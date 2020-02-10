@@ -409,7 +409,7 @@ wire CLKContention = ~Nor1 | ~Nor2;
 
 always @(posedge clk14)
 	contention <= timings & CLKContention;
-	//contention <= timings && screen_load && (hc[2] || hc[3]) && (contention_mem || contention_io);
+	// contention <= timings && screen_load && (hc[2] || hc[3]) && (contention_mem || contention_io);
 
 
 /* CLOCK */
@@ -768,7 +768,7 @@ assign ra[16:14] =
 	{2'b00, rombank128};
 
 assign va[18:0] =
-				  screen_read_snow? {2'b11, vbank, 1'b1, screen_addr[14:8], {8{1'bz}}} :
+				  // screen_read_snow? {2'b11, vbank, 1'b1, screen_addr[14:8], {8{1'bz}}} :
 				  screen_read? {2'b11, vbank, 1'b1, screen_addr} :
 				  // ~n_vcs_cpu & divmap & a13? {2'b10, divbank, {13{1'bz}}} :
 				  // ~n_vcs_cpu & divmap? {2'b10, 4'b0011, {13{1'bz}}} :

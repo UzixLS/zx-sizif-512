@@ -125,7 +125,7 @@ set_location_assignment PIN_99 -to fd_tr43
 set_location_assignment PIN_19 -to ra[14]
 set_location_assignment PIN_21 -to ra[15]
 set_location_assignment PIN_22 -to ra[16]
-set_location_assignment PIN_107 -to fd_index
+set_location_assignment PIN_91 -to fd_index
 set_location_assignment PIN_79 -to vsync
 set_location_assignment PIN_80 -to hsync
 set_location_assignment PIN_125 -to clk32
@@ -181,3 +181,4 @@ set_global_assignment -name VERILOG_INCLUDE_FILE util.vh
 set_global_assignment -name OPTIMIZE_HOLD_TIMING OFF
 set_global_assignment -name FITTER_EFFORT "STANDARD FIT"
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output/
+set_location_assignment PIN_107 -to fd_index1

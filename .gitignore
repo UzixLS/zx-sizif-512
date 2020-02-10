@@ -4,3 +4,5 @@ output/
 *.bak
 *.*~
 top-old.v
+*.dpf
+*.qws
