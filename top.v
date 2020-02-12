@@ -13,8 +13,6 @@ module zx_ula(
 	inout [7:0] vd,
 	inout [18:0] va,
 	output [16:14] ra,
-	input a0,
-	input a1,
 	input a13,
 	input a14,
 	input a15,
@@ -55,9 +53,6 @@ module zx_ula(
 	output reg csync,
 	output reg hsync,
 	output reg vsync,
-`ifdef FPGA
-	output reg blank0,
-`endif
 `ifndef NO_CHROMA
 	output [1:0] chroma,
 `endif
@@ -110,13 +105,16 @@ module zx_ula(
 	output reg sd_cs
 );
 
-reg timings;
 wire [2:0] border;
-reg contention;
+wire [2:0] rambank128;
+reg timings;
+reg turbo;
+wire contention;
+wire allow_contention = turbo == 0 && timings == 1'b1;
 
 assign n_iorqge_o = ~n_m1 | n_iorq;
 reg n_iorq_delayed;
-wire n_ioreq = n_iorqge_i | n_iorq_delayed ;
+wire n_ioreq = n_iorqge_i | n_iorq_delayed;
 reg n_mreq_delayed;
 wire n_mreq0 = n_mreq_delayed;
 
@@ -140,34 +138,24 @@ localparam V_TOTAL_S48    = V_AREA + V_BBORDER_S48 + V_SYNC_S48 + V_TBORDER_S48;
 localparam H_LBORDER_S128 = 48 - SCREEN_DELAY;
 localparam H_RBORDER_S128 = 48 + SCREEN_DELAY;
 localparam H_BLANK1_S128  = 28;
-localparam H_SYNC_S128    = 32;
-localparam H_BLANK2_S128  = 44;
+localparam H_SYNC_S128    = 33;
+localparam H_BLANK2_S128  = 43;
 localparam H_TOTAL_S128   = H_AREA + H_RBORDER_S128 + H_BLANK1_S128 + H_SYNC_S128 + H_BLANK2_S128 + H_LBORDER_S128;
 localparam V_BBORDER_S128 = 56;
-localparam V_SYNC_S128    = 15;
-localparam V_TBORDER_S128 = 48;
+localparam V_SYNC_S128    = 8;
+localparam V_TBORDER_S128 = 55;
 localparam V_TOTAL_S128   = V_AREA + V_BBORDER_S128 + V_SYNC_S128 + V_TBORDER_S128;
 
-localparam H_LBORDER_PENT = 51 - SCREEN_DELAY;
+localparam H_LBORDER_PENT = 72 - SCREEN_DELAY;
 localparam H_RBORDER_PENT = 56 + SCREEN_DELAY;
-localparam H_BLANK1_PENT  = 12;
+localparam H_BLANK1_PENT  = 16;
 localparam H_SYNC_PENT    = 33;
-localparam H_BLANK2_PENT  = 40;
+localparam H_BLANK2_PENT  = 15;
 localparam H_TOTAL_PENT   = H_AREA + H_RBORDER_PENT + H_BLANK1_PENT + H_SYNC_PENT + H_BLANK2_PENT + H_LBORDER_PENT;
 localparam V_BBORDER_PENT = 56;
 localparam V_SYNC_PENT    = 8;
 localparam V_TBORDER_PENT = 64;
 localparam V_TOTAL_PENT   = V_AREA + V_BBORDER_PENT + V_SYNC_PENT + V_TBORDER_PENT;
-// localparam H_LBORDER_PENT = 72 - SCREEN_DELAY;
-// localparam H_RBORDER_PENT = 56 + SCREEN_DELAY;
-// localparam H_BLANK1_PENT  = 0;
-// localparam H_SYNC_PENT    = 32;
-// localparam H_BLANK2_PENT  = 32;
-// localparam H_TOTAL_PENT   = H_AREA + H_RBORDER_PENT + H_BLANK1_PENT + H_SYNC_PENT + H_BLANK2_PENT + H_LBORDER_PENT;
-// localparam V_BBORDER_PENT = 48;
-// localparam V_SYNC_PENT    = 16;
-// localparam V_TBORDER_PENT = 64;
-// localparam V_TOTAL_PENT   = V_AREA + V_BBORDER_PENT + V_SYNC_PENT + V_TBORDER_PENT;
 
 reg [`CLOG2(`MAX(V_TOTAL_S128, V_TOTAL_PENT))-1:0] vc;
 reg [`CLOG2(`MAX(H_TOTAL_S128, H_TOTAL_PENT)):0] hc0;
@@ -236,9 +224,6 @@ always @(posedge clk14) begin
 		csync <= ~(vsync0 ^ hsync0);
 		vsync <= vsync0;
 		hsync <= hsync0;
-		`ifdef FPGA
-			blank0 <= blank;
-		`endif
 	end
 end
 
@@ -248,13 +233,10 @@ wire bitmap_read = screen_read & hc0[0];
 wire [14:0] bitmap_addr = { 2'b10, vc[7:6], vc[2:0], vc[5:3], hc[7:3] };
 wire [14:0] attr_addr = { 5'b10110, vc[7:3], hc[7:3] };
 wire [14:0] screen_addr = attr_read? attr_addr : bitmap_addr;
-wire screen_load = (vc < V_AREA) && (hc < H_AREA);
+wire screen_load = (vc < V_AREA) && (hc < H_AREA || hc0_reset);
 wire screen_show = (vc < V_AREA) && (hc >= SCREEN_DELAY) && (hc < H_AREA + SCREEN_DELAY);
-wire screen_update = hc0[3:0] == 4'b1111;
-// wire border_update = (~((screen_load && (hc0[3:0] == 4'b1111)) || (screen_show && (hc0[3:0] != 4'b1110))))
-// 				&& (timings == 0 || hc0[3:0] == 4'b1111);
-wire border_update = ((screen_load == 0 && screen_show == 0) || (screen_load == 0 && hc0[3:0] == 4'b1111) || (screen_show == 0 && timings == 0))
-				&& (timings == 0 || hc0[3:0] == 4'b1111);
+wire screen_update = vc < V_AREA && hc <= H_AREA && hc != 0 && hc0[3:0] == 4'b0000;
+wire border_update = !screen_show && (timings == 0 || hc0[3:0] == 4'b0000);
 
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) begin
@@ -265,19 +247,26 @@ always @(posedge clk14 or negedge rst_n) begin
 		bitmap_next <= 0;
 	end
 	else begin
-		screen_read <= screen_load && ((n_mreq == 1'b1 && n_iorq == 1'b1) || (timings && contention && clkcpu));
+		if (screen_load && ((n_mreq == 1'b1 && n_iorq == 1'b1) || (allow_contention && contention))) begin
+			screen_read <= 1'b1;
+		end
+		else begin
+			screen_read <= 0;
+		end
 
 		if (attr_read)
 			attr_next <= vd;
+		else if (!screen_load)
+			attr_next <= 8'hff;
 		if (bitmap_read)
 			bitmap_next <= vd;
 
-		if (screen_load && screen_update)
-			attr <= attr_next;
-		else if (border_update)
+		if (border_update)
 			attr <= {2'b00, border, 3'b000};
+		else if (screen_update)
+			attr <= attr_next;
 		
-		if (screen_load && screen_update)
+		if (screen_update)
 			bitmap <= bitmap_next;
 		else if (hc0[0])
 			bitmap <= {bitmap[6:0], 1'b0};
@@ -285,11 +274,49 @@ always @(posedge clk14 or negedge rst_n) begin
 end
 
 
+/* INT GENERATOR */
+localparam INT_V_S48       = 248;
+localparam INT_H_FROM_S48  = 0;
+localparam INT_H_TO_S48    = 63;
+localparam INT_V_S128      = 248;
+localparam INT_H_FROM_S128 = 2;
+localparam INT_H_TO_S128   = 65;
+localparam INT_V_PENT      = 239;
+localparam INT_H_FROM_PENT = 336;
+localparam INT_H_TO_PENT   = 408;
+reg n_int0, n_int1;
+always @(posedge clk14) begin
+	n_int0 <= timings? 
+		vc != INT_V_S128 || hc < INT_H_FROM_S128 || hc > INT_H_TO_S128 :
+		vc != INT_V_PENT || hc < INT_H_FROM_PENT || hc > INT_H_TO_PENT ;
+	n_int1 <= timings? 
+		hc > INT_H_FROM_S128+(INT_H_TO_S128-INT_H_FROM_S128)/2 :
+		hc > INT_H_FROM_PENT+(INT_H_TO_PENT-INT_H_FROM_PENT)/2 ;
+	n_int <= n_int0 | (turbo? n_int1 : 1'b0);
+end
+
+
+/* CONTENTION */
+always @(posedge clkcpu)
+	n_mreq_delayed <= n_mreq;
+always @(negedge clkcpu)
+	n_iorq_delayed <= n_iorq;
+wire contention_mem_addr = a14 & (~a15 | (a15 & rambank128[0]));
+wire contention_mem = n_iorq_delayed == 1'b1 && n_mreq_delayed == 1'b1 && (contention_mem_addr | n_iorq == 0);
+wire contention_io = n_iorq == 0 && n_iorq_delayed == 1'b1 ;
+assign contention = screen_load && (hc[2] || hc[3]) && clkcpu == 1'b1 && (contention_mem || contention_io);
+wire screen_read_snow = screen_read && timings && contention_mem_addr && n_rfsh == 0;
+
+
+/* CLOCK */
+always @(posedge clk14)
+	clkcpu <= (clkcpu && allow_contention && contention)? 1'b1 : turbo? hc[0] : hc[1];
+
+
 /* CONFIG */
-reg turbo;
 reg [1:0] extrom;
 reg rambank512;
-wire config_cs = extrom == 2'b01 && n_ioreq == 0 && a0 == 1'b1 && a1 == 1'b1;
+wire config_cs = extrom == 2'b01 && n_ioreq == 0 && va[0] == 1'b1 && va[1] == 1'b1;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) begin
 		timings <= 0;
@@ -298,6 +325,7 @@ always @(posedge clk14 or negedge rst_n) begin
 		extrom <= 0;
 		n_nmi <= 1'bz;
 		n_rstcpu <= 0;
+		rambank512 <= 0;
 	end
 	else begin
 		if (config_cs && n_wr == 0) begin
@@ -320,7 +348,7 @@ end
 
 
 /* PORT #FE */
-wire port_fe_cs = n_ioreq == 0 && a0 == 0;
+wire port_fe_cs = n_ioreq == 0 && va[0] == 0;
 reg port_fe_rd;
 always @(posedge clk14)
 	port_fe_rd <= port_fe_cs && n_rd == 0;
@@ -338,10 +366,18 @@ always @(posedge clk14 or negedge rst_n) begin
 end
 
 
+/* PORT #FF */
+wire port_ff_cs = n_ioreq == 0 && va[7:0] == 8'hff;
+wire [7:0] port_ff_data = attr_next;
+reg port_ff_rd;
+always @(posedge clk14)
+	port_ff_rd <= port_ff_cs && n_rd == 0;
+
+
 /* PORT #7FFD */
-wire port_7ffd_cs = n_ioreq == 0 && a1 == 0 && a15 == 0 && (a14 == 1 || a13 == 1);
+wire port_7ffd_cs = n_ioreq == 0 && va[1] == 0 && va[15] == 0 && (va[14] == 1 || va[13] == 1);
 reg [7:0] port_7ffd;
-wire [2:0] rambank128 = port_7ffd[2:0];
+assign rambank128 = port_7ffd[2:0];
 wire vbank = port_7ffd[3];
 wire rombank128 = port_7ffd[4];
 wire lock_7ffd = port_7ffd[5];
@@ -354,7 +390,7 @@ end
 
 
 /* PORT 1FFD */
-wire port_1ffd_cs = n_ioreq == 0 && a1 == 0 && a15 == 0 && a14 == 0 && a13 == 0;
+wire port_1ffd_cs = n_ioreq == 0 && va[1] == 0 && va[15] == 0 && va[14] == 0 && va[13] == 0;
 reg rambank256;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n)
@@ -364,61 +400,6 @@ always @(posedge clk14 or negedge rst_n) begin
 end
 
 
-/* INT GENERATOR */
-localparam INT_V_S48       = 248;
-localparam INT_H_FROM_S48  = 0;
-localparam INT_H_TO_S48    = 63;
-localparam INT_V_S128      = 248;
-localparam INT_H_FROM_S128 = 2;
-localparam INT_H_TO_S128   = 65;
-localparam INT_V_PENT      = 239;
-localparam INT_H_FROM_PENT = 312;
-localparam INT_H_TO_PENT   = 384;
-reg n_int0;
-always @(posedge clk14) begin
-	n_int0 <= timings? 
-		vc != INT_V_S128 || hc < INT_H_FROM_S128 || hc > INT_H_TO_S128 :
-		vc != INT_V_PENT || hc < INT_H_FROM_PENT || hc > INT_H_TO_PENT ;
-	n_int <= n_int0;
-end
-
-	
-
-
-/* CONTENTION */
-always @(posedge clkcpu)
-	n_mreq_delayed <= n_mreq;
-always @(negedge clkcpu)
-	n_iorq_delayed <= n_iorq;
-wire contention_mem_addr = a14 & (~a15 | (a15 & rambank128[0]));
-wire contention_mem = contention_mem_addr && n_mreq_delayed == 1'b1 && n_iorq_delayed == 1'b1;
-wire contention_io = n_iorqge_o == 0 && n_iorq_delayed == 1'b1 && clkcpu == 1'b1;
-wire snow = timings? (contention_mem_addr && n_rfsh == 0) : 1'b0;
-wire screen_read_snow = screen_read && snow;
-
-wire Nor1 = (~(a14 | ~n_iorq)) | 
-			(~(~a15 | ~n_iorq)) | 
-			(~(hc[2] | hc[3])) | 
-			(~screen_load | ~n_iorq_delayed | ~clkcpu | ~n_mreq_delayed);
-wire Nor2 = (~(hc[2] | hc[3])) | 
-			~screen_load |
-			~clkcpu |
-			n_iorq |
-			~n_iorq_delayed;
-wire CLKContention = ~Nor1 | ~Nor2;
-
-always @(posedge clk14)
-	contention <= timings & CLKContention;
-	// contention <= timings && screen_load && (hc[2] || hc[3]) && (contention_mem || contention_io);
-
-
-/* CLOCK */
-wire [2:0] clk_cnt = hc0[2:0];
-
-always @(posedge clk14)
-	clkcpu <= (clkcpu & contention)? 1'b1 : turbo? clk_cnt[0] : clk_cnt[1];
-
-
 /* AY */
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) begin
@@ -426,11 +407,11 @@ always @(posedge clk14 or negedge rst_n) begin
 		ay_bdir <= 0;
 	end
 	else begin
-		ay_bc1  <= a15 == 1'b1 && a14 == 1'b1 && a1 == 0 && n_ioreq == 0;
-		ay_bdir <= a15 == 1'b1 && a1 == 0 && n_ioreq == 0 && n_wr == 0;
+		ay_bc1  <= va[15] == 1'b1 && va[14] == 1'b1 && va[1] == 0 && n_ioreq == 0;
+		ay_bdir <= va[15] == 1'b1 && va[1] == 0 && n_ioreq == 0 && n_wr == 0;
 	end
 end
-assign ay_clk = clk_cnt[2];
+assign ay_clk = hc[1];
 
 
 /* COVOX */
@@ -461,28 +442,28 @@ always @(posedge clk14)
 
 /* BETA DISK INTERFACE */
 reg dos;
-reg [7:0] port_ff;
-wire [7:0] port_ff_data = {fd_intr, fd_drq, 6'b111111};
-wire port_ff_cs = n_ioreq == 0 && dos && va[7] == 1'b1;
+reg [7:0] port_dosff;
+wire [7:0] port_dosff_data = {fd_intr, fd_drq, 6'b111111};
+wire port_dosff_cs = dos && n_ioreq == 0 && va[7] == 1'b1;
 reg port_dosff_rd;
 always @(posedge clk14)
-	port_dosff_rd <= port_ff_cs && n_rd == 0;
+	port_dosff_rd <= port_dosff_cs && n_rd == 0;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n)
-		port_ff <= 0;
-	else if (port_ff_cs && n_wr == 0)
-		port_ff <= vd;
+		port_dosff <= 0;
+	else if (port_dosff_cs && n_wr == 0)
+		port_dosff <= vd;
 end
 
-assign fd_dden = port_ff[6];
-assign fd_side1 = ~port_ff[4];
-assign fd_hlt = port_ff[3];
-assign fd_rst = port_ff[2];
-assign fd_disk0 = ((port_ff[1:0] == 2'b00) && fd_motor)? 1'b0 : 1'bz;
-assign fd_disk1 = ((port_ff[1:0] == 2'b01) && fd_motor)? 1'b0 : 1'bz;
+assign fd_dden = port_dosff[6];
+assign fd_side1 = ~port_dosff[4];
+assign fd_hlt = port_dosff[3];
+assign fd_rst = port_dosff[2];
+assign fd_disk0 = ((port_dosff[1:0] == 2'b00) && fd_motor)? 1'b0 : 1'bz;
+assign fd_disk1 = ((port_dosff[1:0] == 2'b01) && fd_motor)? 1'b0 : 1'bz;
 
 always @(posedge clk14)
-	fd_cswg <= dos == 0 | va[7] | n_ioreq;
+	fd_cswg <= (dos && va[7] == 0 && n_ioreq == 0)? 0 : 1'b1;
 
 
 always @(posedge clk14 or negedge rst_n) begin
@@ -754,7 +735,7 @@ assign n_vwr = (n_vcs_cpu | n_wr) | ~n_vcs_ula;
 assign vaout = screen_read == 1'b1;
 assign vaout_8 = screen_read_snow == 1'b1;
 assign vaout_13 = n_vcs_cpu == 0;
-assign vdout = kempston_rd || port_fe_rd || div_rd || port_dosff_rd;
+assign vdout = port_ff_rd || port_fe_rd || kempston_rd || div_rd || port_dosff_rd;
 `endif
 
 
@@ -768,19 +749,20 @@ assign ra[16:14] =
 	{2'b00, rombank128};
 
 assign va[18:0] =
-				  // screen_read_snow? {2'b11, vbank, 1'b1, screen_addr[14:8], {8{1'bz}}} :
-				  screen_read? {2'b11, vbank, 1'b1, screen_addr} :
-				  // ~n_vcs_cpu & divmap & a13? {2'b10, divbank, {13{1'bz}}} :
-				  // ~n_vcs_cpu & divmap? {2'b10, 4'b0011, {13{1'bz}}} :
-				  ~n_vcs_cpu & a15 & a14? {~rambank256, ~rambank512, rambank128[1], rambank128[2], rambank128[0], a13, {13{1'bz}}} :
-				  ~n_vcs_cpu? {2'b11, a15, a14, a14, a13, {13{1'bz}}} :
-				  {19{1'bz}};
+	// screen_read_snow? {2'b11, vbank, 1'b1, screen_addr[14:8], {8{1'bz}}} :
+	screen_read? {2'b11, vbank, 1'b1, screen_addr} :
+	// ~n_vcs_cpu & divmap & a13? {2'b10, divbank, {13{1'bz}}} :
+	// ~n_vcs_cpu & divmap? {2'b10, 4'b0011, {13{1'bz}}} :
+	~n_vcs_cpu & a15 & a14? {~rambank256, ~rambank512, rambank128[1], rambank128[2], rambank128[0], a13, {13{1'bz}}} :
+	~n_vcs_cpu? {2'b11, a15, a14, a14, a13, {13{1'bz}}} :
+	{19{1'bz}};
 
 assign vd[7:0] =
-		   kempston_rd? kempston_data :
-		   port_fe_rd? port_fe_data :
-		   div_rd? covox_data_divmmc_data : 
-		   port_dosff_rd? port_ff_data :
-		   {8{1'bz}};
+	port_dosff_rd? port_dosff_data :
+	div_rd? covox_data_divmmc_data : 
+	kempston_rd? kempston_data :
+	port_fe_rd? port_fe_data :
+	//port_ff_rd? port_ff_data :
+	{8{1'bz}};
 
 endmodule
