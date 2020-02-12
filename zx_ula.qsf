@@ -173,7 +173,6 @@ set_global_assignment -name MISC_FILE "Z:/zx-sizif-512/zx_ula.dpf"
 set_instance_assignment -name CLOCK_SETTINGS clk8 -to "lpm_counter:wgcnt_rtl_1|dffs[1]"
 set_instance_assignment -name CLOCK_SETTINGS clk4 -to "lpm_counter:wgcnt_rtl_1|dffs[2]"
 set_location_assignment PIN_132 -to a13
-set_global_assignment -name USE_CONFIGURATION_DEVICE ON
 set_global_assignment -name RESERVE_ALL_UNUSED_PINS_NO_OUTPUT_GND "AS INPUT TRI-STATED"
 set_global_assignment -name VHDL_FILE chroma_gen32.vhd
 set_global_assignment -name VERILOG_FILE top.v
