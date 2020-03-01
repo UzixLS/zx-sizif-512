@@ -1,6 +1,7 @@
 `include "util.vh"
 // `define FPGA
 `define NO_CHROMA
+// `define NO_BDI
 
 module zx_ula(
 	input rst_n,
@@ -27,7 +28,7 @@ module zx_ula(
 `endif
 
 	output n_vrd,
-	output n_vwr,
+	output reg n_vwr,
 	output reg n_romcs,
 
 	input n_rd,
@@ -445,6 +446,7 @@ always @(posedge clk14)
 
 
 /* BETA DISK INTERFACE */
+`ifndef NO_BDI
 reg dos;
 reg [7:0] port_dosff;
 wire [7:0] port_dosff_data = {fd_intr, fd_drq, 6'b111111};
@@ -463,8 +465,8 @@ assign fd_dden = port_dosff[6];
 assign fd_side1 = ~port_dosff[4];
 assign fd_hlt = port_dosff[3];
 assign fd_rst = port_dosff[2];
-assign fd_disk0 = ((port_dosff[1:0] == 2'b00) && fd_motor)? 1'b0 : 1'bz;
-assign fd_disk1 = ((port_dosff[1:0] == 2'b01) && fd_motor)? 1'b0 : 1'bz;
+assign fd_disk0 = ((port_dosff[1:0] == 2'b00) && fd_motor)? 1'b0 : 1'b1;
+assign fd_disk1 = ((port_dosff[1:0] == 2'b01) && fd_motor)? 1'b0 : 1'b1;
 
 always @(posedge clk14)
 	fd_cswg <= (dos && xa[7] == 0 && n_ioreq == 0)? 0 : 1'b1;
@@ -485,8 +487,8 @@ end
 reg [4:0] wgcnt;
 wire clk8 = wgcnt[1];
 wire clk4 = wgcnt[2];
-assign fd_wg_clk = wgcnt[3];
-always @(posedge clk32 or negedge rst_n) begin
+assign fd_wg_clk = wgcnt[4];
+always @(negedge clk32 or negedge rst_n) begin
 	if (!rst_n)
 		wgcnt <= 0;
 	else
@@ -540,7 +542,7 @@ always @(posedge clk8 or negedge rst_n) begin
 	if (!rst_n)
 		fd_rclk <= 0;
 	else
-		fd_rclk <= (~fd_wf_de)? ~fa[4] : 1'b1;
+		fd_rclk <= (fd_wf_de == 0)? ~fa[4] : 1'b1;
 end
 
 reg [3:0] wdata;
@@ -567,6 +569,15 @@ end
 
 always @(posedge clk32)
 	fd_index1 <= fd_index & fd_hlt;
+
+`else /* NO_BDI */
+wire dos = 0;
+wire port_dosff_rd = 0;
+assign fd_rst = 0;
+always @* begin
+	fd_cswg <= 1'b1;
+end
+`endif /* NO_BDI */
 
 
 /* DIVMMC */
@@ -676,7 +687,7 @@ always @*
 `ifndef NO_CHROMA
 reg [2:0] chroma0;
 chroma_gen chroma_gen1(
-	.cg_clock(clk32),
+	.cg_clock(clk14),
 	.cg_rgb({g,r,b}),
 	.cg_hsync(~hsync),
 	.cg_enable(1'b1),
@@ -734,23 +745,20 @@ assign chroma[1] = chroma0[2]? chroma0[0] : 1'bz;
 
 reg n_vcs_cpu;
 always @(posedge clk14) begin
-`ifdef FPGA
-	n_romcs <=   (n_mreq == 0 &&  a14 == 0 && a15 == 0)? 1'b0 : 1'b1;
-	n_vcs_cpu <= (n_mreq == 0 && (a14 == 1'b1 || a15 == 1'b1))? 1'b0 : 1'b1;
-`else
 	n_romcs <=   (n_mreq == 0 &&  a14 == 0 && a15 == 0 &&
 		((conmem == 0 && automap == 0) || (a13 == 0 && conmem == 1) || (a13 == 0 && mapram == 0)))? 1'b0 : 1'b1;
 	n_vcs_cpu <= (n_mreq == 0 && (a14 == 1'b1 || a15 == 1'b1 || 
 		(conmem == 0 && automap == 1 && mapram == 1) || (a13 == 1 && conmem == 1) || (a13 == 1 && automap == 1) ))? 1'b0 : 1'b1;
-`endif
 end
-
-wire n_vwren_div = (a13 == 0 || (a14 == 0 && a15 == 0 && conmem == 0 && automap == 1 && mapram == 1 && divbank == 4'b0111))? 1'b1 : 1'b0;
 
 wire n_vcs_ula = ~screen_read;
 assign n_vrd = (n_vcs_cpu | n_rd) &  n_vcs_ula;
-assign n_vwr = (n_vcs_cpu | n_wr) | ~n_vcs_ula;
-// assign n_vwr = (n_vcs_cpu | n_wr) | ~n_vcs_ula | n_vwren_div;
+
+wire n_vwren_div = a14 && a15 && (~a13 || (conmem == 0 && automap == 1 && mapram == 1 && divbank == 4'b0111))? 1'b1 : 1'b0;
+always @* begin
+	n_vwr <= (n_vcs_cpu | n_wr) | ~n_vcs_ula;
+	// n_vwr <= (n_vcs_cpu | n_wr) | ~n_vcs_ula | n_vwren_div;
+end
 
 
 `ifdef FPGA
@@ -762,10 +770,10 @@ assign vdout = port_ff_rd || port_fe_rd || kempston_rd || div_rd || port_dosff_r
 
 
 assign ra[16:14] =
-`ifndef FPGA
 	// (extrom == 2'b01)? 3'b111 :
 	// (extrom[1] == 1'b1)? {1'b1, extrom[0], rombank128} :
 	divmap? 3'b011 :
+`ifndef NO_BDI
 	dos? 3'b010 :
 `endif
 	{2'b00, rombank128};
@@ -780,11 +788,14 @@ assign va[18:0] =
 	{19{1'bz}};
 
 assign vd[7:0] =
+`ifndef NO_BDI
 	port_dosff_rd? port_dosff_data :
+`endif
 	div_rd? covox_data_divmmc_data : 
 	kempston_rd? kempston_data :
 	port_fe_rd? port_fe_data :
 	port_ff_rd? port_ff_data :
+	n_ioreq == 0 && (n_rd == 0 | n_m1 == 0)? {8{1'b1}} :
 	{8{1'bz}};
 
 endmodule

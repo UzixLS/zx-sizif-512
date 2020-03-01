@@ -78,8 +78,8 @@ set_global_assignment -name MISC_FILE "E:/ws/quartus/zx_ula/zx_ula.dpf"
 set_global_assignment -name VERILOG_INPUT_VERSION SYSTEMVERILOG_2005
 set_global_assignment -name VERILOG_SHOW_LMF_MAPPING_MESSAGES OFF
 set_global_assignment -name MAX7000_OPTIMIZATION_TECHNIQUE AREA
-set_global_assignment -name FMAX_REQUIREMENT "14.312 MHz"
-set_global_assignment -name FMAX_REQUIREMENT "14.312 MHz" -section_id clk14
+set_global_assignment -name FMAX_REQUIREMENT "14.4 MHz"
+set_global_assignment -name FMAX_REQUIREMENT "14.4 MHz" -section_id clk14
 set_location_assignment PIN_23 -to va[18]
 set_location_assignment PIN_7 -to va[17]
 set_instance_assignment -name CLOCK_SETTINGS clk14 -to clk14
@@ -174,10 +174,10 @@ set_instance_assignment -name CLOCK_SETTINGS clk8 -to "lpm_counter:wgcnt_rtl_1|d
 set_instance_assignment -name CLOCK_SETTINGS clk4 -to "lpm_counter:wgcnt_rtl_1|dffs[2]"
 set_location_assignment PIN_132 -to a13
 set_global_assignment -name RESERVE_ALL_UNUSED_PINS_NO_OUTPUT_GND "AS INPUT TRI-STATED"
-set_global_assignment -name VHDL_FILE chroma_gen32.vhd
-set_global_assignment -name VERILOG_FILE top.v
-set_global_assignment -name VERILOG_INCLUDE_FILE util.vh
 set_global_assignment -name OPTIMIZE_HOLD_TIMING OFF
 set_global_assignment -name FITTER_EFFORT "STANDARD FIT"
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output/
 set_location_assignment PIN_107 -to fd_index1
+set_global_assignment -name VHDL_FILE chroma_gen14.vhd
+set_global_assignment -name VERILOG_FILE top.v
+set_global_assignment -name VERILOG_INCLUDE_FILE util.vh
