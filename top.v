@@ -1,7 +1,8 @@
 `include "util.vh"
 // `define FPGA
-`define NO_CHROMA
+// `define NO_CHROMA
 // `define NO_BDI
+`define NO_DIV
 
 module zx_ula(
 	input rst_n,
@@ -86,7 +87,7 @@ module zx_ula(
 	output fd_hlt,
 	output fd_side1,
 	output fd_dden,
-	output reg fd_rclk,
+	output fd_rclk,
 	input fd_wf_de,
 	output reg fd_rawr,
 	input fd_tr43,
@@ -477,10 +478,10 @@ always @(posedge clk14 or negedge rst_n) begin
 		dos <= 0;
 	end
 	else begin
-		if (n_mreq0 == 0 && n_m1 == 0 && (xa[14] == 1'b1 || xa[15] == 1'b1))
-			dos <= 0;
-		if (xa[15:8] == 8'h3D && rombank128 == 1'b1 && n_mreq0 == 0 & n_m1 == 0 & sd_cd == 1'b1)
+		if (n_mreq0 == 0 && n_m1 == 0 && xa[15:8] == 8'h3D && rombank128 == 1'b1 && sd_cd == 1'b1)
 			dos <= 1'b1;
+		else if (n_mreq0 == 0 && n_m1 == 0 && (xa[15] == 1'b1 || xa[14] == 1'b1))
+			dos <= 0;
 	end
 end
 
@@ -496,19 +497,11 @@ always @(negedge clk32 or negedge rst_n) begin
 end
 
 reg rd1, rd2;
-always @(posedge clk8 or negedge rst_n) begin
-	if (!rst_n) begin
-		rd1 <= 0;
-		rd2 <= 0;
-	end
-	else begin
-		rd1 <= fd_rdat;
-		rd2 <= ~rd1;
-	end
+always @(posedge clk8) begin
+	rd1 <= fd_rdat;
+	rd2 <= rd1;
+	fd_rawr <= (fd_wf_de == 0 & rd1 == 1'b1 & rd2 == 0)? 1'b0 : 1'b1;
 end
-
-always @(posedge clk32)
-	fd_rawr <= (fd_wf_de == 0 & rd1 == 1'b1 & rd2 == 1'b1)? 1'b0 : 1'b1;
 
 reg [4:0] fa;
 always @(posedge clk8 or negedge rst_n) begin
@@ -516,7 +509,7 @@ always @(posedge clk8 or negedge rst_n) begin
 		fa <= 0;
 	end
 	else begin
-		if (fd_rawr == 0) begin
+		if (rd1 == 1'b1 & rd2 == 0) begin
 			if (fa[3:0] < 3)
 				fa[3:0] <= fa[3:0] + 4'd4;
 			else if (fa[3:0] < 5)
@@ -538,12 +531,7 @@ always @(posedge clk8 or negedge rst_n) begin
 	end
 end
 
-always @(posedge clk8 or negedge rst_n) begin
-	if (!rst_n)
-		fd_rclk <= 0;
-	else
-		fd_rclk <= (fd_wf_de == 0)? ~fa[4] : 1'b1;
-end
+assign fd_rclk = (fd_wf_de == 0)? ~fa[4] : 1'b1;
 
 reg [3:0] wdata;
 assign fd_wdat = wdata[3];
@@ -574,13 +562,13 @@ always @(posedge clk32)
 wire dos = 0;
 wire port_dosff_rd = 0;
 assign fd_rst = 0;
-always @* begin
+always @*
 	fd_cswg <= 1'b1;
-end
 `endif /* NO_BDI */
 
 
 /* DIVMMC */
+`ifndef NO_DIV
 wire port_eb_cs = n_ioreq == 0 && xa[7:0] == 8'hEB;
 reg div_rd;
 always @(posedge clk14 or negedge rst_n) begin
@@ -681,6 +669,7 @@ end
 
 always @*
 	sd_sck <= ~clk14 & ~divcnt[3];
+`endif /* NO_DIV */
 
 
 /* VIDEO */
@@ -745,16 +734,23 @@ assign chroma[1] = chroma0[2]? chroma0[0] : 1'bz;
 
 reg n_vcs_cpu;
 always @(posedge clk14) begin
+`ifndef NO_DIV
 	n_romcs <=   (n_mreq == 0 &&  a14 == 0 && a15 == 0 &&
 		((conmem == 0 && automap == 0) || (a13 == 0 && conmem == 1) || (a13 == 0 && mapram == 0)))? 1'b0 : 1'b1;
 	n_vcs_cpu <= (n_mreq == 0 && (a14 == 1'b1 || a15 == 1'b1 || 
 		(conmem == 0 && automap == 1 && mapram == 1) || (a13 == 1 && conmem == 1) || (a13 == 1 && automap == 1) ))? 1'b0 : 1'b1;
+`else
+	n_romcs <=   (n_mreq == 0 &&  a14 == 0 && a15 == 0)? 1'b0 : 1'b1;
+	n_vcs_cpu <= (n_mreq == 0 && (a14 == 1'b1 || a15 == 1'b1))? 1'b0 : 1'b1;
+`endif
 end
 
 wire n_vcs_ula = ~screen_read;
 assign n_vrd = (n_vcs_cpu | n_rd) &  n_vcs_ula;
 
+`ifndef NO_DIV
 wire n_vwren_div = a14 && a15 && (~a13 || (conmem == 0 && automap == 1 && mapram == 1 && divbank == 4'b0111))? 1'b1 : 1'b0;
+`endif
 always @* begin
 	n_vwr <= (n_vcs_cpu | n_wr) | ~n_vcs_ula;
 	// n_vwr <= (n_vcs_cpu | n_wr) | ~n_vcs_ula | n_vwren_div;
@@ -772,7 +768,9 @@ assign vdout = port_ff_rd || port_fe_rd || kempston_rd || div_rd || port_dosff_r
 assign ra[16:14] =
 	// (extrom == 2'b01)? 3'b111 :
 	// (extrom[1] == 1'b1)? {1'b1, extrom[0], rombank128} :
+`ifndef NO_DIV
 	divmap? 3'b011 :
+`endif
 `ifndef NO_BDI
 	dos? 3'b010 :
 `endif
@@ -781,8 +779,10 @@ assign ra[16:14] =
 assign va[18:0] =
 	// screen_read_snow? {2'b11, vbank, 1'b1, screen_addr[14:8], {8{1'bz}}} :
 	screen_read? {2'b11, vbank, 1'b1, screen_addr} :
+`ifndef NO_DIV
 	~n_vcs_cpu & divmap & ~a14 & ~a15 & a13? {2'b10, divbank, {13{1'bz}}} :
 	~n_vcs_cpu & divmap & ~a14 & ~a15? {2'b10, 4'b0011, {13{1'bz}}} :
+`endif
 	~n_vcs_cpu & a15 & a14? {~rambank256, ~rambank512, rambank128[1], rambank128[2], rambank128[0], a13, {13{1'bz}}} :
 	~n_vcs_cpu? {2'b11, a15, a14, a14, a13, {13{1'bz}}} :
 	{19{1'bz}};
@@ -791,7 +791,9 @@ assign vd[7:0] =
 `ifndef NO_BDI
 	port_dosff_rd? port_dosff_data :
 `endif
-	div_rd? covox_data_divmmc_data : 
+`ifndef NO_DIV
+	div_rd? covox_data_divmmc_data :
+`endif 
 	kempston_rd? kempston_data :
 	port_fe_rd? port_fe_data :
 	port_ff_rd? port_ff_data :
