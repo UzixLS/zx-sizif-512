@@ -611,7 +611,7 @@ always @(posedge clk14 or negedge rst_n) begin
 		if (sd_cd) begin
 			automap_next <= 0;
 		end
-		else if (n_m1 == 0 && n_mreq0 == 0 && n_rd == 0 && (
+		else if (n_m1 == 0 && n_mreq0 == 0 && (
 				xa[15:0] == 16'h0000 || // power-on/reset/rst0/software restart
 				xa[15:0] == 16'h0008 || // syntax error
 				xa[15:0] == 16'h0038 || // im1 interrupt/rst #38
@@ -621,11 +621,11 @@ always @(posedge clk14 or negedge rst_n) begin
 		        )) begin
 			automap_next <= 1'b1;
 		end
-		else if (n_m1 == 0 && n_mreq0 == 0 && n_rd == 0 && xa[15:8] == 8'h3D) begin // tr-dos mapping area
+		else if (n_m1 == 0 && n_mreq0 == 0 && xa[15:8] == 8'h3D) begin // tr-dos mapping area
 			automap_next <= 1'b1;
 			automap <= 1'b1;
 		end
-		else if (n_m1 == 0 && n_mreq0 == 0 && n_rd == 0 && xa[15:3] == 13'h3FF) begin
+		else if (n_m1 == 0 && n_mreq0 == 0 && xa[15:3] == 13'h3FF) begin
 			automap_next <= 0;
 		end
 		else if (n_m1 == 1'b1) begin
@@ -669,6 +669,9 @@ end
 
 always @*
 	sd_sck <= ~clk14 & ~divcnt[3];
+
+`else /* NO_DIV */
+wire div_rd = 0;
 `endif /* NO_DIV */
 
 
@@ -792,8 +795,8 @@ assign vd[7:0] =
 	port_dosff_rd? port_dosff_data :
 `endif
 `ifndef NO_DIV
-	div_rd? covox_data_divmmc_data :
-`endif 
+	div_rd? covox_data_divmmc_data : 
+`endif
 	kempston_rd? kempston_data :
 	port_fe_rd? port_fe_data :
 	port_ff_rd? port_ff_data :
