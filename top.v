@@ -114,13 +114,12 @@ wire [2:0] rambank128;
 reg timings;
 reg turbo;
 wire contention;
-wire allow_contention = turbo == 0 && timings == 1'b1;
 
 assign n_iorqge_o = ~n_m1 | n_iorq;
 reg n_iorq_delayed;
 wire n_ioreq = n_iorqge_i | n_iorq_delayed;
 reg n_mreq_delayed;
-wire n_mreq0 = n_mreq_delayed;
+wire n_mreq0 = n_mreq_delayed | n_mreq;
 
 
 /* SCREEN CONTROLLER */
@@ -238,9 +237,9 @@ wire [14:0] bitmap_addr = { 2'b10, vc[7:6], vc[2:0], vc[5:3], hc[7:3] };
 wire [14:0] attr_addr = { 5'b10110, vc[7:3], hc[7:3] };
 wire [14:0] screen_addr = attr_read? attr_addr : bitmap_addr;
 wire screen_load = (vc < V_AREA) && (hc < H_AREA || hc0_reset);
-wire screen_show = (vc < V_AREA) && (hc >= SCREEN_DELAY) && (hc < H_AREA + SCREEN_DELAY);
-wire screen_update = vc < V_AREA && hc <= H_AREA && hc != 0 && hc0[3:0] == 4'b0000;
-wire border_update = !screen_show && (timings == 0 || hc0[3:0] == 4'b0000);
+wire screen_show = (vc < V_AREA) && (hc >= SCREEN_DELAY - 1) && (hc < H_AREA + SCREEN_DELAY - 1);
+wire screen_update = vc < V_AREA && hc <= H_AREA && hc != 0 && hc0[3:0] == 4'b1110;
+wire border_update = !screen_show && (timings == 0 || hc0[3:0] == 4'b1110);
 
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) begin
@@ -251,7 +250,7 @@ always @(posedge clk14 or negedge rst_n) begin
 		bitmap_next <= 0;
 	end
 	else begin
-		if (screen_load && ((n_mreq == 1'b1 && n_iorq == 1'b1) || (allow_contention && contention))) begin
+		if (screen_load && (((n_mreq == 1'b1 || n_rfsh == 0) && n_iorq == 1'b1) || contention)) begin
 			screen_read <= 1'b1;
 		end
 		else begin
@@ -281,22 +280,23 @@ end
 /* INT GENERATOR */
 localparam INT_V_S48       = 248;
 localparam INT_H_FROM_S48  = 0;
-localparam INT_H_TO_S48    = 63;
+localparam INT_H_TO_S48    = 64;
 localparam INT_V_S128      = 248;
-localparam INT_H_FROM_S128 = 2;
-localparam INT_H_TO_S128   = 65;
+localparam INT_H_FROM_S128 = 5;
+localparam INT_H_TO_S128   = 64;
 localparam INT_V_PENT      = 239;
-localparam INT_H_FROM_PENT = 336;
-localparam INT_H_TO_PENT   = 408;
-reg n_int0, n_int1;
+localparam INT_H_FROM_PENT = 318;
+localparam INT_H_TO_PENT   = 384;
+reg int0, int1;
 always @(posedge clk14) begin
-	n_int0 <= timings? 
-		vc != INT_V_S128 || hc < INT_H_FROM_S128 || hc > INT_H_TO_S128 :
-		vc != INT_V_PENT || hc < INT_H_FROM_PENT || hc > INT_H_TO_PENT ;
-	n_int1 <= timings? 
-		hc > INT_H_FROM_S128+(INT_H_TO_S128-INT_H_FROM_S128)/2 :
-		hc > INT_H_FROM_PENT+(INT_H_TO_PENT-INT_H_FROM_PENT)/2 ;
-	n_int <= n_int0 | (turbo? n_int1 : 1'b0);
+	int0 <= timings? 
+		vc == INT_V_S128 && hc >= INT_H_FROM_S128 && hc < INT_H_TO_S128 :
+		// (vc == INT_V_S128-1 && hc >= H_TOTAL_S128-8) || (vc == INT_V_S128 && hc < INT_H_TO_S128-8) :
+		vc == INT_V_PENT && hc >= INT_H_FROM_PENT && hc < INT_H_TO_PENT ;
+	int1 <= timings? 
+		hc < INT_H_FROM_S128+(INT_H_TO_S128-INT_H_FROM_S128)/2 :
+		hc < INT_H_FROM_PENT+(INT_H_TO_PENT-INT_H_FROM_PENT)/2 ;
+	n_int <= ~(int0 && (turbo? int1 : 1'b1));
 end
 
 
@@ -306,15 +306,16 @@ always @(posedge clkcpu)
 always @(negedge clkcpu)
 	n_iorq_delayed <= n_iorq;
 wire contention_mem_addr = a14 & (~a15 | (a15 & rambank128[0]));
-wire contention_mem = n_iorq_delayed == 1'b1 && n_mreq_delayed == 1'b1 && (contention_mem_addr | n_iorq == 0);
-wire contention_io = n_iorq == 0 && n_iorq_delayed == 1'b1 ;
-assign contention = screen_load && (hc[2] || hc[3]) && clkcpu == 1'b1 && (contention_mem || contention_io);
+wire contention_mem = n_iorq_delayed == 1'b1 && n_mreq_delayed == 1'b1 && contention_mem_addr;
+wire contention_io = n_iorq_delayed == 1'b1 && n_iorq == 0;
+wire contention0 = screen_load && (hc[2] || hc[3]) && clkcpu == 1'b1 && (contention_mem || contention_io);
+assign contention = contention0 && !turbo && timings;
 wire screen_read_snow = screen_read && timings && contention_mem_addr && n_rfsh == 0;
 
 
 /* CLOCK */
 always @(posedge clk14)
-	clkcpu <= (clkcpu && allow_contention && contention)? 1'b1 : turbo? hc0[0] : hc[0];
+	clkcpu <= (clkcpu && contention)? 1'b1 : turbo? hc0[0] : hc[0];
 
 wire [15:0] xa = {a15, a14, a13, va[12:0]};
 
@@ -373,11 +374,10 @@ end
 
 
 /* PORT #FF */
-wire port_ff_cs = n_ioreq == 0 && xa[7:0] == 8'hff;
 wire [7:0] port_ff_data = attr_next;
 reg port_ff_rd;
 always @(posedge clk14)
-	port_ff_rd <= port_ff_cs && n_rd == 0;
+	port_ff_rd <= n_ioreq == 0 && (n_m1 == 0 || n_rd == 0);
 
 
 /* PORT #7FFD */
@@ -466,11 +466,11 @@ assign fd_dden = port_dosff[6];
 assign fd_side1 = ~port_dosff[4];
 assign fd_hlt = port_dosff[3];
 assign fd_rst = port_dosff[2];
-assign fd_disk0 = ((port_dosff[1:0] == 2'b00) && fd_motor)? 1'b0 : 1'b1;
-assign fd_disk1 = ((port_dosff[1:0] == 2'b01) && fd_motor)? 1'b0 : 1'b1;
+assign fd_disk1 = ((port_dosff[1:0] == 2'b00) && fd_motor)? 1'b0 : 1'bz;
+assign fd_disk0 = ((port_dosff[1:0] == 2'b01) && fd_motor)? 1'b0 : 1'bz;
 
 always @(posedge clk14)
-	fd_cswg <= (dos && xa[7] == 0 && n_ioreq == 0)? 0 : 1'b1;
+	fd_cswg <= (dos && n_ioreq == 0 && xa[7] == 0)? 0 : 1'b1;
 
 
 always @(posedge clk14 or negedge rst_n) begin
@@ -735,35 +735,37 @@ assign chroma[1] = chroma0[2]? chroma0[0] : 1'bz;
 //    1      x       x     xx1      1      0
 //    x      1       x     xx1      1      0
 
-reg n_vcs_cpu;
-always @(posedge clk14) begin
+
+reg n_ramcs, n_romcs0, n_vwr0;
+always @(negedge clk14) begin
 `ifndef NO_DIV
-	n_romcs <=   (n_mreq == 0 &&  a14 == 0 && a15 == 0 &&
+	n_romcs0 = (n_mreq == 0 && n_rfsh == 1 &&  a14 == 0    && a15 == 0 &&
 		((conmem == 0 && automap == 0) || (a13 == 0 && conmem == 1) || (a13 == 0 && mapram == 0)))? 1'b0 : 1'b1;
-	n_vcs_cpu <= (n_mreq == 0 && (a14 == 1'b1 || a15 == 1'b1 || 
+	n_ramcs  = (n_mreq == 0 && n_rfsh == 1 && (a14 == 1'b1 || a15 == 1'b1 || 
 		(conmem == 0 && automap == 1 && mapram == 1) || (a13 == 1 && conmem == 1) || (a13 == 1 && automap == 1) ))? 1'b0 : 1'b1;
 `else
-	n_romcs <=   (n_mreq == 0 &&  a14 == 0 && a15 == 0)? 1'b0 : 1'b1;
-	n_vcs_cpu <= (n_mreq == 0 && (a14 == 1'b1 || a15 == 1'b1))? 1'b0 : 1'b1;
+	n_romcs0 = (n_mreq == 0 && n_rfsh == 1 &&  a14 == 0    && a15 == 0)? 1'b0 : 1'b1;
+	n_ramcs  = (n_mreq == 0 && n_rfsh == 1 && (a14 == 1'b1 || a15 == 1'b1))? 1'b0 : 1'b1;
 `endif
+
+// `ifndef NO_DIV
+// 	n_vwr0 = (n_ramcs | n_wr) | screen_read | (
+// 		a14 && a15 && (~a13 || (conmem == 0 && automap == 1 && mapram == 1 && divbank == 4'b0111))? 1'b1 : 1'b0
+// 		);
+// `else
+	n_vwr0 = (n_ramcs | n_wr) | screen_read;
+// `endif
 end
 
-wire n_vcs_ula = ~screen_read;
-assign n_vrd = (n_vcs_cpu | n_rd) &  n_vcs_ula;
-
-`ifndef NO_DIV
-wire n_vwren_div = a14 && a15 && (~a13 || (conmem == 0 && automap == 1 && mapram == 1 && divbank == 4'b0111))? 1'b1 : 1'b0;
-`endif
-always @* begin
-	n_vwr <= (n_vcs_cpu | n_wr) | ~n_vcs_ula;
-	// n_vwr <= (n_vcs_cpu | n_wr) | ~n_vcs_ula | n_vwren_div;
-end
+assign n_romcs = n_romcs0 | n_mreq;
+assign n_vrd = (n_ramcs | n_rd) & ~screen_read;
+assign n_vwr = n_vwr0 | n_wr;
 
 
 `ifdef FPGA
 assign vaout = screen_read == 1'b1;
 assign vaout_8 = screen_read_snow == 1'b1;
-assign vaout_13 = n_vcs_cpu == 0;
+assign vaout_13 = n_ramcs == 0;
 assign vdout = port_ff_rd || port_fe_rd || kempston_rd || div_rd || port_dosff_rd;
 `endif
 
@@ -783,11 +785,11 @@ assign va[18:0] =
 	// screen_read_snow? {2'b11, vbank, 1'b1, screen_addr[14:8], {8{1'bz}}} :
 	screen_read? {2'b11, vbank, 1'b1, screen_addr} :
 `ifndef NO_DIV
-	~n_vcs_cpu & divmap & ~a14 & ~a15 & a13? {2'b10, divbank, {13{1'bz}}} :
-	~n_vcs_cpu & divmap & ~a14 & ~a15? {2'b10, 4'b0011, {13{1'bz}}} :
+	~n_ramcs & divmap & ~a14 & ~a15 & a13? {2'b10, divbank, {13{1'bz}}} :
+	~n_ramcs & divmap & ~a14 & ~a15? {2'b10, 4'b0011, {13{1'bz}}} :
 `endif
-	~n_vcs_cpu & a15 & a14? {~rambank256, ~rambank512, rambank128[1], rambank128[2], rambank128[0], a13, {13{1'bz}}} :
-	~n_vcs_cpu? {2'b11, a15, a14, a14, a13, {13{1'bz}}} :
+	~n_ramcs & a15 & a14? {~rambank256, ~rambank512, rambank128[1], rambank128[2], rambank128[0], a13, {13{1'bz}}} :
+	~n_ramcs? {2'b11, a15, a14, a14, a13, {13{1'bz}}} :
 	{19{1'bz}};
 
 assign vd[7:0] =
@@ -800,7 +802,6 @@ assign vd[7:0] =
 	kempston_rd? kempston_data :
 	port_fe_rd? port_fe_data :
 	port_ff_rd? port_ff_data :
-	n_ioreq == 0 && (n_rd == 0 | n_m1 == 0)? {8{1'b1}} :
 	{8{1'bz}};
 
 endmodule
