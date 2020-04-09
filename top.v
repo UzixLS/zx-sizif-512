@@ -24,7 +24,6 @@ module zx_ula(
 `ifdef FPGA
 	output vaout,
 	output vaout_8,
-	output vaout_13,
 	output vdout,
 `endif
 
@@ -109,11 +108,13 @@ module zx_ula(
 	output reg sd_cs
 );
 
+wire [15:0] xa = {a15, a14, a13, va[12:0]};
+
 wire [2:0] border;
 wire [2:0] rambank128;
 reg timings;
 reg turbo;
-wire contention;
+wire clkwait;
 
 assign n_iorqge_o = ~n_m1 | n_iorq;
 reg n_iorq_delayed;
@@ -250,7 +251,7 @@ always @(posedge clk14 or negedge rst_n) begin
 		bitmap_next <= 0;
 	end
 	else begin
-		if (screen_load && (((n_mreq == 1'b1 || n_rfsh == 0) && n_iorq == 1'b1) || contention)) begin
+		if (screen_load && (((n_mreq == 1'b1 || n_rfsh == 0) && n_iorq == 1'b1) || clkwait)) begin
 			screen_read <= 1'b1;
 		end
 		else begin
@@ -265,7 +266,7 @@ always @(posedge clk14 or negedge rst_n) begin
 			bitmap_next <= vd;
 
 		if (border_update)
-			attr <= {2'b00, border, 3'b000};
+			attr <= {2'b00, border[2] ^ sd_sck, border[1], border[0] ^ fd_drq, 3'b000};
 		else if (screen_update)
 			attr <= attr_next;
 		
@@ -308,16 +309,38 @@ always @(negedge clkcpu)
 wire contention_mem_addr = a14 & (~a15 | (a15 & rambank128[0]));
 wire contention_mem = n_iorq_delayed == 1'b1 && n_mreq_delayed == 1'b1 && contention_mem_addr;
 wire contention_io = n_iorq_delayed == 1'b1 && n_iorq == 0;
-wire contention0 = screen_load && (hc[2] || hc[3]) && clkcpu == 1'b1 && (contention_mem || contention_io);
-assign contention = contention0 && !turbo && timings;
+wire contention0 = screen_load && (hc[2] || hc[3]) && (contention_mem || contention_io);
+wire contention = contention0 && !turbo && timings;
 wire screen_read_snow = screen_read && timings && contention_mem_addr && n_rfsh == 0;
 
 
 /* CLOCK */
-always @(posedge clk14)
-	clkcpu <= (clkcpu && contention)? 1'b1 : turbo? hc0[0] : hc[0];
+reg [1:0] dos_wait;
+reg dos_wait_flag;
+always @(posedge clk14 or negedge rst_n) begin
+	if (!rst_n) begin
+		dos_wait <= 0;
+		dos_wait_flag <= 0;
+	end
+	else begin
+		if (dos_wait) begin
+			dos_wait <= dos_wait + 1'b1;
+		end
+		else if (n_mreq0 == 0 && n_m1 == 0 && xa[15:8] == 8'h3D) begin
+			if (!dos_wait_flag)
+				dos_wait <= 1'b1;
+			dos_wait_flag <= 1'b1;
+		end
+		else begin
+			dos_wait_flag <= 0;
+		end
+	end
+end
 
-wire [15:0] xa = {a15, a14, a13, va[12:0]};
+assign clkwait = clkcpu && (contention || dos_wait);
+
+always @(posedge clk14)
+	clkcpu <= clkwait? 1'b1 : turbo? hc0[0] : hc[0];
 
 
 /* CONFIG */
@@ -328,11 +351,11 @@ always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) begin
 		timings <= 0;
 		turbo <= 0;
-		ay_abc <= 0;
+		ay_abc <= 1'b1;
 		extrom <= 0;
 		n_nmi <= 1'bz;
 		n_rstcpu <= 0;
-		rambank512 <= 0;
+		rambank512 <= 1'b1;
 	end
 	else begin
 		if (config_cs && n_wr == 0) begin
@@ -340,7 +363,7 @@ always @(posedge clk14 or negedge rst_n) begin
 			turbo <= vd[1];
 			ay_abc <= vd[2];
 			extrom <= vd[4:3];
-			rambank512 <= vd[5];
+			rambank512 <= ~vd[5];
 		end
 		else if (n_int == 0 && n_magic == 0) begin
 			extrom <= 2'b01;
@@ -352,6 +375,13 @@ always @(posedge clk14 or negedge rst_n) begin
 			n_rstcpu <= 1'bz;
 	end
 end
+
+
+/* PORT #FF */
+wire [7:0] port_ff_data = attr_next;
+reg port_ff_rd;
+always @(posedge clk14)
+	port_ff_rd <= n_iorq == 0 && (n_rd == 0 || n_m1 == 0);
 
 
 /* PORT #FE */
@@ -371,13 +401,6 @@ always @(posedge clk14 or negedge rst_n) begin
 	else if (port_fe_cs && n_wr == 0)
 		port_fe <= vd;
 end
-
-
-/* PORT #FF */
-wire [7:0] port_ff_data = attr_next;
-reg port_ff_rd;
-always @(posedge clk14)
-	port_ff_rd <= n_ioreq == 0 && (n_m1 == 0 || n_rd == 0);
 
 
 /* PORT #7FFD */
@@ -400,9 +423,9 @@ wire port_1ffd_cs = n_ioreq == 0 && xa[1] == 0 && xa[15] == 0 && xa[14] == 0 && 
 reg rambank256;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n)
-		rambank256 <= 0;
+		rambank256 <= 1'b1;
 	else if (port_1ffd_cs && n_wr == 0 && lock_7ffd == 0)
-		rambank256 <= vd[4];
+		rambank256 <= ~vd[4];
 end
 
 
@@ -559,11 +582,11 @@ always @(posedge clk32)
 	fd_index1 <= fd_index & fd_hlt;
 
 `else /* NO_BDI */
+always @* fd_cswg <= 1'b1;
+assign fd_rst = 0;
 wire dos = 0;
 wire port_dosff_rd = 0;
-assign fd_rst = 0;
-always @*
-	fd_cswg <= 1'b1;
+wire [7:0] port_dosff_data = 0;
 `endif /* NO_BDI */
 
 
@@ -671,7 +694,12 @@ always @*
 	sd_sck <= ~clk14 & ~divcnt[3];
 
 `else /* NO_DIV */
+always @* sd_cs = 1'b1;
+always @* sd_sck = 0;
+assign sd_mosi = 1'b1;
 wire div_rd = 0;
+wire divmap = 0;
+wire [3:0] divbank = 0;
 `endif /* NO_DIV */
 
 
@@ -737,6 +765,7 @@ assign chroma[1] = chroma0[2]? chroma0[0] : 1'bz;
 
 
 reg n_ramcs, n_romcs0, n_vwr0;
+reg [18:13] ram_a;
 always @(negedge clk14) begin
 `ifndef NO_DIV
 	n_romcs0 = (n_mreq == 0 && n_rfsh == 1 &&  a14 == 0    && a15 == 0 &&
@@ -755,6 +784,13 @@ always @(negedge clk14) begin
 // `else
 	n_vwr0 = (n_ramcs | n_wr) | screen_read;
 // `endif
+
+	ram_a <=
+		n_ramcs? ram_a :
+		divmap & ~a14 & ~a15 & a13? {2'b10, divbank} :
+		divmap & ~a14 & ~a15? {2'b10, 4'b0011} :
+		a15 & a14? {rambank256, rambank512, rambank128[1], rambank128[2], rambank128[0], a13} :
+		{2'b11, a15, a14, a14, a13} ;
 end
 
 assign n_romcs = n_romcs0 | n_mreq;
@@ -765,7 +801,6 @@ assign n_vwr = n_vwr0 | n_wr;
 `ifdef FPGA
 assign vaout = screen_read == 1'b1;
 assign vaout_8 = screen_read_snow == 1'b1;
-assign vaout_13 = n_ramcs == 0;
 assign vdout = port_ff_rd || port_fe_rd || kempston_rd || div_rd || port_dosff_rd;
 `endif
 
@@ -773,32 +808,18 @@ assign vdout = port_ff_rd || port_fe_rd || kempston_rd || div_rd || port_dosff_r
 assign ra[16:14] =
 	// (extrom == 2'b01)? 3'b111 :
 	// (extrom[1] == 1'b1)? {1'b1, extrom[0], rombank128} :
-`ifndef NO_DIV
 	divmap? 3'b011 :
-`endif
-`ifndef NO_BDI
 	dos? 3'b010 :
-`endif
 	{2'b00, rombank128};
 
 assign va[18:0] =
 	// screen_read_snow? {2'b11, vbank, 1'b1, screen_addr[14:8], {8{1'bz}}} :
 	screen_read? {2'b11, vbank, 1'b1, screen_addr} :
-`ifndef NO_DIV
-	~n_ramcs & divmap & ~a14 & ~a15 & a13? {2'b10, divbank, {13{1'bz}}} :
-	~n_ramcs & divmap & ~a14 & ~a15? {2'b10, 4'b0011, {13{1'bz}}} :
-`endif
-	~n_ramcs & a15 & a14? {~rambank256, ~rambank512, rambank128[1], rambank128[2], rambank128[0], a13, {13{1'bz}}} :
-	~n_ramcs? {2'b11, a15, a14, a14, a13, {13{1'bz}}} :
-	{19{1'bz}};
+	{ram_a[18:13], {13{1'bz}}};
 
 assign vd[7:0] =
-`ifndef NO_BDI
 	port_dosff_rd? port_dosff_data :
-`endif
-`ifndef NO_DIV
 	div_rd? covox_data_divmmc_data : 
-`endif
 	kempston_rd? kempston_data :
 	port_fe_rd? port_fe_data :
 	port_ff_rd? port_ff_data :
