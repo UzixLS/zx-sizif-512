@@ -44,7 +44,6 @@ set_global_assignment -name PROJECT_CREATION_TIME_DATE "08:15:12  APRIL 28, 2019
 set_global_assignment -name LAST_QUARTUS_VERSION "9.0 SP2"
 set_global_assignment -name USE_GENERATED_PHYSICAL_CONSTRAINTS OFF -section_id eda_blast_fpga
 set_global_assignment -name MAX7000_DEVICE_IO_STANDARD "3.3-V LVTTL"
-set_location_assignment PIN_128 -to clk14
 set_location_assignment PIN_36 -to n_int
 set_location_assignment PIN_29 -to n_iorq
 set_location_assignment PIN_34 -to n_m1
@@ -82,7 +81,6 @@ set_global_assignment -name FMAX_REQUIREMENT "14.4 MHz"
 set_global_assignment -name FMAX_REQUIREMENT "14.4 MHz" -section_id clk14
 set_location_assignment PIN_23 -to va[18]
 set_location_assignment PIN_7 -to va[17]
-set_instance_assignment -name CLOCK_SETTINGS clk14 -to clk14
 set_location_assignment PIN_54 -to n_iorqge_i
 set_location_assignment PIN_53 -to n_iorqge_o
 set_global_assignment -name FMAX_REQUIREMENT "7.156 MHz" -section_id clkcpu
@@ -178,6 +176,10 @@ set_global_assignment -name OPTIMIZE_HOLD_TIMING OFF
 set_global_assignment -name FITTER_EFFORT "STANDARD FIT"
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output/
 set_location_assignment PIN_107 -to fd_index1
-set_global_assignment -name VHDL_FILE chroma_gen14.vhd
+set_location_assignment PIN_128 -to clk7
+set_global_assignment -name VHDL_FILE chroma_gen32.vhd
 set_global_assignment -name VERILOG_FILE top.v
 set_global_assignment -name VERILOG_INCLUDE_FILE util.vh
+set_global_assignment -name FMAX_REQUIREMENT "7.156 MHz" -section_id clk7
+set_global_assignment -name DUTY_CYCLE 40 -section_id clk7
+set_instance_assignment -name CLOCK_SETTINGS clk7 -to clk7
