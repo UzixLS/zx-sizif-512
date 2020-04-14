@@ -229,12 +229,10 @@ always @(posedge clk7) begin
 end
 
 reg screen_read;
-reg screen_read_sel;
-wire attr_read = screen_read & screen_read_sel;
-wire bitmap_read = screen_read & ~screen_read_sel;
+reg screen_read_attr;
 wire [14:0] bitmap_addr = { 2'b10, vc[7:6], vc[2:0], vc[5:3], hc[7:3] };
 wire [14:0] attr_addr = { 5'b10110, vc[7:3], hc[7:3] };
-wire [14:0] screen_addr = attr_read? attr_addr : bitmap_addr;
+wire [14:0] screen_addr = screen_read_attr? attr_addr : bitmap_addr;
 wire screen_load = (vc < V_AREA) && (hc < H_AREA || hc_reset);
 wire screen_show = (vc < V_AREA) && (hc >= SCREEN_DELAY - 1) && (hc < H_AREA + SCREEN_DELAY - 1);
 wire screen_update = vc < V_AREA && hc <= H_AREA && hc != 0 && hc[2:0] == 3'b111;
@@ -243,12 +241,12 @@ wire border_update = !screen_show && (timings == 0 || hc[2:0] == 3'b111);
 always @(posedge clk7 or negedge rst_n) begin
 	if (!rst_n) begin
 		screen_read <= 0;
-		screen_read_sel <= 0;
+		screen_read_attr <= 0;
 	end
 	else begin
 		if (screen_load && (((n_mreq == 1'b1 || n_rfsh == 0) && n_iorq == 1'b1) || clkwait)) begin
 			screen_read <= 1'b1;
-			screen_read_sel <= ~screen_read_sel;
+			screen_read_attr <= ~screen_read_attr;
 		end
 		else begin
 			screen_read <= 0;
@@ -264,11 +262,11 @@ always @(negedge clk7 or negedge rst_n) begin
 		bitmap_next <= 0;
 	end
 	else begin
-		if (attr_read)
+		if (screen_read && screen_read_attr)
 			attr_next <= vd;
 		else if (!screen_load)
 			attr_next <= 8'hff;
-		if (bitmap_read)
+		if (screen_read && !screen_read_attr)
 			bitmap_next <= vd;
 
 		if (border_update)
@@ -344,8 +342,7 @@ always @(posedge clk7 or negedge rst_n) begin
 	end
 end
 
-// assign clkwait = clkcpu && (contention || dos_wait);
-assign clkwait = 0;
+assign clkwait = clkcpu && (contention || dos_wait);
 
 reg clkcpu35;
 always @(negedge clk7 or negedge rst_n) begin
@@ -789,31 +786,34 @@ assign chroma[1] = chroma0[2]? chroma0[0] : 1'bz;
 
 reg n_ramcs, n_romcs0, n_vwr0;
 reg [18:13] ram_a;
-always @(posedge clk7) begin
+always @(posedge clk7 or negedge rst_n) begin
+	if (!rst_n) begin
+		n_romcs0 <= 1'b1;
+		n_ramcs <= 1'b1;
+		n_vwr0 <= 1'b1;
+		ram_a <= 0;
+	end
+	else begin
 `ifndef NO_DIV
-	n_romcs0 = (n_mreq == 0 && n_rfsh == 1 &&  a14 == 0    && a15 == 0 &&
-		((conmem == 0 && automap == 0) || (a13 == 0 && conmem == 1) || (a13 == 0 && mapram == 0)))? 1'b0 : 1'b1;
-	n_ramcs  = (n_mreq == 0 && n_rfsh == 1 && (a14 == 1'b1 || a15 == 1'b1 || 
-		(conmem == 0 && automap == 1 && mapram == 1) || (a13 == 1 && conmem == 1) || (a13 == 1 && automap == 1) ))? 1'b0 : 1'b1;
+		n_romcs0 = (n_mreq == 0 && n_rfsh == 1 &&  a14 == 0    && a15 == 0 &&
+			((conmem == 0 && automap == 0) || (a13 == 0 && conmem == 1) || (a13 == 0 && mapram == 0)))? 1'b0 : 1'b1;
+		n_ramcs  = (n_mreq == 0 && n_rfsh == 1 && (a14 == 1'b1 || a15 == 1'b1 || 
+			(conmem == 0 && automap == 1 && mapram == 1) || (a13 == 1 && conmem == 1) || (a13 == 1 && automap == 1) ))? 1'b0 : 1'b1;
+		n_vwr0 = (n_ramcs | n_wr) | screen_read | (
+			(~a15 && ~a14 && (~a13 || divbank == 4'b0011) && conmem == 0 && automap == 1 && mapram == 1)? 1'b1 : 1'b0
+			);
 `else
-	n_romcs0 = (n_mreq == 0 && n_rfsh == 1 &&  a14 == 0    && a15 == 0)? 1'b0 : 1'b1;
-	n_ramcs  = (n_mreq == 0 && n_rfsh == 1 && (a14 == 1'b1 || a15 == 1'b1))? 1'b0 : 1'b1;
+		n_romcs0 = (n_mreq == 0 && n_rfsh == 1 &&  a14 == 0    && a15 == 0)? 1'b0 : 1'b1;
+		n_ramcs  = (n_mreq == 0 && n_rfsh == 1 && (a14 == 1'b1 || a15 == 1'b1))? 1'b0 : 1'b1;
+		n_vwr0 = (n_ramcs | n_wr) | screen_read;
 `endif
-
-`ifndef NO_DIV
-	n_vwr0 = (n_ramcs | n_wr) | screen_read | (
-		(~a15 && ~a14 && a13 && conmem == 0 && automap == 1 && mapram == 1 && divbank == 4'b0011)? 1'b1 : 1'b0
-		);
-`else
-	n_vwr0 = (n_ramcs | n_wr) | screen_read;
-`endif
-
-	ram_a <=
-		n_ramcs? ram_a :
-		divmap & ~a14 & ~a15 & a13? {2'b10, divbank} :
-		divmap & ~a14 & ~a15? {2'b10, 4'b0011} :
-		a15 & a14? {rambank256, rambank512, rambank128[1], rambank128[2], rambank128[0], a13} :
-		{2'b11, a15, a14, a14, a13} ;
+		ram_a <=
+			n_ramcs? ram_a :
+			divmap & ~a14 & ~a15 & a13? {2'b10, divbank} :
+			divmap & ~a14 & ~a15? {2'b10, 4'b0011} :
+			a15 & a14? {rambank256, rambank512, rambank128[1], rambank128[2], rambank128[0], a13} :
+			{2'b11, a15, a14, a14, a13} ;
+	end
 end
 
 assign n_romcs = n_romcs0 | n_mreq;
