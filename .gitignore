@@ -3,7 +3,9 @@ incremental_db/
 output/
 *.bak
 *.*~
-top-old.v
 *.dpf
 *.qws
+*.srf
+top-old.v
+top-test*.v
 sizif*.rom
