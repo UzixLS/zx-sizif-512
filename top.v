@@ -78,20 +78,20 @@ module zx_ula(
 	input n_joy_b2,
 	input n_joy_b3,
 
-	output vg_clk,
+	output reg vg_clk,
 	output reg vg_cs,
 	output vg_rst,
 	input vg_intr,
 	input vg_drq,
 	output vg_hlt,
 	output vg_dden,
-	output vg_rclk,
+	output reg vg_rclk,
 	input vg_wf_de,
 	input vg_tr43,
 	input vg_sr,
 	input vg_sl,
 	input vg_wd,
-	output fd_wdat,
+	output reg fd_wdat,
 	input fd_index,
 	output reg vg_index,
 	input fd_rdat,
@@ -206,6 +206,9 @@ always @(posedge clk14 or negedge rst_n) begin
 	end
 end
 
+wire ck7 = hc0[0];
+wire ck3_5 = hc0[0] & hc0[1];
+
 reg [4:0] blink_cnt;
 wire blink = blink_cnt[$bits(blink_cnt)-1];
 always @(negedge n_int or negedge rst_n) begin
@@ -218,7 +221,7 @@ end
 reg [7:0] bitmap, attr, bitmap_next, attr_next;
 wire pixel = bitmap[7];
 always @(posedge clk14) begin
-	if (hc0[0]) begin
+	if (ck7) begin
 		if (blank)
 			{i, g, r, b} = 4'b0000;
 		else begin
@@ -232,11 +235,11 @@ always @(posedge clk14) begin
 end
 
 reg screen_read;
-wire attr_read = screen_read & ~hc0[0];
-wire bitmap_read = screen_read & hc0[0];
+wire attr_read = screen_read & ~ck7;
+wire bitmap_read = screen_read & ck7;
 wire [14:0] bitmap_addr = { 2'b10, vc[7:6], vc[2:0], vc[5:3], hc[7:3] };
 wire [14:0] attr_addr = { 5'b10110, vc[7:3], hc[7:3] };
-wire [14:0] screen_addr = ~hc0[0]? attr_addr : bitmap_addr;
+wire [14:0] screen_addr = ~ck7? attr_addr : bitmap_addr;
 wire screen_load = (vc < V_AREA) && (hc < H_AREA || hc0_reset);
 wire screen_show = (vc < V_AREA) && (hc >= SCREEN_DELAY - 1) && (hc < H_AREA + SCREEN_DELAY - 1);
 wire screen_update = vc < V_AREA && hc <= H_AREA && hc != 0 && hc0[3:0] == 4'b1110;
@@ -272,7 +275,7 @@ always @(posedge clk14 or negedge rst_n) begin
 		
 		if (screen_update)
 			bitmap <= bitmap_next;
-		else if (hc0[0])
+		else if (ck7)
 			bitmap <= {bitmap[6:0], 1'b0};
 	end
 end
@@ -497,7 +500,7 @@ assign fd_disk0 = ((port_dosff[1:0] == 2'b00) && fd_motor)? 1'b0 : 1'bz;
 assign fd_disk1 = ((port_dosff[1:0] == 2'b01) && fd_motor)? 1'b0 : 1'bz;
 
 always @(posedge clk14)
-	vg_cs <= (dos && n_ioreq == 0 && xa[7] == 0)? 0 : 1'b1;
+	vg_cs <= (dos && n_ioreq == 0 && xa[7] == 0)? 1'b0 : 1'b1;
 
 
 always @(posedge clk14 or negedge rst_n) begin
@@ -519,63 +522,75 @@ always @(posedge clk14 or negedge rst_n) begin
 	end
 end
 
-reg [4:0] vgcnt;
-wire clk4 = vgcnt[2];
-assign vg_clk = vgcnt[4];
-always @(negedge clk32 or negedge rst_n) begin
-	if (!rst_n)
-		vgcnt <= 0;
-	else
-		vgcnt <= vgcnt + 1'b1;
+reg [1:0] vgck;
+always @(posedge clk14 or negedge rst_n) begin
+	if (!rst_n) begin
+		vgck <= 0;
+		vg_clk <= 1'b1;
+	end
+	else if (vgck == 3 && (ck7 || vg_clk)) begin
+		vgck <= 0;
+		vg_clk <= ~vg_clk;
+	end
+	else if (ck7) begin
+		vgck <= vgck + 1'b1;
+	end
 end
 
+always @(posedge clk14)
+	vg_index <= fd_index & vg_hlt;
+
 reg rd1, rd2;
-always @(posedge clk4) begin
-	rd1 <= fd_rdat;
-	rd2 <= rd1;
+always @(posedge clk14) begin
+	if (ck3_5) begin
+		rd1 <= fd_rdat;
+		rd2 <= rd1;
+	end
 	vg_rawr <= (vg_wf_de == 0 & rd1 == 1'b1 & rd2 == 0)? 1'b0 : 1'b1;
 end
 
 reg [3:0] fa;
-assign vg_rclk = (vg_wf_de == 0)? ~fa[3] : 1'b1;
-always @(posedge clk4 or negedge rst_n) begin
+always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) begin
 		fa <= 0;
 	end
-	else begin
-		if (rd1 == 1'b1 & rd2 == 0) begin
-			fa[2:0] <= 4;
-		end
-		else begin
+	else if (ck3_5 && rd1 == 1'b1 & rd2 == 0) begin
+		if (fa < 7)
+			fa <= 4;
+		else
+			fa <= 11;
+	end
+	else if (ck3_5) begin
+		if (fa > 12)
+			fa <= 0;
+		else
 			fa <= fa + 1'b1;
-		end
 	end
 end
 
-reg [3:0] wdata;
-assign fd_wdat = wdata[3];
-always @(posedge clk4 or negedge rst_n) begin
+always @(posedge clk14)
+	vg_rclk <= (vg_wf_de == 0)? fa < 7 : 1'b1;
+
+reg [2:0] wdata;
+always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) begin
 		wdata <= 0;
 	end
 	else begin
 		if (vg_wd == 1'b1) begin
-			wdata[0] <= vg_tr43 & vg_sr;
-			wdata[1] <= ~ ((vg_tr43 & vg_sr) | (vg_tr43 & vg_sl));
+			fd_wdat  <= 0;
 			wdata[2] <= vg_tr43 & vg_sl;
-			wdata[3] <= 0;
+			wdata[1] <= ~ ((vg_tr43 & vg_sr) | (vg_tr43 & vg_sl));
+			wdata[0] <= vg_tr43 & vg_sr;
 		end
-		else begin
-			wdata[3] <= wdata[2];
+		else if (ck3_5) begin
+			fd_wdat  <= wdata[2];
 			wdata[2] <= wdata[1];
 			wdata[1] <= wdata[0];
 			wdata[0] <= 0;
 		end
 	end
 end
-
-always @(posedge clk32)
-	vg_index <= fd_index & vg_hlt;
 
 `else /* NO_BDI */
 always @* vg_cs <= 1'b1;
@@ -660,7 +675,7 @@ always @(posedge clk14 or negedge rst_n) begin
 		divcnt <= 0;
 	else if (port_eb_cs && (n_rd == 0 || n_wr == 0))
 		divcnt <= 4'b1110;
-	else if (divcnt_en && hc0[0])
+	else if (divcnt_en && ck7)
 		divcnt <= divcnt + 1'b1;
 end
 
@@ -681,7 +696,7 @@ always @(posedge clk14 or negedge rst_n) begin
 	else if (port_eb_cs && n_wr == 0)
 	 	covox_data_divmmc_data <= vd;
 	else if (divcnt[3] == 1'b0)
-		if (hc0[0])
+		if (ck7)
 			covox_data_divmmc_data[7:0] <= {covox_data_divmmc_data[6:0], sd_miso};
 	else if (covox_cs && n_wr == 0)
 		covox_data_divmmc_data <= vd;
