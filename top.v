@@ -479,6 +479,25 @@ always @(posedge clk14)
 /* BETA DISK INTERFACE */
 `ifndef NO_BDI
 reg dos;
+always @(posedge clk14 or negedge rst_n) begin
+	if (!rst_n) begin
+		dos <= 0;
+	end
+	else begin
+`ifndef NO_DIV
+		if (sd_cd == 0)
+			dos <= 0;
+	 	else
+`endif
+ 		if (n_magic == 0 && n_mreq0 == 0 && n_m1 == 0 && (xa[15] || xa[14]))
+			dos <= 1'b1;
+		else if (n_mreq0 == 0 && n_m1 == 0 && xa[15:8] == 8'h3D && rombank128 == 1'b1)
+			dos <= 1'b1;
+		else if (n_mreq0 == 0 && n_m1 == 0 && (xa[15] == 1'b1 || xa[14] == 1'b1))
+			dos <= 0;
+	end
+end
+
 reg [7:0] port_dosff;
 wire [7:0] port_dosff_data = {vg_intr, vg_drq, 6'b111111};
 wire port_dosff_cs = dos && n_ioreq == 0 && xa[7] == 1'b1;
@@ -502,25 +521,6 @@ assign fd_disk1 = ((port_dosff[1:0] == 2'b01) && fd_motor)? 1'b0 : 1'bz;
 always @(posedge clk14)
 	vg_cs <= (dos && n_ioreq == 0 && xa[7] == 0)? 1'b0 : 1'b1;
 
-
-always @(posedge clk14 or negedge rst_n) begin
-	if (!rst_n) begin
-		dos <= 0;
-	end
-	else begin
-`ifndef NO_DIV
-		if (sd_cd == 0)
-			dos <= 0;
-	 	else
-`endif
- 		if (n_magic == 0 && n_mreq0 == 0 && n_m1 == 0 && (xa[15] || xa[14]))
-			dos <= 1'b1;
-		else if (n_mreq0 == 0 && n_m1 == 0 && xa[15:8] == 8'h3D && rombank128 == 1'b1)
-			dos <= 1'b1;
-		else if (n_mreq0 == 0 && n_m1 == 0 && (xa[15] == 1'b1 || xa[14] == 1'b1))
-			dos <= 0;
-	end
-end
 
 reg [1:0] vgck;
 always @(posedge clk14 or negedge rst_n) begin
@@ -679,17 +679,17 @@ always @(posedge clk14 or negedge rst_n) begin
 		divcnt <= divcnt + 1'b1;
 end
 
-reg div_wrmosi;
+reg div_mosi_en;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n)
-		div_wrmosi <= 0;
+		div_mosi_en <= 0;
 	else if (port_eb_cs && n_wr == 0)
-		div_wrmosi <= 1'b1;
+		div_mosi_en <= 1'b1;
 	else if (!divcnt_en)
-		div_wrmosi <= 0;
+		div_mosi_en <= 0;
 end
 
-assign sd_mosi = div_wrmosi? covox_data_divmmc_data[7] : 1'b1;
+assign sd_mosi = div_mosi_en? covox_data_divmmc_data[7] : 1'b1;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) 
 		covox_data_divmmc_data <= 0;
