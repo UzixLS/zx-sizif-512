@@ -1,11 +1,27 @@
+## Quartus
 db/
 incremental_db/
 output/
-*.bak
-*.*~
 *.dpf
+*.cdf
 *.qws
 *.srf
+
+## Kicad
+*-lib-table
+*-cache
+*-rescue.lib
+*.sch-bak
+*.kicad_pcb-bak
+*.dcm
+pcb/*.xml
+
+## Etc.
+*.sublime-*
+pcb/out/
+out/pinouts.docx
+*.bak
+*.*~
 top-old.v
 top-test*.v
 sizif*.rom
