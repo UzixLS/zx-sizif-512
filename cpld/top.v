@@ -114,6 +114,7 @@ wire [2:0] border;
 wire [2:0] rambank128;
 reg timings;
 reg turbo;
+reg extlock;
 wire clkwait;
 
 assign n_iorqge_o = ~n_m1 | n_iorq;
@@ -356,6 +357,7 @@ always @(posedge clk14 or negedge rst_n) begin
 		turbo <= 0;
 		ay_abc <= 1'b1;
 		extrom <= 0;
+		extlock <= 0;
 		n_nmi <= 1'bz;
 		n_rstcpu <= 0;
 	end
@@ -365,6 +367,7 @@ always @(posedge clk14 or negedge rst_n) begin
 			turbo <= vd[1];
 			ay_abc <= vd[2];
 			extrom <= vd[4:3];
+			extlock <= vd[5];
 		end
 		// else if (n_int == 0 && n_magic == 0) begin
 		// 	extrom <= 2'b01;
@@ -420,7 +423,7 @@ end
 
 
 /* PORT DFFD */
-wire port_dffd_cs = n_ioreq == 0 && xa[1] == 0 && xa[15] == 1 && xa[14] == 1 && xa[13] == 0;
+wire port_dffd_cs = !extlock && n_ioreq == 0 && xa[1] == 0 && xa[15] == 1 && xa[14] == 1 && xa[13] == 0;
 reg [1:0] rambank_ext;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) begin
@@ -452,7 +455,7 @@ assign ay_clk = hc[1];
 
 /* COVOX */
 reg [7:0] covox_data_divmmc_data;
-wire covox_cs = n_ioreq == 0 && xa[3:1] == 3'b101;
+wire covox_cs = !extlock && n_ioreq == 0 && xa[3:1] == 3'b101;
 
 reg [8:0] snd_dac;
 assign snd = snd_dac[8];
@@ -473,7 +476,7 @@ wire [7:0] kempston_data = {1'b0, ~n_joy_b3, ~n_joy_b2, ~n_joy_b1, ~n_joy_up,
 						~n_joy_down, ~n_joy_left, ~n_joy_right};
 reg kempston_rd;
 always @(posedge clk14)
-	kempston_rd <= n_ioreq == 0 && n_rd == 0 && xa[7:5] == 3'b000;
+	kempston_rd <= !extlock && n_ioreq == 0 && n_rd == 0 && xa[7:5] == 3'b000;
 
 
 /* BETA DISK INTERFACE */
@@ -603,7 +606,7 @@ wire [7:0] port_dosff_data = 0;
 
 /* DIVMMC */
 `ifndef NO_DIV
-wire port_eb_cs = n_ioreq == 0 && xa[7:0] == 8'hEB;
+wire port_eb_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'hEB;
 reg div_rd;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n)
@@ -621,7 +624,7 @@ always @(posedge clk14 or negedge rst_n) begin
 		 conmem <= 0;
 		 sd_cs <= 1'b1;
 	end
-	else if (n_ioreq == 0 && n_wr == 0) begin
+	else if (!extlock && n_ioreq == 0 && n_wr == 0) begin
 	 	if (xa[7:0] == 8'hE3) begin
 	 		divbank <= vd[4:0];
 	 		mapram <= vd[6];
@@ -640,9 +643,9 @@ always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) begin
 		automap_next <= 0;
 		automap <= 0;
-	end
+	end 
 	else begin
-		if (sd_cd) begin
+		if (sd_cd || extlock) begin
 			automap_next <= 0;
 		end
 		else if (n_m1 == 0 && n_mreq0 == 0 && (
