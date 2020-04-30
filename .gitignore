@@ -17,11 +17,12 @@ output/
 pcb/*.xml
 
 ## Etc.
+*.bak
+*.*~
 *.sublime-*
 pcb/out/
 out/pinouts.docx
-*.bak
-*.*~
-top-old.v
-top-test*.v
-sizif*.rom
+cpld/top-old.v
+cpld/top-test*.v
+rom/sizif-*.rom
+rom_src/*.bin

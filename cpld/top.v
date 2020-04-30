@@ -268,7 +268,7 @@ always @(posedge clk14 or negedge rst_n) begin
 			bitmap_next <= vd;
 
 		if (border_update)
-			attr <= {2'b00, border[2] ^ ~sd_miso, border[1], border[0] ^ ~fd_rdat, 3'b000};
+			attr <= {2'b00, border[2] ^ ~sd_miso, border[1] ^ ~n_magic, border[0] ^ ~fd_rdat, 3'b000};
 		else if (screen_update)
 			attr <= attr_next;
 		
@@ -303,6 +303,29 @@ always @(posedge clk14) begin
 end
 
 
+/* MAGIC */
+reg [1:0] n_magic0;
+wire magic_enter = n_magic0[0] == 0 && n_magic0[1] == 1'b1;
+always @(posedge n_int or negedge rst_n) begin
+	if (!rst_n)
+		n_magic0 <= 2'b11;
+	else
+		n_magic0 <= {n_magic0[0], n_magic};
+end
+
+always @(posedge clk14 or negedge rst_n) begin
+	if (!rst_n) begin
+		n_nmi <= 1'b1;
+		n_rstcpu <= 0;
+	end
+	else begin
+		n_nmi <= (n_int == 0 && magic_enter)? 1'b0 : 1'b1;
+		if (blink_cnt[0])
+			n_rstcpu <= 1'bz;
+	end
+end
+
+
 /* CONTENTION */
 reg n_mreq_delayed;
 always @(posedge clkcpu)
@@ -328,30 +351,28 @@ reg [1:0] extrom;
 wire config_cs = extrom == 2'b01 && n_ioreq == 0 && xa[0] == 1'b1 && xa[1] == 1'b1;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) begin
+		extlock <= 0;
 		timings <= 0;
 		turbo <= 0;
 		ay_abc <= 1'b1;
 		extrom <= 0;
-		extlock <= 0;
-		n_nmi <= 1'bz;
-		n_rstcpu <= 0;
 	end
 	else begin
 		if (config_cs && n_wr == 0) begin
-			timings <= vd[0];
-			turbo <= vd[1];
-			ay_abc <= vd[2];
-			extrom <= vd[4:3];
-			extlock <= vd[5];
+			if (xa[15])
+				extlock <= vd[0];
+			if (xa[14])
+				timings <= vd[0];
+			if (xa[13])
+				turbo <= vd[0];
+			if (xa[12])
+				ay_abc <= vd[0];
+			if (xa[11])
+				extrom <= vd[1:0];
 		end
-		// else if (n_int == 0 && n_magic == 0) begin
-		// 	extrom <= 2'b01;
-		// end
-
-		n_nmi <= (n_int == 0 && n_magic == 0)? 1'b0 : 1'bz;
-
-		if (blink_cnt[0])
-			n_rstcpu <= 1'bz;
+		else if (magic_enter && n_mreq == 1'b0 && n_m1 == 1'b0 && xa == 16'h0066) begin
+			extrom <= 2'b01;
+		end
 	end
 end
 
@@ -369,7 +390,7 @@ reg port_fe_rd;
 always @(posedge clk14)
 	port_fe_rd <= port_fe_cs && n_rd == 0;
 
-wire [7:0] port_fe_data = {n_magic, tape_in, 1'b1, kd};
+wire [7:0] port_fe_data = {n_magic0[0], tape_in, 1'b1, kd};
 reg [7:0] port_fe;
 assign beeper = port_fe[4];
 assign tape_out = port_fe[3] ^ tape_in;
@@ -620,14 +641,14 @@ always @(negedge clk14 or negedge rst_n) begin // negedge for timing of 3Dh entr
 		automap <= 0;
 	end
 	else begin
-		if (sd_cd || extlock) begin
+		if (sd_cd || extlock || extrom == 2'b01) begin
 			automap_next <= 0;
 		end
 		else if (n_m1 == 0 && n_mreq == 0 && (
 				xa == 16'h0000 || // power-on/reset/rst0/software restart
 				xa == 16'h0008 || // syntax error
 				xa == 16'h0038 || // im1 interrupt/rst #38
-				xa == 16'h0066 || // nmi routine
+				(xa == 16'h0066 && !magic_enter) || // nmi routine
 				xa == 16'h04C6 || // tape save routine
 				xa == 16'h0562    // tape load and verify routine
 				)) begin
@@ -801,8 +822,8 @@ assign vdout = port_ff_rd || port_fe_rd || kempston_rd || div_rd || port_dosff_r
 
 
 assign ra[16:14] =
-	// (extrom == 2'b01)? 3'b111 :
-	// (extrom[1] == 1'b1)? {1'b1, extrom[0], rombank128} :
+	(extrom == 2'b01)? 3'b111 :
+	(extrom[1] == 1'b1)? {extrom, rombank128} :
 	divmap? 3'b011 :
 	dos? 3'b010 :
 	{2'b00, rombank128};
