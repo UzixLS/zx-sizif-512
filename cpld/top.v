@@ -337,7 +337,7 @@ wire contention_mem = n_iorq_delayed == 1'b1 && n_mreq_delayed == 1'b1 && conten
 wire contention_io = n_iorq_delayed == 1'b1 && n_iorq == 0;
 wire contention0 = screen_load && (hc[2] || hc[3]) && (contention_mem || contention_io);
 wire contention = contention0 && !turbo && timings;
-wire screen_read_snow = screen_read && timings && contention_mem_addr && n_rfsh == 0;
+wire screen_read_snow = screen_read && timings && a14 && ~a15 && n_rfsh == 0;
 
 
 /* CLOCK */
@@ -829,7 +829,7 @@ assign ra[16:14] =
 	{2'b00, rombank128};
 
 assign va[18:0] =
-	// screen_read_snow? {3'b111, vbank, screen_addr[14:8], {8{1'bz}}} :
+	screen_read_snow? {3'b111, vbank, screen_addr[14:8], {8{1'bz}}} :
 	screen_read? {3'b111, vbank, screen_addr} :
 	{ram_a[18:13], {13{1'bz}}};
 
