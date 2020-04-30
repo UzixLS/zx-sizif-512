@@ -1,8 +1,8 @@
 `include "util.vh"
 // `define FPGA
 // `define NO_CHROMA
-// `define NO_BDI
-`define NO_DIV
+`define NO_BDI
+// `define NO_DIV
 
 module zx_ula(
 	input rst_n,
@@ -117,11 +117,9 @@ reg turbo;
 reg extlock;
 wire clkwait;
 
-assign n_iorqge_o = ~n_m1 | n_iorq;
 reg n_iorq_delayed;
+assign n_iorqge_o = ~n_m1 | n_iorq;
 wire n_ioreq = n_iorqge_i | n_iorq_delayed;
-reg n_mreq_delayed;
-wire n_mreq0 = n_mreq_delayed | n_mreq;
 
 
 /* SCREEN CONTROLLER */
@@ -166,6 +164,9 @@ reg [`CLOG2(`MAX(V_TOTAL_S128, V_TOTAL_PENT))-1:0] vc;
 reg [`CLOG2(`MAX(H_TOTAL_S128, H_TOTAL_PENT)):0] hc0;
 wire [`CLOG2(`MAX(H_TOTAL_S128, H_TOTAL_PENT))-1:0] hc = hc0[$bits(hc0)-1:1];
 
+wire ck7 = hc0[0];
+wire ck3_5 = hc0[0] & hc0[1];
+
 wire hc0_reset = timings? 
 	hc0 == (H_TOTAL_S128<<1) - 1'b1 :
 	hc0 == (H_TOTAL_PENT<<1) - 1'b1 ;
@@ -206,9 +207,6 @@ always @(posedge clk14 or negedge rst_n) begin
 		hc0 <= hc0 + 1'b1;
 	end
 end
-
-wire ck7 = hc0[0];
-wire ck3_5 = hc0[0] & hc0[1];
 
 reg [4:0] blink_cnt;
 wire blink = blink_cnt[$bits(blink_cnt)-1];
@@ -255,7 +253,7 @@ always @(posedge clk14 or negedge rst_n) begin
 		bitmap_next <= 0;
 	end
 	else begin
-		if (screen_load && (((n_mreq == 1'b1 || n_rfsh == 0) && n_iorq == 1'b1) || clkwait)) begin
+		if (screen_load && (((n_mreq == 1'b1 || n_rfsh == 0) && n_iorq == 1'b1 && n_m1 == 1'b1) || clkwait)) begin
 			screen_read <= 1'b1;
 		end
 		else begin
@@ -287,8 +285,8 @@ localparam INT_V_S48       = 248;
 localparam INT_H_FROM_S48  = 0;
 localparam INT_H_TO_S48    = 64;
 localparam INT_V_S128      = 248;
-localparam INT_H_FROM_S128 = 5;
-localparam INT_H_TO_S128   = 76;
+localparam INT_H_FROM_S128 = 0;
+localparam INT_H_TO_S128   = 64;
 localparam INT_V_PENT      = 239;
 localparam INT_H_FROM_PENT = 318;
 localparam INT_H_TO_PENT   = 384;
@@ -296,7 +294,7 @@ reg int0, int1;
 always @(posedge clk14) begin
 	int0 = timings? 
 		vc == INT_V_S128 && hc >= INT_H_FROM_S128 && hc < INT_H_TO_S128 :
-		// (vc == INT_V_S128-1 && hc >= H_TOTAL_S128-8) || (vc == INT_V_S128 && hc < INT_H_TO_S128-8) :
+		// (vc == INT_V_S128-1 && hc >= H_TOTAL_S128-2) || (vc == INT_V_S128 && hc < INT_H_TO_S128-2) :
 		vc == INT_V_PENT && hc >= INT_H_FROM_PENT && hc < INT_H_TO_PENT ;
 	int1 = timings? 
 		hc < INT_H_FROM_S128+(INT_H_TO_S128-INT_H_FROM_S128)/2 :
@@ -306,9 +304,10 @@ end
 
 
 /* CONTENTION */
+reg n_mreq_delayed;
 always @(posedge clkcpu)
 	n_mreq_delayed <= n_mreq;
-always @(negedge clkcpu)
+always @(posedge clkcpu)
 	n_iorq_delayed <= n_iorq;
 wire contention_mem_addr = a14 & (~a15 | (a15 & rambank128[0]));
 wire contention_mem = n_iorq_delayed == 1'b1 && n_mreq_delayed == 1'b1 && contention_mem_addr;
@@ -319,32 +318,8 @@ wire screen_read_snow = screen_read && timings && contention_mem_addr && n_rfsh 
 
 
 /* CLOCK */
-reg [1:0] dos_wait;
-reg dos_wait_flag;
-always @(posedge clk14 or negedge rst_n) begin
-	if (!rst_n) begin
-		dos_wait <= 0;
-		dos_wait_flag <= 0;
-	end
-	else begin
-		if (dos_wait) begin
-			dos_wait <= dos_wait + 1'b1;
-		end
-		else if (n_mreq0 == 0 && n_m1 == 0 && xa[15:8] == 8'h3D) begin
-			if (!dos_wait_flag)
-				dos_wait <= 1'b1;
-			dos_wait_flag <= 1'b1;
-		end
-		else begin
-			dos_wait_flag <= 0;
-		end
-	end
-end
-
-// assign clkwait = clkcpu && (contention || dos_wait);
 assign clkwait = clkcpu && contention;
-
-always @(posedge clk14)
+always @(negedge clk14)
 	clkcpu <= clkwait? 1'b1 : turbo? hc0[0] : hc[0];
 
 
@@ -492,11 +467,11 @@ always @(posedge clk14 or negedge rst_n) begin
 			dos <= 0;
 	 	else
 `endif
- 		if (n_magic == 0 && n_mreq0 == 0 && n_m1 == 0 && (xa[15] || xa[14]))
+ 		if (n_magic == 0 && n_mreq == 0 && n_m1 == 0 && (xa[15] || xa[14]))
 			dos <= 1'b1;
-		else if (n_mreq0 == 0 && n_m1 == 0 && xa[15:8] == 8'h3D && rombank128 == 1'b1)
+		else if (n_mreq == 0 && n_m1 == 0 && xa[15:8] == 8'h3D && rombank128 == 1'b1)
 			dos <= 1'b1;
-		else if (n_mreq0 == 0 && n_m1 == 0 && (xa[15] == 1'b1 || xa[14] == 1'b1))
+		else if (n_mreq == 0 && n_m1 == 0 && (xa[15] == 1'b1 || xa[14] == 1'b1))
 			dos <= 0;
 	end
 end
@@ -639,30 +614,30 @@ end
 reg automap_next;
 reg automap;
 wire divmap = automap | conmem;
-always @(posedge clk14 or negedge rst_n) begin
+always @(negedge clk14 or negedge rst_n) begin // negedge for timing of 3Dh entrypoint in turbo mode
 	if (!rst_n) begin
 		automap_next <= 0;
 		automap <= 0;
-	end 
+	end
 	else begin
 		if (sd_cd || extlock) begin
 			automap_next <= 0;
 		end
-		else if (n_m1 == 0 && n_mreq0 == 0 && (
-				xa[15:0] == 16'h0000 || // power-on/reset/rst0/software restart
-				xa[15:0] == 16'h0008 || // syntax error
-				xa[15:0] == 16'h0038 || // im1 interrupt/rst #38
-				xa[15:0] == 16'h0066 || // nmi routine
-				xa[15:0] == 16'h04C6 || // tape save routine
-				xa[15:0] == 16'h0562    // tape load and verify routine
-		        )) begin
+		else if (n_m1 == 0 && n_mreq == 0 && (
+				xa == 16'h0000 || // power-on/reset/rst0/software restart
+				xa == 16'h0008 || // syntax error
+				xa == 16'h0038 || // im1 interrupt/rst #38
+				xa == 16'h0066 || // nmi routine
+				xa == 16'h04C6 || // tape save routine
+				xa == 16'h0562    // tape load and verify routine
+				)) begin
 			automap_next <= 1'b1;
 		end
-		else if (n_m1 == 0 && n_mreq0 == 0 && xa[15:8] == 8'h3D) begin // tr-dos mapping area
+		else if (n_m1 == 0 && n_mreq == 0 && xa[15:8] == 8'h3D) begin // tr-dos mapping area
 			automap_next <= 1'b1;
 			automap <= 1'b1;
 		end
-		else if (n_m1 == 0 && n_mreq0 == 0 && xa[15:3] == 13'h3FF) begin
+		else if (n_m1 == 0 && n_mreq == 0 && xa[15:3] == 13'h3FF) begin
 			automap_next <= 0;
 		end
 		else if (n_m1 == 1'b1) begin
@@ -792,8 +767,11 @@ always @(posedge clk14 or negedge rst_n) begin
 `ifndef NO_DIV
 		n_romcs0 = (n_mreq == 0 && n_rfsh == 1 &&  a14 == 0    && a15 == 0 &&
 			((conmem == 0 && automap == 0) || (a13 == 0 && conmem == 1) || (a13 == 0 && mapram == 0)))? 1'b0 : 1'b1;
-		n_ramcs  = (n_mreq == 0 && n_rfsh == 1 && (a14 == 1'b1 || a15 == 1'b1 || 
-			(conmem == 0 && automap == 1 && mapram == 1) || (a13 == 1 && conmem == 1) || (a13 == 1 && automap == 1) ))? 1'b0 : 1'b1;
+		n_ramcs  = (n_mreq == 0 && n_rfsh == 1 && (a14 == 1'b1 || a15 == 1'b1 ||
+				(conmem == 0 && automap == 1 && mapram == 1) ||
+				(a13 == 1 && conmem == 1) ||
+				(a13 == 1 && automap == 1)
+			) )? 1'b0 : 1'b1;
 		n_vwr0 = (n_ramcs | n_wr) | screen_read | (
 			(~a15 && ~a14 && (~a13 || divbank == 5'b00011) && conmem == 0 && automap == 1 && mapram == 1)? 1'b1 : 1'b0
 			);
@@ -803,7 +781,6 @@ always @(posedge clk14 or negedge rst_n) begin
 		n_vwr0 = (n_ramcs | n_wr) | screen_read;
 `endif
 		ram_a <=
-			n_ramcs? ram_a :
 			divmap & ~a14 & ~a15 & a13? {1'b0, divbank} :
 			divmap & ~a14 & ~a15? {1'b0, 5'b00011} :
 			a15 & a14? {rambank_ext, rambank128, a13} :
