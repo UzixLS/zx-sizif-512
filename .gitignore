@@ -5,8 +5,9 @@
 *.sch-bak
 *.kicad_pcb-bak
 *.dcm
-pcb/*.xml
-pcb/out/
+pcb/**/*.xml
+pcb/**/out/
+pcb/mask-color.png
 
 ## Quartus
 db/
