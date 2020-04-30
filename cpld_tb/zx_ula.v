@@ -1,3 +1,2 @@
-`define FPGA
-`define NO_CHROMA
+`define USE_FPGA
 `include "../cpld/top.v"

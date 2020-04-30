@@ -1,8 +1,8 @@
 `include "util.vh"
-// `define FPGA
-// `define NO_CHROMA
-`define NO_BDI
-// `define NO_DIV
+// `define USE_FPGA
+// `define USE_CHROMA
+// `define USE_DIV
+// `define USE_BDI
 
 module zx_ula(
 	input rst_n,
@@ -21,7 +21,7 @@ module zx_ula(
 	input a14,
 	input a15,
 
-`ifdef FPGA
+`ifdef USE_FPGA
 	output vaout,
 	output vaout_8,
 	output vdout,
@@ -56,7 +56,7 @@ module zx_ula(
 	output reg csync,
 	output reg hsync,
 	output reg vsync,
-`ifndef NO_CHROMA
+`ifdef USE_CHROMA
 	output [1:0] chroma,
 `endif
 
@@ -66,7 +66,7 @@ module zx_ula(
 	output reg ay_abc,
 
 	output snd,
-`ifdef FPGA
+`ifdef USE_FPGA
 	output [7:0] snd_parallel,
 `endif
 
@@ -100,7 +100,7 @@ module zx_ula(
 	output fd_disk1,
 	output fd_side1,
 	input fd_motor,
-	
+
 	input sd_cd,
 	input sd_miso,
 	output sd_mosi,
@@ -167,7 +167,7 @@ wire [`CLOG2(`MAX(H_TOTAL_S128, H_TOTAL_PENT))-1:0] hc = hc0[$bits(hc0)-1:1];
 wire ck7 = hc0[0];
 wire ck3_5 = hc0[0] & hc0[1];
 
-wire hc0_reset = timings? 
+wire hc0_reset = timings?
 	hc0 == (H_TOTAL_S128<<1) - 1'b1 :
 	hc0 == (H_TOTAL_PENT<<1) - 1'b1 ;
 wire vc_reset = timings?
@@ -176,12 +176,12 @@ wire vc_reset = timings?
 wire hsync0 = timings?
 	(hc >= (H_AREA + H_RBORDER_S128 + H_BLANK1_S128)) &&
 		(hc <  (H_AREA + H_RBORDER_S128 + H_BLANK1_S128 + H_SYNC_S128)) :
- 	(hc >= (H_AREA + H_RBORDER_PENT + H_BLANK1_PENT)) &&
+	(hc >= (H_AREA + H_RBORDER_PENT + H_BLANK1_PENT)) &&
 		(hc <  (H_AREA + H_RBORDER_PENT + H_BLANK1_PENT + H_SYNC_PENT));
 wire vsync0 = timings?
 	(vc >= (V_AREA + V_BBORDER_S128)) && (vc < (V_AREA + V_BBORDER_S128 + V_SYNC_S128)) :
 	(vc >= (V_AREA + V_BBORDER_PENT)) && (vc < (V_AREA + V_BBORDER_PENT + V_SYNC_PENT)) ;
-wire blank = timings? 
+wire blank = timings?
 	((vc >= (V_AREA + V_BBORDER_S128)) && (vc < (V_AREA + V_BBORDER_S128 + V_SYNC_S128))) ||
 		((hc >= (H_AREA + H_RBORDER_S128)) &&
 		 (hc <  (H_AREA + H_RBORDER_S128 + H_BLANK1_S128 + H_SYNC_S128 + H_BLANK2_S128))) :
@@ -202,7 +202,7 @@ always @(posedge clk14 or negedge rst_n) begin
 		else begin
 			vc <= vc + 1'b1;
 		end
-	end 
+	end
 	else begin
 		hc0 <= hc0 + 1'b1;
 	end
@@ -211,10 +211,10 @@ end
 reg [4:0] blink_cnt;
 wire blink = blink_cnt[$bits(blink_cnt)-1];
 always @(negedge n_int or negedge rst_n) begin
-    if (!rst_n)
-        blink_cnt <= 0;
-    else
-        blink_cnt <= blink_cnt + 1'b1;
+	if (!rst_n)
+		blink_cnt <= 0;
+	else
+		blink_cnt <= blink_cnt + 1'b1;
 end
 
 reg [7:0] bitmap, attr, bitmap_next, attr_next;
@@ -271,7 +271,7 @@ always @(posedge clk14 or negedge rst_n) begin
 			attr <= {2'b00, border[2] ^ ~sd_miso, border[1] ^ ~n_magic, border[0] ^ ~fd_rdat, 3'b000};
 		else if (screen_update)
 			attr <= attr_next;
-		
+
 		if (screen_update)
 			bitmap <= bitmap_next;
 		else if (ck7)
@@ -292,11 +292,11 @@ localparam INT_H_FROM_PENT = 318;
 localparam INT_H_TO_PENT   = 384;
 reg int0, int1;
 always @(posedge clk14) begin
-	int0 = timings? 
+	int0 = timings?
 		vc == INT_V_S128 && hc >= INT_H_FROM_S128 && hc < INT_H_TO_S128 :
 		// (vc == INT_V_S128-1 && hc >= H_TOTAL_S128-2) || (vc == INT_V_S128 && hc < INT_H_TO_S128-2) :
 		vc == INT_V_PENT && hc >= INT_H_FROM_PENT && hc < INT_H_TO_PENT ;
-	int1 = timings? 
+	int1 = timings?
 		hc < INT_H_FROM_S128+(INT_H_TO_S128-INT_H_FROM_S128)/2 :
 		hc < INT_H_FROM_PENT+(INT_H_TO_PENT-INT_H_FROM_PENT)/2 ;
 	n_int <= ~(int0 && (turbo? int1 : 1'b1));
@@ -427,7 +427,7 @@ always @(posedge clk14 or negedge rst_n) begin
 	end
 	else if (port_dffd_cs && n_wr == 0 && lock_7ffd == 0) begin
 		rambank_ext[0] <= ~vd[0];
-`ifndef NO_DIV
+`ifdef USE_DIV
 		if (sd_cd == 1'b1)
 `endif
 		rambank_ext[1] <= ~vd[1];
@@ -456,7 +456,7 @@ wire covox_cs = !extlock && n_ioreq == 0 && xa[3:1] == 3'b101;
 reg [8:0] snd_dac;
 assign snd = snd_dac[8];
 wire [7:0] snd_dac_next = covox_data_divmmc_data ^ {1'b0, beeper, tape_out, tape_in, 4'b0000};
-`ifdef FPGA
+`ifdef USE_FPGA
 	assign snd_parallel = snd_dac_next;
 `endif
 always @(posedge clk14 or negedge rst_n) begin
@@ -476,19 +476,19 @@ always @(posedge clk14)
 
 
 /* BETA DISK INTERFACE */
-`ifndef NO_BDI
+`ifdef USE_BDI
 reg dos;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) begin
 		dos <= 0;
 	end
 	else begin
-`ifndef NO_DIV
+`ifdef USE_DIV
 		if (sd_cd == 0)
 			dos <= 0;
-	 	else
+		else
 `endif
- 		if (n_magic == 0 && n_mreq == 0 && n_m1 == 0 && (xa[15] || xa[14]))
+		if (n_magic == 0 && n_mreq == 0 && n_m1 == 0 && (xa[15] || xa[14]))
 			dos <= 1'b1;
 		else if (n_mreq == 0 && n_m1 == 0 && xa[15:8] == 8'h3D && rombank128 == 1'b1)
 			dos <= 1'b1;
@@ -591,17 +591,17 @@ always @(posedge clk14 or negedge rst_n) begin
 	end
 end
 
-`else /* NO_BDI */
+`else /* USE_BDI */
 always @* vg_cs <= 1'b1;
 assign vg_rst = 0;
 wire dos = 0;
 wire port_dosff_rd = 0;
 wire [7:0] port_dosff_data = 0;
-`endif /* NO_BDI */
+`endif /* USE_BDI */
 
 
 /* DIVMMC */
-`ifndef NO_DIV
+`ifdef USE_DIV
 wire port_eb_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'hEB;
 reg div_rd;
 always @(posedge clk14 or negedge rst_n) begin
@@ -615,15 +615,15 @@ reg conmem, mapram;
 reg [4:0] divbank;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) begin
-		 divbank <= 0;
-		 mapram <= 0;
-		 conmem <= 0;
-		 sd_cs <= 1'b1;
+		divbank <= 0;
+		mapram <= 0;
+		conmem <= 0;
+		sd_cs <= 1'b1;
 	end
 	else if (!extlock && n_ioreq == 0 && n_wr == 0) begin
-	 	if (xa[7:0] == 8'hE3) begin
-	 		divbank <= vd[4:0];
-	 		mapram <= vd[6];
+		if (xa[7:0] == 8'hE3) begin
+			divbank <= vd[4:0];
+			mapram <= vd[6];
 			conmem <= vd[7];
 		end
 		if (xa[7:0] == 8'hE7) begin
@@ -690,10 +690,10 @@ end
 
 assign sd_mosi = div_mosi_en? covox_data_divmmc_data[7] : 1'b1;
 always @(posedge clk14 or negedge rst_n) begin
-	if (!rst_n) 
+	if (!rst_n)
 		covox_data_divmmc_data <= 0;
 	else if (port_eb_cs && n_wr == 0)
-	 	covox_data_divmmc_data <= vd;
+		covox_data_divmmc_data <= vd;
 	else if (divcnt[3] == 1'b0)
 		if (ck7)
 			covox_data_divmmc_data[7:0] <= {covox_data_divmmc_data[6:0], sd_miso};
@@ -704,18 +704,18 @@ end
 always @(posedge clk14)
 	sd_sck <= ~sd_sck & ~divcnt[3];
 
-`else /* NO_DIV */
+`else /* USE_DIV */
 always @* sd_cs = 1'b1;
 always @* sd_sck = 0;
 assign sd_mosi = 1'b1;
 wire div_rd = 0;
 wire divmap = 0;
 wire [4:0] divbank = 0;
-`endif /* NO_DIV */
+`endif /* USE_DIV */
 
 
 /* VIDEO */
-`ifndef NO_CHROMA
+`ifdef USE_CHROMA
 reg [2:0] chroma0;
 chroma_gen chroma_gen1(
 	.cg_clock(clk14),
@@ -785,7 +785,7 @@ always @(posedge clk14 or negedge rst_n) begin
 		ram_a <= 0;
 	end
 	else begin
-`ifndef NO_DIV
+`ifdef USE_DIV
 		n_romcs0 = (n_mreq == 0 && n_rfsh == 1 &&  a14 == 0    && a15 == 0 &&
 			((conmem == 0 && automap == 0) || (a13 == 0 && conmem == 1) || (a13 == 0 && mapram == 0)))? 1'b0 : 1'b1;
 		n_ramcs  = (n_mreq == 0 && n_rfsh == 1 && (a14 == 1'b1 || a15 == 1'b1 ||
@@ -796,11 +796,11 @@ always @(posedge clk14 or negedge rst_n) begin
 		n_vwr0 = (n_ramcs | n_wr) | screen_read | (
 			(~a15 && ~a14 && (~a13 || divbank == 5'b00011) && conmem == 0 && automap == 1 && mapram == 1)? 1'b1 : 1'b0
 			);
-`else
+`else /* USE_DIV */
 		n_romcs0 = (n_mreq == 0 && n_rfsh == 1 &&  a14 == 0    && a15 == 0)? 1'b0 : 1'b1;
 		n_ramcs  = (n_mreq == 0 && n_rfsh == 1 && (a14 == 1'b1 || a15 == 1'b1))? 1'b0 : 1'b1;
 		n_vwr0 = (n_ramcs | n_wr) | screen_read;
-`endif
+`endif /* USE_DIV */
 		ram_a <=
 			divmap & ~a14 & ~a15 & a13? {1'b0, divbank} :
 			divmap & ~a14 & ~a15? {1'b0, 5'b00011} :
@@ -814,7 +814,7 @@ assign n_vrd = (n_ramcs | n_rd) & ~screen_read;
 assign n_vwr = n_vwr0 | n_wr;
 
 
-`ifdef FPGA
+`ifdef USE_FPGA
 assign vaout = screen_read == 1'b1;
 assign vaout_8 = screen_read_snow == 1'b1;
 assign vdout = port_ff_rd || port_fe_rd || kempston_rd || div_rd || port_dosff_rd;
@@ -835,7 +835,7 @@ assign va[18:0] =
 
 assign vd[7:0] =
 	port_dosff_rd? port_dosff_data :
-	div_rd? covox_data_divmmc_data : 
+	div_rd? covox_data_divmmc_data :
 	kempston_rd? kempston_data :
 	port_fe_rd? port_fe_data :
 	port_ff_rd? port_ff_data :
