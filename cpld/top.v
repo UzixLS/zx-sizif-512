@@ -138,15 +138,15 @@ localparam V_SYNC_S48     = 8;
 localparam V_TBORDER_S48  = 56;
 localparam V_TOTAL_S48    = V_AREA + V_BBORDER_S48 + V_SYNC_S48 + V_TBORDER_S48;
 
-localparam H_LBORDER_S128 = 48 - SCREEN_DELAY;
-localparam H_RBORDER_S128 = 48 + SCREEN_DELAY;
-localparam H_BLANK1_S128  = 28;
+localparam H_LBORDER_S128 = 64 - SCREEN_DELAY;
+localparam H_RBORDER_S128 = 60 + SCREEN_DELAY;
+localparam H_BLANK1_S128  = 16;
 localparam H_SYNC_S128    = 33;
-localparam H_BLANK2_S128  = 43;
+localparam H_BLANK2_S128  = 27;
 localparam H_TOTAL_S128   = H_AREA + H_RBORDER_S128 + H_BLANK1_S128 + H_SYNC_S128 + H_BLANK2_S128 + H_LBORDER_S128;
-localparam V_BBORDER_S128 = 56;
+localparam V_BBORDER_S128 = 47;
 localparam V_SYNC_S128    = 8;
-localparam V_TBORDER_S128 = 55;
+localparam V_TBORDER_S128 = 64;
 localparam V_TOTAL_S128   = V_AREA + V_BBORDER_S128 + V_SYNC_S128 + V_TBORDER_S128;
 
 localparam H_LBORDER_PENT = 72 - SCREEN_DELAY;
