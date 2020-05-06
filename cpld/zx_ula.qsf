@@ -179,14 +179,15 @@ set_global_assignment -name FMAX_REQUIREMENT "7.156 MHz" -section_id clk7
 set_global_assignment -name DUTY_CYCLE 40 -section_id clk7
 
 set_instance_assignment -name CLOCK_SETTINGS clk14 -to clk14
-set_global_assignment -name SDC_FILE clocks.sdc
-set_global_assignment -name VHDL_FILE chroma_gen14.vhd
-set_global_assignment -name VERILOG_FILE top.v
-set_global_assignment -name VERILOG_INCLUDE_FILE util.vh
-set_global_assignment -name CDF_FILE output/zx_ula.cdf
 set_global_assignment -name SAVE_DISK_SPACE OFF
 set_global_assignment -name SMART_RECOMPILE ON
 set_global_assignment -name POWER_USE_PVA OFF
 set_global_assignment -name OPTIMIZE_MULTI_CORNER_TIMING OFF
 set_global_assignment -name SLOW_SLEW_RATE OFF
 set_global_assignment -name SYNTH_TIMING_DRIVEN_SYNTHESIS OFF
+
+set_global_assignment -name VHDL_FILE chroma_gen32.vhd
+set_global_assignment -name SDC_FILE clocks.sdc
+set_global_assignment -name VERILOG_FILE top.v
+set_global_assignment -name VERILOG_INCLUDE_FILE util.vh
+set_global_assignment -name CDF_FILE output/zx_ula.cdf

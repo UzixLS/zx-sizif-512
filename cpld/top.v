@@ -149,11 +149,11 @@ localparam V_SYNC_S128    = 8;
 localparam V_TBORDER_S128 = 64;
 localparam V_TOTAL_S128   = V_AREA + V_BBORDER_S128 + V_SYNC_S128 + V_TBORDER_S128;
 
-localparam H_LBORDER_PENT = 72 - SCREEN_DELAY;
+localparam H_LBORDER_PENT = 64 - SCREEN_DELAY;
 localparam H_RBORDER_PENT = 56 + SCREEN_DELAY;
 localparam H_BLANK1_PENT  = 8;
 localparam H_SYNC_PENT    = 33;
-localparam H_BLANK2_PENT  = 23;
+localparam H_BLANK2_PENT  = 31;
 localparam H_TOTAL_PENT   = H_AREA + H_RBORDER_PENT + H_BLANK1_PENT + H_SYNC_PENT + H_BLANK2_PENT + H_LBORDER_PENT;
 localparam V_BBORDER_PENT = 56;
 localparam V_SYNC_PENT    = 8;
@@ -718,7 +718,7 @@ wire [4:0] divbank = 0;
 `ifdef USE_CHROMA
 reg [2:0] chroma0;
 chroma_gen chroma_gen1(
-	.cg_clock(clk14),
+	.cg_clock(clk32),
 	.cg_rgb({g,r,b}),
 	.cg_hsync(~hsync),
 	.cg_enable(1'b1),
