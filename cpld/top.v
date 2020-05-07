@@ -3,6 +3,7 @@
 // `define USE_CHROMA
 // `define USE_DIV
 // `define USE_BDI
+// `define USE_COVOX
 
 module zx_ula(
 	input rst_n,
@@ -337,7 +338,7 @@ wire contention_mem = n_iorq_delayed == 1'b1 && n_mreq_delayed == 1'b1 && conten
 wire contention_io = n_iorq_delayed == 1'b1 && n_iorq == 0;
 wire contention0 = screen_load && (hc[2] || hc[3]) && (contention_mem || contention_io);
 wire contention = contention0 && !turbo && timings;
-wire screen_read_snow = screen_read && timings && a14 && ~a15 && n_rfsh == 0;
+wire snow = timings && a14 && ~a15 && n_rfsh == 0;
 
 
 /* CLOCK */
@@ -450,21 +451,31 @@ assign ay_clk = hc[1];
 
 
 /* COVOX */
-reg [7:0] covox_data_divmmc_data;
+`ifdef USE_COVOX
+reg [7:0] covox_data;
 wire covox_cs = !extlock && n_ioreq == 0 && xa[3:1] == 3'b101;
+always @(posedge clk14 or negedge rst_n) begin
+	if (!rst_n)
+		covox_data <= 0;
+	else if (covox_cs && n_wr == 0)
+		covox_data <= vd;
+end
 
 reg [8:0] snd_dac;
 assign snd = snd_dac[8];
-wire [7:0] snd_dac_next = covox_data_divmmc_data ^ {1'b0, beeper, tape_out, tape_in, 4'b0000};
-`ifdef USE_FPGA
-	assign snd_parallel = snd_dac_next;
-`endif
+wire [7:0] snd_dac_next = covox_data ^ {1'b0, beeper, tape_out, tape_in, sd_miso, 3'b000};
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n)
 		snd_dac <= 0;
 	else
 		snd_dac <= snd_dac[7:0] + snd_dac_next;
 end
+`ifdef USE_FPGA
+	assign snd_parallel = snd_dac_next;
+`endif
+`else /* USE_COVOX */
+	assign snd = beeper ^ tape_out ^ tape_in ^ sd_miso;
+`endif
 
 
 /* JOYPAD/KEMPSTON */
@@ -688,17 +699,16 @@ always @(posedge clk14 or negedge rst_n) begin
 		div_mosi_en <= 0;
 end
 
-assign sd_mosi = div_mosi_en? covox_data_divmmc_data[7] : 1'b1;
+reg [7:0] divmmc_data;
+assign sd_mosi = div_mosi_en? divmmc_data[7] : 1'b1;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n)
-		covox_data_divmmc_data <= 0;
+		divmmc_data <= 0;
 	else if (port_eb_cs && n_wr == 0)
-		covox_data_divmmc_data <= vd;
+		divmmc_data <= vd;
 	else if (divcnt[3] == 1'b0)
 		if (ck7)
-			covox_data_divmmc_data[7:0] <= {covox_data_divmmc_data[6:0], sd_miso};
-	else if (covox_cs && n_wr == 0)
-		covox_data_divmmc_data <= vd;
+			divmmc_data[7:0] <= {divmmc_data[6:0], sd_miso};
 end
 
 always @(posedge clk14)
@@ -711,6 +721,7 @@ assign sd_mosi = 1'b1;
 wire div_rd = 0;
 wire divmap = 0;
 wire [4:0] divbank = 0;
+wire [7:0] divmmc_data = 0;
 `endif /* USE_DIV */
 
 
@@ -816,7 +827,7 @@ assign n_vwr = n_vwr0 | n_wr;
 
 `ifdef USE_FPGA
 assign vaout = screen_read == 1'b1;
-assign vaout_8 = screen_read_snow == 1'b1;
+assign vaout_8 = screen_read && snow;
 assign vdout = port_ff_rd || port_fe_rd || kempston_rd || div_rd || port_dosff_rd;
 `endif
 
@@ -829,13 +840,13 @@ assign ra[16:14] =
 	{2'b00, rombank128};
 
 assign va[18:0] =
-	screen_read_snow? {3'b111, vbank, screen_addr[14:8], {8{1'bz}}} :
+	screen_read & snow? {3'b111, vbank, screen_addr[14:8], {8{1'bz}}} :
 	screen_read? {3'b111, vbank, screen_addr} :
 	{ram_a[18:13], {13{1'bz}}};
 
 assign vd[7:0] =
 	port_dosff_rd? port_dosff_data :
-	div_rd? covox_data_divmmc_data :
+	div_rd? divmmc_data :
 	kempston_rd? kempston_data :
 	port_fe_rd? port_fe_data :
 	port_ff_rd? port_ff_data :
