@@ -319,9 +319,9 @@ always @(posedge clk14 or negedge rst_n) begin
 		n_rstcpu <= 0;
 	end
 	else begin
-		n_nmi <= (n_int == 0 && magic_enter)? 1'b0 : 1'b1;
+		n_nmi <= (magic_enter && vc == 0)? 1'b0 : 1'b1;
 		if (blink_cnt[0])
-			n_rstcpu <= 1'bz;
+			n_rstcpu <= 1'b1;
 	end
 end
 
