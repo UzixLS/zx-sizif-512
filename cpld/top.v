@@ -404,7 +404,7 @@ end
 
 
 /* PORT #7FFD */
-wire port_7ffd_cs = n_ioreq == 0 && xa[1] == 0 && xa[15] == 0 && (xa[14] == 1 || xa[13] == 1);
+wire port_7ffd_cs = n_ioreq == 0 && xa[1] == 0 && xa[15] == 0;
 reg [7:0] port_7ffd;
 assign rambank128 = port_7ffd[2:0];
 wire vbank = port_7ffd[3];
@@ -419,7 +419,7 @@ end
 
 
 /* PORT DFFD */
-wire port_dffd_cs = !extlock && n_ioreq == 0 && xa[1] == 0 && xa[15] == 1 && xa[14] == 1 && xa[13] == 0;
+wire port_dffd_cs = !extlock && n_ioreq == 0 && xa == 16'hDFFD;
 reg [1:0] rambank_ext;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) begin
