@@ -652,7 +652,7 @@ always @(negedge clk14 or negedge rst_n) begin // negedge for timing of 3Dh entr
 		automap <= 0;
 	end
 	else begin
-		if (sd_cd || extlock || extrom == 2'b01) begin
+		if (sd_cd || extlock) begin
 			automap_next <= 0;
 		end
 		else if (n_m1 == 0 && n_mreq == 0 && (
