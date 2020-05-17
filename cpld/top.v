@@ -453,7 +453,7 @@ assign ay_clk = hc[1];
 /* COVOX */
 `ifdef USE_COVOX
 reg [7:0] covox_data;
-wire covox_cs = !extlock && n_ioreq == 0 && xa[3:1] == 3'b101;
+wire covox_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'hFB;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n)
 		covox_data <= 0;
@@ -463,12 +463,12 @@ end
 
 reg [8:0] snd_dac;
 assign snd = snd_dac[8];
-wire [7:0] snd_dac_next = covox_data ^ {1'b0, beeper, tape_out, tape_in, sd_miso, 3'b000};
+wire [8:0] snd_dac_next = covox_data + {beeper, tape_out, tape_in, sd_miso, 4'b0000};
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n)
 		snd_dac <= 0;
 	else
-		snd_dac <= snd_dac[7:0] + snd_dac_next;
+		snd_dac <= snd_dac[7:0] + snd_dac_next[8:1];
 end
 `ifdef USE_FPGA
 	assign snd_parallel = snd_dac_next;
