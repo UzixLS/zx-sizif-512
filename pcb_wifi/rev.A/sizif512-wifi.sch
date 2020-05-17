@@ -37,11 +37,11 @@ F 3 "" H 3925 3475 50  0001 C CNN
 	0    -1   1    0   
 $EndComp
 $Comp
-L Regulator_Linear:AP1117-33 U1
+L Regulator_Linear:AMS1117-3.3 U1
 U 1 1 5EA457DB
 P 6175 2875
 F 0 "U1" H 6175 3117 50  0000 C CNN
-F 1 "AP1117-33" H 6175 3026 50  0000 C CNN
+F 1 "AMS1117-3.3" H 6175 3026 50  0000 C CNN
 F 2 "Package_TO_SOT_SMD:SOT-223-3_TabPin2" H 6175 3075 50  0001 C CNN
 F 3 "http://www.diodes.com/datasheets/AP1117.pdf" H 6275 2625 50  0001 C CNN
 	1    6175 2875

@@ -1,4 +1,4 @@
-﻿## Sizif-512
+﻿ ## Sizif-512
 
 Another CPLD-based ZX Spectrum clone for 48K rubber case with additional features.
 **Please note: work in progress, not all things implemented at the moment**
@@ -41,6 +41,11 @@ DivMMC can't be property used with BDI by it's design. So when SD card insert, B
 
 ### Strange lines on border and creaky sounds on SD card access
 It's not a bug, it's a feature ;)
+
+### Changelog & current status
+* Rev.A - first release. Done. Please see [errata](pcb/rev.A/ERRATA.ru.txt) (in russian)
+* Rev.B - abandoned. Files keep for historical reason.
+* Rev.C - BDI has been removed. Work in progress.
 
 ### Acknowledgments
 This work is based on a lot of other projects and would hardly have been successful without them.
