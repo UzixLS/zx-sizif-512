@@ -19,16 +19,17 @@ Another CPLD-based ZX Spectrum clone for 48K rubber case with additional feature
 ### Magic button
 Sizif have some configurable things which you may change at any moment and that's doesn't require reboot.
 To do this there is a Magic button: just hold it and press key on keyboard:
-Key | Function
-- | -
-1 | Switch to Pentagon 128 timings (by default)
-2 | Switch to Spectrum 128 timings
-3 | Switch to 3.5 MHz (normal) mode (by default)
-4 | Switch to 7 MHz (turbo) mode
-5 | Switch to ABC stereo (by default)
-6 | Switch to ACB stereo
-9 | Enable all additional features: DivMMC, 512K RAM, Kempston, Covox (by default)
-0 | Disable all additional features
+| Key | Function |
+| - | - |
+| 1 | Switch to Pentagon 128 timings (by default) |
+| 2 | Switch to Spectrum 128 timings |
+| 3 | Switch to 3.5 MHz (normal) mode (by default) |
+| 4 | Switch to 7 MHz (turbo) mode |
+| 5 | Switch to ABC stereo (by default) |
+| 6 | Switch to ACB stereo |
+| 9 | Enable all additional features: DivMMC, 512K RAM, Kempston, Covox (by default) |
+| 0 | Disable all additional features |
+
 If you press Magic button and didn't change something, standard NMI handler 'll be called on button release.
 
 ### RAM
