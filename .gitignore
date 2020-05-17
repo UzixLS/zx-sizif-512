@@ -17,6 +17,7 @@ output/
 *.cdf
 *.qws
 *.srf
+cpld/simulation/
 cpld/top-old.v
 cpld/top-test*.v
 cpld/top28.v
@@ -36,3 +37,4 @@ cpld_tb/*.mem
 *.sublime-*
 rom/sizif-*.rom
 rom_src/*.bin
+videoout/
