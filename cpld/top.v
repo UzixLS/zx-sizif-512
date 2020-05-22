@@ -45,8 +45,8 @@ module zx_ula(
 	input n_iorqge_i,
 	input [4:0] kd,
 	input tape_in,
-	output tape_out,
-	output beeper,
+	output reg tape_out,
+	output reg beeper,
 
 	input n_magic,
 
@@ -111,8 +111,8 @@ module zx_ula(
 
 wire [15:0] xa = {a15, a14, a13, va[12:0]};
 
-wire [2:0] border;
-wire [2:0] rambank128;
+reg [2:0] border;
+reg [2:0] rambank128;
 reg timings;
 reg turbo;
 reg extlock;
@@ -392,31 +392,39 @@ always @(posedge clk14)
 	port_fe_rd <= port_fe_cs && n_rd == 0;
 
 wire [7:0] port_fe_data = {n_magic0[0], tape_in, 1'b1, kd};
-reg [7:0] port_fe;
-assign beeper = port_fe[4];
-assign tape_out = port_fe[3] ^ tape_in;
-assign border = port_fe[2:0];
 always @(posedge clk14 or negedge rst_n) begin
-	if (!rst_n)
-		port_fe <= 0;
-	else if (port_fe_cs && n_wr == 0)
-		port_fe <= vd;
+	if (!rst_n) begin
+		beeper <= 0;
+		tape_out <= 0;
+		border <= 0;
+	end
+	else if (port_fe_cs && n_wr == 0) begin
+		beeper <= vd[4];
+		tape_out <= vd[3];
+		border <= vd[2:0];
+	end
 end
 
 
 /* PORT #7FFD */
 wire port_7ffd_cs = n_ioreq == 0 && xa[1] == 0 && xa[15] == 0;
-reg [7:0] port_7ffd;
-assign rambank128 = port_7ffd[2:0];
-wire vbank = port_7ffd[3];
-wire rombank128 = port_7ffd[4];
-wire lock_7ffd = port_7ffd[5];
+reg vbank;
+reg rombank128;
+reg lock_7ffd;
 reg dffd_d4;
 always @(posedge clk14 or negedge rst_n) begin
-	if (!rst_n)
-		port_7ffd <= 0;
-	else if (port_7ffd_cs && n_wr == 0 && (lock_7ffd == 0 || dffd_d4 == 1'b1))
-		port_7ffd <= vd;
+	if (!rst_n) begin
+		rambank128 <= 0;
+		vbank <= 0;
+		rombank128 <= 0;
+		lock_7ffd <= 0;
+	end
+	else if (port_7ffd_cs && n_wr == 0 && (lock_7ffd == 0 || dffd_d4 == 1'b1)) begin
+		rambank128 <= vd[2:0];
+		vbank <= vd[3];
+		rombank128 <= vd[4];
+		lock_7ffd <= vd[5];
+	end
 end
 
 
@@ -478,7 +486,7 @@ end
 `endif
 `else /* USE_COVOX */
 	assign snd = beeper ^ tape_out ^ tape_in ^ sd_miso;
-`endif
+`endif /* USE_COVOX */
 
 
 /* JOYPAD/KEMPSTON */
