@@ -411,10 +411,11 @@ assign rambank128 = port_7ffd[2:0];
 wire vbank = port_7ffd[3];
 wire rombank128 = port_7ffd[4];
 wire lock_7ffd = port_7ffd[5];
+reg dffd_d4;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n)
 		port_7ffd <= 0;
-	else if (port_7ffd_cs && n_wr == 0 && lock_7ffd == 0)
+	else if (port_7ffd_cs && n_wr == 0 && (lock_7ffd == 0 || dffd_d4 == 1'b1))
 		port_7ffd <= vd;
 end
 
@@ -425,13 +426,15 @@ reg [1:0] rambank_ext;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) begin
 		rambank_ext <= 2'b11;
+		dffd_d4 <= 1'b0;
 	end
-	else if (port_dffd_cs && n_wr == 0 && lock_7ffd == 0) begin
+	else if (port_dffd_cs && n_wr == 0) begin
 		rambank_ext[0] <= ~vd[0];
 `ifdef USE_DIV
 		if (sd_cd == 1'b1)
 `endif
 		rambank_ext[1] <= ~vd[1];
+		dffd_d4 <= vd[4];
 	end
 end
 
@@ -634,7 +637,7 @@ always @(posedge clk14 or negedge rst_n) begin
 	else if (!extlock && n_ioreq == 0 && n_wr == 0) begin
 		if (xa[7:0] == 8'hE3) begin
 			divbank <= vd[4:0];
-			mapram <= vd[6];
+			mapram <= vd[6] | mapram;
 			conmem <= vd[7];
 		end
 		if (xa[7:0] == 8'hE7) begin
@@ -645,7 +648,6 @@ end
 
 reg automap_next;
 reg automap;
-wire divmap = automap | conmem;
 always @(negedge clk14 or negedge rst_n) begin // negedge for timing of 3Dh entrypoint in turbo mode
 	if (!rst_n) begin
 		automap_next <= 0;
@@ -719,7 +721,6 @@ always @* sd_cs = 1'b1;
 always @* sd_sck = 0;
 assign sd_mosi = 1'b1;
 wire div_rd = 0;
-wire divmap = 0;
 wire [4:0] divbank = 0;
 wire [7:0] divmmc_data = 0;
 `endif /* USE_DIV */
@@ -743,48 +744,15 @@ assign chroma[1] = chroma0[2]? chroma0[0] : 1'bz;
 
 
 /* MEMORY CONTROLLER */
-// divmap rambank256 rambank128 a15-13 va18-13
-//    0       0         xxx       01x   11010z  bank 2
-//    0       0         xxx       10x   11101z  bank 5
-//    0       0         000       11x   11000z  bank 0
-//    0       0         001       11x   11001z  bank 1 | contended
-//    0       0         010       11x   11010z  bank 2
-//    0       0         011       11x   11011z  bank 3 | contended
-//    0       0         100       11x   11100z  bank 4
-//    0       0         101       11x   11101z  bank 5 | contended (video)
-//    0       0         110       11x   11110z  bank 6
-//    0       0         111       11x   11111z  bank 7 | contended (video alt)
-//    0       1         000       11x   01000z  256bank
-//    0       1         001       11x   01001z  256bank
-//    0       1         010       11x   01010z  256bank
-//    0       1         011       11x   01011z  256bank
-//    0       1         100       11x   01100z  256bank
-//    0       1         101       11x   01101z  256bank
-//    0       1         110       11x   01110z  256bank
-//    0       1         111       11x   01111z  256bank
-//    1       x         xxx       xx0   100011  divbank 3
-//    1       x         xxx       xx1   10DDDD  divbank D
-//
-// a15-14 dos divmap extrom rombank128 ra16-14
-//   00    0    0      00       0        000   rom0
-//   00    0    0      00       1        001   rom1
-//   00    1    0      00       x        010   trdos
-//   00    x    1      00       x        011   esxdos
-//   00    x    x      10       0        100   zx80
-//   00    x    x      10       1        101   zx81
-//   00    x    x      11       x        110   opense
-//   00    x    x      01       x        111   service
-//
-// conmem automap mapram a15-13  n_romcs n_vcs
-//    0      0       x     00x      0      1
-//    x      x       x     x1x      1      0
-//    x      x       x     1xx      1      0
-//    1      x       x     000      0      1
-//    0      1       0     000      0      1
-//    0      1       1     xxx      1      0
-//    1      x       x     xx1      1      0
-//    x      1       x     xx1      1      0
-
+`ifdef USE_DIV
+wire divmap = automap | conmem;
+wire div_ram = (conmem == 1 && a13 == 1) || (automap == 1 && a13 == 1) || (conmem == 0 && automap == 1 && mapram == 1);
+wire div_ramwr_mask = a15 == 0 && a14 == 0 && (a13 == 0 || divbank == 5'b00011) && conmem == 0 && automap == 1 && mapram == 1;
+`else 
+wire divmap = 0;
+wire div_ram = 0;
+wire div_ramwr_mask = 0;
+`endif
 
 reg n_ramcs, n_romcs0, n_vwr0;
 reg [18:13] ram_a;
@@ -796,22 +764,9 @@ always @(posedge clk14 or negedge rst_n) begin
 		ram_a <= 0;
 	end
 	else begin
-`ifdef USE_DIV
-		n_romcs0 = (n_mreq == 0 && n_rfsh == 1 &&  a14 == 0    && a15 == 0 &&
-			((conmem == 0 && automap == 0) || (a13 == 0 && conmem == 1) || (a13 == 0 && mapram == 0)))? 1'b0 : 1'b1;
-		n_ramcs  = (n_mreq == 0 && n_rfsh == 1 && (a14 == 1'b1 || a15 == 1'b1 ||
-				(conmem == 0 && automap == 1 && mapram == 1) ||
-				(a13 == 1 && conmem == 1) ||
-				(a13 == 1 && automap == 1)
-			) )? 1'b0 : 1'b1;
-		n_vwr0 = (n_ramcs | n_wr) | screen_read | (
-			(~a15 && ~a14 && (~a13 || divbank == 5'b00011) && conmem == 0 && automap == 1 && mapram == 1)? 1'b1 : 1'b0
-			);
-`else /* USE_DIV */
-		n_romcs0 = (n_mreq == 0 && n_rfsh == 1 &&  a14 == 0    && a15 == 0)? 1'b0 : 1'b1;
-		n_ramcs  = (n_mreq == 0 && n_rfsh == 1 && (a14 == 1'b1 || a15 == 1'b1))? 1'b0 : 1'b1;
-		n_vwr0 = (n_ramcs | n_wr) | screen_read;
-`endif /* USE_DIV */
+		n_romcs0 = (n_mreq == 0 && n_rfsh == 1 &&  a14 == 0    && a15 == 0 && !div_ram && !(dffd_d4 && !divmap))? 1'b0 : 1'b1;
+		n_ramcs  = (n_mreq == 0 && n_rfsh == 1 && (a14 == 1'b1 || a15 == 1'b1 || div_ram || (dffd_d4 && !divmap)))? 1'b0 : 1'b1;
+		n_vwr0 = n_ramcs | n_wr | div_ramwr_mask;
 		ram_a <=
 			divmap & ~a14 & ~a15 & a13? {1'b0, divbank} :
 			divmap & ~a14 & ~a15? {1'b0, 5'b00011} :
@@ -822,7 +777,7 @@ end
 
 assign n_romcs = n_romcs0 | n_mreq;
 assign n_vrd = (n_ramcs | n_rd) & ~screen_read;
-assign n_vwr = n_vwr0 | n_wr;
+assign n_vwr = n_vwr0 | n_wr | screen_read;
 
 
 `ifdef USE_FPGA
