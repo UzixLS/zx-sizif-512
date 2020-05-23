@@ -665,7 +665,7 @@ always @(negedge clk14 or negedge rst_n) begin // negedge for timing of 3Dh entr
 		if (sd_cd || extlock) begin
 			automap_next <= 0;
 		end
-		else if (n_m1 == 0 && n_mreq == 0 && (
+		else if (n_m1 == 0 && n_mreq == 0 && dffd_d4 == 0 && (
 				xa == 16'h0000 || // power-on/reset/rst0/software restart
 				xa == 16'h0008 || // syntax error
 				xa == 16'h0038 || // im1 interrupt/rst #38
