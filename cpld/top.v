@@ -431,9 +431,11 @@ end
 /* PORT DFFD */
 wire port_dffd_cs = !extlock && n_ioreq == 0 && xa == 16'hDFFD;
 reg [1:0] rambank_ext;
+reg dffd_d3;
 always @(posedge clk14 or negedge rst_n) begin
 	if (!rst_n) begin
 		rambank_ext <= 2'b11;
+		dffd_d3 <= 1'b0;
 		dffd_d4 <= 1'b0;
 	end
 	else if (port_dffd_cs && n_wr == 0) begin
@@ -442,6 +444,7 @@ always @(posedge clk14 or negedge rst_n) begin
 		if (sd_cd == 1'b1)
 `endif
 		rambank_ext[1] <= ~vd[1];
+		dffd_d3 <= vd[3];
 		dffd_d4 <= vd[4];
 	end
 end
@@ -778,6 +781,8 @@ always @(posedge clk14 or negedge rst_n) begin
 		ram_a <=
 			divmap & ~a14 & ~a15 & a13? {1'b0, divbank} :
 			divmap & ~a14 & ~a15? {1'b0, 5'b00011} :
+			dffd_d3 & a15? {2'b11, a14, a15, a14, a13} :
+			dffd_d3 & a14? {rambank_ext, rambank128, a13} :
 			a15 & a14? {rambank_ext, rambank128, a13} :
 			{2'b11, a14, a15, a14, a13} ;
 	end
