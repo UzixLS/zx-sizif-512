@@ -1,6 +1,6 @@
 ﻿ ## Sizif-512
 
-Another CPLD-based ZX Spectrum clone for 48K rubber case with additional features.
+Another CPLD-based ZX Spectrum clone for 48K rubber case with additional features.  
 **Please note: work in progress, not all things implemented at the moment**
 
 ### Features
@@ -15,6 +15,10 @@ Another CPLD-based ZX Spectrum clone for 48K rubber case with additional feature
 * Digital video out (EGA header ;))
 * Switchable stereo ABC/ACB
 * Mono covox
+
+### Video demonstration
+Running Pentagon 128 and Spectrum 128 demos: [link](https://www.youtube.com/watch?v=_RoLKcfJSTY)  
+Playing music from SD: [link](https://www.youtube.com/watch?v=TmikKD3yqOU)
 
 ### Magic button
 Sizif have some configurable things which you may change at any moment and that's doesn't require reboot.
@@ -46,7 +50,7 @@ It's not a bug, it's a feature ;)
 ### Changelog & current status
 * Rev.A - first release. Done. Please see [errata](pcb/rev.A/ERRATA.ru.txt) (in russian)
 * Rev.B - abandoned. Files keep for historical reason.
-* Rev.C - BDI has been removed. Work in progress.
+* Rev.C - BDI has been removed; better video circuit; more capable CPLD. Work in progress.
 
 ### Acknowledgments
 This work is based on a lot of other projects and would hardly have been successful without them.
