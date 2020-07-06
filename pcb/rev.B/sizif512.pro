@@ -1,4 +1,4 @@
-update=08/04/2020 18:24:24
+update=06/07/2020 22:31:45
 version=1
 last_client=kicad
 [general]
@@ -263,8 +263,8 @@ dPairGap=0.25
 dPairViaGap=0.25
 [schematic_editor]
 version=1
-PageLayoutDescrFile=E:/ws/kicad-lib/mykicadws.kicad_wks
-PlotDirectoryName=E:/ownCloud/MAIN/zx/
+PageLayoutDescrFile=${MYLIBPATH}/mykicadws.kicad_wks
+PlotDirectoryName=out/
 SubpartIdSeparator=0
 SubpartFirstId=65
 NetFmtName=Pcbnew

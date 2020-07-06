@@ -5,8 +5,8 @@ EELAYER END
 $Descr A2 23386 16535
 encoding utf-8
 Sheet 1 1
-Title "SIZIF-512"
-Date "2020-02-07"
+Title "ZX-SIZIF-512"
+Date ""
 Rev ""
 Comp "Eugene Lozovoy"
 Comment1 ""
