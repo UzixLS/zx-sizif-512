@@ -47,6 +47,9 @@ DivMMC can't be property used with BDI by it's design. So when SD card insert, B
 ### Strange lines on border and creaky sounds on SD card access
 It's not a bug, it's a feature ;)
 
+### WiFi module
+It's possible to connect to internet with additional [WiFi module](https://github.com/UzixLS/zx-sizif-512-wifi).
+
 ### Changelog & current status
 * Rev.A - first release. Done. Please see [errata](pcb/rev.A/ERRATA.ru.txt) (in russian)
 * Rev.B - abandoned. Files keep for historical reason.
