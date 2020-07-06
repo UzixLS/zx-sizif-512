@@ -8,6 +8,7 @@
 pcb/**/*.xml
 pcb/**/out/
 pcb/mask-color.png
+pcb.*/
 
 ## Quartus
 db/
@@ -22,6 +23,7 @@ cpld/top-old.v
 cpld/top-test*.v
 cpld/top28.v
 cpld/chroma_gen28.vhd
+cpld.*/
 
 ## Testbench
 cpld_tb/ivl_vhdl_work/
@@ -30,6 +32,7 @@ cpld_tb/*.gtkw
 cpld_tb/*.vcd
 cpld_tb/*.bin
 cpld_tb/*.mem
+cpld_tb.*/
 
 ## Etc.
 *.bak
@@ -37,4 +40,5 @@ cpld_tb/*.mem
 *.sublime-*
 rom/sizif-*.rom
 rom_src/*.bin
+rom_src.*/
 videoout/
