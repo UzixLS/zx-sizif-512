@@ -1,20 +1,19 @@
-﻿ ## Sizif-512
-
-Another CPLD-based ZX Spectrum clone for 48K rubber case with additional features.  
-**Please note: work in progress, not all things implemented at the moment**
+﻿## Sizif-512
+Another CPLD-based ZX Spectrum clone for 48K rubber case with some sweet features.
 
 ### Features
 * Half-sized PCB for 48K rubber case, no case modifications necessary
 * Pentagon 128 and Spectrum 128 timings
 * Real Z80 in 3.5MHz and 7MHz (no-wait turbo) mode
 * 512K RAM
+* Real AY with switchable stereo ABC/ACB/mono
 * Kempston Joystick
-* Integrated Beta Disk Interface
 * Integrated DivMMC
 * PAL and RGB video out (Sega Mini-DIN/9 connector)
-* Digital video out (EGA header ;))
-* Switchable stereo ABC/ACB
-* Mono covox
+* Digital video out (with EGA header ;))
+* 6-bit color pallete
+* Stereo covox
+* WiFi
 
 ### Video demonstration
 Running Pentagon 128 and Spectrum 128 demos: [link](https://www.youtube.com/watch?v=_RoLKcfJSTY)  
@@ -41,9 +40,6 @@ The board contains 512K RAM. There are two cases how to access it:
 1. DivMMC enabled (SD card insert) - 128K available via 7FFDh port, 128K via DFFDh and 256K reserved for DivMMC.
 2. No SD card present - 128K available via 7FFDh and 384K via DFFDh
 
-### DivMMC and BDI coexistence
-DivMMC can't be property used with BDI by it's design. So when SD card insert, BDI goes into inactive state.
-
 ### Strange lines on border and creaky sounds on SD card access
 It's not a bug, it's a feature ;)
 
@@ -51,10 +47,20 @@ It's not a bug, it's a feature ;)
 It's possible to connect to internet with additional [WiFi module](https://github.com/UzixLS/zx-sizif-512-wifi).
 
 ### Changelog & current status
-* Rev.A - first release. Done. Please see [errata](pcb/rev.A/ERRATA.ru.txt) (in russian)
+* Rev.A - first release. Please see [errata](pcb/rev.A/ERRATA.ru.txt) (in russian).
 * Rev.B - abandoned. Files keep for historical reason.
 * Rev.C - BDI has been removed; better video circuit; more capable CPLD. Work in progress.
 * Rev.C1 - fixed incorrect JTAG pinout; fixed incorrect silkscreen for power connector J3. Everything seems to work.
+
+### Roadmap
+PCB rev.D:
+* add zxbus connector for in-case addons
+* add support for +3DOS floppy controller
+
+Firmware:
+* add ULAplus
+* improve 128K timings for 100% compatibility
+* add 48K timings
 
 ### Acknowledgments
 This work is based on a lot of other projects and would hardly have been successful without them.
