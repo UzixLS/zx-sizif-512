@@ -54,6 +54,7 @@ It's possible to connect to internet with additional [WiFi module](https://githu
 * Rev.A - first release. Done. Please see [errata](pcb/rev.A/ERRATA.ru.txt) (in russian)
 * Rev.B - abandoned. Files keep for historical reason.
 * Rev.C - BDI has been removed; better video circuit; more capable CPLD. Work in progress.
+* Rev.C1 - fixed incorrect JTAG pinout; fixed incorrect silkscreen for power connector J3. Everything seems to work.
 
 ### Acknowledgments
 This work is based on a lot of other projects and would hardly have been successful without them.
