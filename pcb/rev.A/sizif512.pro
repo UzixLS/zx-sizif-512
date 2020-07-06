@@ -1,4 +1,4 @@
-update=17/05/2020 12:50:13
+update=05/07/2020 10:26:24
 version=1
 last_client=kicad
 [general]
@@ -263,7 +263,7 @@ dPairGap=0.25
 dPairViaGap=0.25
 [schematic_editor]
 version=1
-PageLayoutDescrFile=E:/ws/hwlib/mykicadws.kicad_wks
+PageLayoutDescrFile=${MYLIBPATH}/mykicadws.kicad_wks
 PlotDirectoryName=out/
 SubpartIdSeparator=0
 SubpartFirstId=65
