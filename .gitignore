@@ -18,11 +18,11 @@ output/
 *.cdf
 *.qws
 *.srf
-cpld/simulation/
-cpld/top-old.v
-cpld/top-test*.v
-cpld/top28.v
-cpld/chroma_gen28.vhd
+cpld/*/simulation/
+cpld/*/top-old.v
+cpld/*/top-test*.v
+cpld/*/top28.v
+cpld/*/chroma_gen28.vhd
 cpld.*/
 
 ## Testbench

@@ -6,7 +6,7 @@ all: testbench_zx_ula
 
 testbench_zx_ula: IVFLAGS+=-I./az80/ -I./t80/ -I../cpld
 testbench_zx_ula: VSIMFLAGS+=+nowarn3722 +nowarn8822 +nowarn3017
-testbench_zx_ula: V=testbench_zx_ula.v zx_ula.v ../cpld/chroma_gen14.vhd ${V_T80}
+testbench_zx_ula: V=testbench_zx_ula.v zx_ula.v ${V_T80}
 testbench_zx_ula: rom.mem zero64.mem
 
 testbench_memcontroller: V=testbench_memcontroller.v

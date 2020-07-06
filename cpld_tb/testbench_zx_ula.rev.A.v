@@ -1,8 +1,13 @@
+`define USE_FPGA
+`include "../cpld/top.v"
+
 `timescale 100ps/10ps 
 module testbench_zx_ula();
 
 reg rst_n;
+reg clk32;
 reg clk28;
+reg clk14;
 
 
 /* CPU */
@@ -39,28 +44,36 @@ T80na cpu1(
 
 /* ULA */
 wire [7:0] vd;
-wire [7:0] d_ula;
 wire [18:0] va;
 wire [16:14] ra;
 wire m_romcs;
 wire n_vrd;
 wire n_vwr;
-wire dout;
+wire vaout;
+wire vaout_7;
 wire vdout;
 wire n_iorqge;
 reg n_magic;
+reg fd_rdat;
+reg vg_wd;
+reg vg_tr43;
+reg vg_sl;
+reg vg_sr;
 zx_ula zx_ula1(
     .rst_n(rst_n),
-    .clk28(clk28),
+    .clk14(clk14),
+    // .clk28(clk28),
+    // .clk32(clk32),
     .clkcpu(clkcpu),
     .vd(vd),
     .va(va),
     .ra(ra),
-    .xa(a_cpu),
-    .xd(d_ula),
+    .a13(a_cpu[13]),
+    .a14(a_cpu[14]),
+    .a15(a_cpu[15]),
     .n_rd(n_rd),
     .n_wr(n_wr),
-    .n_iorqge(n_iorq),
+    .n_iorq(n_iorq),
     .n_mreq(n_mreq),
     .n_m1(n_m1),
     .n_rfsh(n_rfsh),
@@ -69,12 +82,22 @@ zx_ula zx_ula1(
     .n_vwr(n_vwr),
     .n_int(n_int),
     .n_nmi(n_nmi),
+    .n_iorqge_o(n_iorqge),
+    .n_iorqge_i(n_iorqge),
     .n_magic(n_magic),
     .tape_in(1'b1),
     .kd(5'b0),
     .sd_cd(1'b0),
     .sd_miso(1'b0),
-    .dout(dout),
+    .fd_rdat(fd_rdat),
+    .vg_drq(1'b0),
+    .vg_wf_de(1'b0),
+    .vg_wd(vg_wd),
+    .vg_tr43(vg_tr43),
+    .vg_sl(vg_sl),
+    .vg_sr(vg_sr),
+    .vaout(vaout),
+    .vaout_8(vaout_8),
     .vdout(vdout)
     );
 
@@ -84,7 +107,7 @@ reg [7:0] rom [0:16383];
 wire [13:0] rom_addr;
 reg [13:0] rom_addr0;
 wire [7:0] rom_q = rom[rom_addr0];
-always @(posedge clk28) begin
+always @(posedge clk14) begin
     rom_addr0 <= rom_addr;
 end
 initial begin
@@ -96,7 +119,7 @@ wire [15:0] ram_addr_a;
 reg [15:0] ram_addr_a0;
 wire [7:0] ram_q_a = ram[ram_addr_a0];
 
-always @(posedge clk28) begin
+always @(posedge clk14) begin
     if (n_vwr == 0) begin
         ram[ram_addr_a] <= vd;
     end
@@ -111,12 +134,14 @@ end
 assign rom_addr = {ra[14],a_cpu[13:0]};
 assign ram_addr_a = va[15:0];
 
+assign va =
+   vaout_8? {{11{1'bz}}, a_cpu[7:0]} : 
+   vaout? {19{1'bz}} :
+   {{6{1'bz}}, a_cpu[12:0]};
+
 assign vd =
     ~n_vrd? ram_q_a :
-    {8{1'bz}};
-
-assign d_ula =
-    dout? {8{1'bz}} :
+    vdout? {8{1'bz}} :
     ~n_wr? d_cpu_o :
     ~n_romcs? rom_q :
     {8{1'bz}};
@@ -124,7 +149,7 @@ assign d_ula =
 assign d_cpu_i = 
     ~n_wr? d_cpu_o :
     ~n_romcs? rom_q :
-    d_ula;
+    vd;
 
 
 /* CPU SIGNALS (ideal timings) */
@@ -164,6 +189,45 @@ initial begin
     n_magic = 1;
 end
 
+always begin
+    fd_rdat = 1;
+    #303000 fd_rdat = 0;
+    #5000;
+end 
+
+always begin
+    vg_wd = 0;
+    vg_tr43 = 0;
+    vg_sl = 0;
+    vg_sr = 0;
+    #303000
+    vg_wd = 1;
+    #4000
+    vg_wd = 0;
+    
+    #300750
+    vg_tr43 = 1;
+    vg_sl = 1;
+    #1250
+    vg_wd = 1;
+    #3500
+    vg_sl = 0;
+    vg_tr43 = 0;
+    #500
+    vg_wd = 0;
+
+    #300750
+    vg_tr43 = 1;
+    vg_sr = 1;
+    #1250
+    vg_wd = 1;
+    #3500
+    vg_sr = 0;
+    vg_tr43 = 0;
+    #500
+    vg_wd = 0;
+end
+
 
 /* CLOCKS & RESET */
 initial begin
@@ -172,10 +236,22 @@ initial begin
 end
 
 always begin
+    clk14 = 0;
+    #357 clk14 = 1;
+    #358;
+end 
+
+always begin
     clk28 = 0;
     #178 clk28 = 1;
     #179;
 end
+
+always begin
+    clk32 = 0;
+    #156 clk32 = 1;
+    #156;
+end 
 
 
 /* TESTBENCH CONTROL */
@@ -187,7 +263,7 @@ initial begin
 end
 
 
-always @(clk28) begin
+always @(clk14) begin
     // if (v > 100) $dumpoff;
     // if (~n_iorq) $dumpon;
     // if (v == 1 && ovf == 1) $finish;

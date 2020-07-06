@@ -1,2 +1,2 @@
 `define USE_FPGA
-`include "../cpld/top.v"
+`include "../cpld/rev.C/top.v"
