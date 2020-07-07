@@ -12,7 +12,8 @@ Another CPLD-based ZX Spectrum clone for 48K rubber case with some sweet feature
 * PAL and RGB video out (Sega Mini-DIN/9 connector)
 * Digital video out (with EGA header ;))
 * 6-bit color pallete
-* Stereo covox
+* Mono covox (Pentagon standart)
+* SounDrive (4-channel stereo covox)
 * WiFi
 
 ### Video demonstration

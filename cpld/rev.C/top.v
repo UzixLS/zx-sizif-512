@@ -55,7 +55,8 @@ module zx_ula(
 	output snd_l,
 	output snd_r,
 `ifdef USE_FPGA
-	output [7:0] snd_parallel,
+	output [9:0] snd_parallel_l,
+	output [9:0] snd_parallel_r,
 `endif
 
 	input n_joy_down,
@@ -433,28 +434,50 @@ end
 assign ay_clk = hc[1];
 
 
-/* COVOX */
-reg [7:0] covox_data;
+/* COVOX & SOUNDRIVE */
+reg [7:0] covox_data_l0, covox_data_l1, covox_data_r0, covox_data_r1;
 wire covox_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'hFB;
+wire soundrive_a_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'h0F;
+wire soundrive_b_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'h1F;
+wire soundrive_c_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'h4F;
+wire soundrive_d_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'h5F;
 always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n)
-		covox_data <= 0;
-	else if (covox_cs && n_wr == 0)
-		covox_data <= xd;
+	if (!rst_n) begin
+		covox_data_l0 <= 8'h80;
+		covox_data_l1 <= 8'h80;
+		covox_data_r0 <= 8'h80;
+		covox_data_r1 <= 8'h80;
+	end
+	else begin
+		if ((covox_cs || soundrive_a_cs) && n_wr == 0)
+			covox_data_l0 <= xd;
+		if ((covox_cs || soundrive_b_cs) && n_wr == 0)
+			covox_data_l1 <= xd;
+		if ((covox_cs || soundrive_c_cs) && n_wr == 0)
+			covox_data_r0 <= xd;
+		if ((covox_cs || soundrive_d_cs) && n_wr == 0)
+			covox_data_r1 <= xd;
+	end
 end
 
-reg [8:0] snd_dac;
-assign snd_l = snd_dac[8];
-assign snd_r = snd_dac[8];
-wire [8:0] snd_dac_next = covox_data + {beeper, tape_out, tape_in, sd_miso, 4'b0000};
+reg [10:0] snd_dac_l, snd_dac_r;
+assign snd_l = snd_dac_l[10];
+assign snd_r = snd_dac_r[10];
+wire [9:0] snd_dac_next_l = covox_data_l0 + covox_data_l1 + {beeper, tape_out, tape_in, sd_miso, 4'b0000};
+wire [9:0] snd_dac_next_r = covox_data_r0 + covox_data_r1 + {beeper, tape_out, tape_in, sd_miso, 4'b0000};
 always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n)
-		snd_dac <= 0;
-	else
-		snd_dac <= snd_dac[7:0] + snd_dac_next[8:1];
+	if (!rst_n) begin
+		snd_dac_l <= 0;
+		snd_dac_r <= 0;
+	end
+	else begin
+		snd_dac_l <= snd_dac_l[9:0] + snd_dac_next_l;
+		snd_dac_r <= snd_dac_r[9:0] + snd_dac_next_r;
+	end
 end
 `ifdef USE_FPGA
-	assign snd_parallel = snd_dac_next;
+	assign snd_parallel_l = snd_dac_next_l;
+	assign snd_parallel_r = snd_dac_next_r;
 `endif
 
 
