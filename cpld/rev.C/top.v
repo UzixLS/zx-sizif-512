@@ -81,8 +81,7 @@ reg turbo;
 reg extlock;
 wire clkwait;
 
-reg n_iorq_delayed, n_iorq_delayed2;
-// wire n_ioreq = ~n_m1 | n_iorqge | n_iorq_delayed | ~n_iorq_delayed2;
+reg n_iorq_delayed;
 wire n_ioreq = ~n_m1 | n_iorqge | n_iorq_delayed;
 
 
@@ -219,12 +218,10 @@ always @(posedge clk28 or negedge rst_n) begin
 	end
 	else begin
 		if (ck14) begin
-			if (screen_load && (((n_mreq == 1'b1 || n_rfsh == 0) && n_iorqge == 1'b1 && n_m1 == 1'b1) || clkwait)) begin
+			if (screen_load && (n_mreq == 1'b1 || n_rfsh == 0 || clkwait))
 				screen_read <= 1'b1;
-			end
-			else begin
+			else
 				screen_read <= 0;
-			end
 
 			if (attr_read)
 				attr_next <= vd;
@@ -300,8 +297,6 @@ always @(posedge clkcpu)
 	n_mreq_delayed <= n_mreq;
 always @(posedge clkcpu)
 	n_iorq_delayed <= n_iorqge;
-always @(posedge clk28)
-	n_iorq_delayed2 <= n_iorq_delayed;
 wire contention_mem_addr = xa[14] & (~xa[15] | (xa[15] & rambank128[0]));
 wire contention_mem = n_iorq_delayed == 1'b1 && n_mreq_delayed == 1'b1 && contention_mem_addr;
 wire contention_io = n_iorq_delayed == 1'b1 && n_iorqge == 0;
