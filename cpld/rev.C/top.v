@@ -252,7 +252,7 @@ localparam INT_V_S128      = 248;
 localparam INT_H_FROM_S128 = 0;
 localparam INT_H_TO_S128   = 64;
 localparam INT_V_PENT      = 239;
-localparam INT_H_FROM_PENT = 316;
+localparam INT_H_FROM_PENT = 318;
 localparam INT_H_TO_PENT   = 384;
 reg int0, int1;
 always @(posedge clk28) begin
@@ -308,7 +308,7 @@ wire snow = timings && xa[14] && ~xa[15] && n_rfsh == 0;
 /* CLOCK */
 assign clkwait = clkcpu && contention;
 always @(negedge clk28)
-	clkcpu <= clkwait? 1'b1 : turbo? hc0[1] : ~hc[0];
+	clkcpu <= clkwait? 1'b1 : turbo? hc0[1] : hc[0];
 assign n_clkcpu = ~clkcpu;
 
 
