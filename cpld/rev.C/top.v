@@ -80,6 +80,7 @@ reg timings;
 reg turbo;
 reg extlock;
 wire clkwait;
+reg up_en;
 
 reg n_iorq_delayed;
 wire n_ioreq = ~n_m1 | n_iorqge | n_iorq_delayed;
@@ -182,46 +183,46 @@ always @(negedge n_int or negedge rst_n) begin
 end
 
 reg [7:0] bitmap, attr, bitmap_next, attr_next;
+reg [7:0] up_ink, up_paper, up_ink_next, up_paper_next;
 wire pixel = bitmap[7];
-always @(posedge clk28) begin
-	if (ck7) begin
-		if (blank)
-			{g, r, b} = 6'b000000;
-		else begin
-			{g[1], r[1], b[1]} = (pixel ^ (attr[7] & blink))? attr[2:0] : attr[5:3];
-			{g[0], r[0], b[0]} = {3{(g[1] | r[1] | b[1]) & attr[6]}};
-		end
-		csync <= ~(vsync0 ^ hsync0);
-		vsync <= vsync0;
-		hsync <= hsync0;
-	end
-end
-
 reg screen_read;
-wire attr_read = screen_read & ~clk7;
-wire bitmap_read = screen_read & clk7;
-wire [14:0] bitmap_addr = { 2'b10, vc[7:6], vc[2:0], vc[5:3], hc[7:3] };
-wire [14:0] attr_addr = { 5'b10110, vc[7:3], hc[7:3] };
-wire [14:0] screen_addr = ~clk7? attr_addr : bitmap_addr;
+reg [1:0] screen_read_step;
+wire bitmap_read = screen_read && screen_read_step == 2'd0;
+wire attr_read = screen_read && screen_read_step == 2'd1;
+wire up_ink_read = screen_read && screen_read_step == 2'd2;
+wire up_paper_read = screen_read && screen_read_step == 2'd3;
+wire [14:0] screen_addr =  bitmap_read? 
+										{ 2'b10, vc[7:6], vc[2:0], vc[5:3], hc[7:3] } :
+										{ 5'b10110, vc[7:3], hc[7:3] };
+wire [5:0] up_addr = up_ink_read? { attr_next[7:6], 1'b0, attr_next[2:0] } : { attr_next[7:6], 1'b1, attr_next[5:3] };
 wire screen_load = (vc < V_AREA) && (hc < H_AREA || hc0_reset);
-wire screen_show = (vc < V_AREA) && (hc >= SCREEN_DELAY - 1) && (hc < H_AREA + SCREEN_DELAY - 1);
-wire screen_update = vc < V_AREA && hc <= H_AREA && hc != 0 && hc0[4:0] == 5'b11110;
-wire border_update = !screen_show && (timings == 0 || hc0[4:0] == 5'b11110);
+wire screen_show = (vc < V_AREA) && (hc >= SCREEN_DELAY - 1) && (hc < H_AREA + SCREEN_DELAY);
+wire screen_update = vc < V_AREA && hc <= H_AREA && hc != 0 && hc0[4:0] == 5'b11111;
+wire border_update = !screen_show && (timings == 0 || hc0[4:0] == 5'b11111);
+wire screen_read_next = screen_load && ((n_iorqge == 1'b1 && n_mreq == 1'b1) || n_rfsh == 1'b0 || clkwait);
 
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
 		screen_read <= 0;
+		screen_read_step <= 0;
 		attr <= 0;
 		bitmap <= 0;
 		attr_next <= 0;
 		bitmap_next <= 0;
+		up_ink <= 0;
+		up_paper <= 0;
+		up_ink_next <= 0;
+		up_paper_next <= 0;
 	end
 	else begin
 		if (ck14) begin
-			if (screen_load && (n_mreq == 1'b1 || n_rfsh == 0 || clkwait))
-				screen_read <= 1'b1;
-			else
-				screen_read <= 0;
+			screen_read <= screen_read_next;
+			if (screen_read && screen_read_step[0] && !up_en)
+				screen_read_step <= 0;
+			else if (screen_update || hc0_reset)
+				screen_read_step <= 0;
+			else if (screen_read)
+				screen_read_step <= screen_read_step + 1'b1;
 
 			if (attr_read)
 				attr_next <= vd;
@@ -229,6 +230,10 @@ always @(posedge clk28 or negedge rst_n) begin
 				attr_next <= 8'hff;
 			if (bitmap_read)
 				bitmap_next <= vd;
+			if (up_ink_read)
+				up_ink_next <= vd;
+			if (up_paper_read)
+				up_paper_next <= vd;
 		end
 
 		if (border_update)
@@ -240,6 +245,53 @@ always @(posedge clk28 or negedge rst_n) begin
 			bitmap <= bitmap_next;
 		else if (ck7)
 			bitmap <= {bitmap[6:0], 1'b0};
+
+		if (screen_update) begin
+			up_ink <= up_ink_next;
+			up_paper <= up_paper_next;
+		end
+	end
+end
+
+
+/* VIDEO OUTPUT */
+function [1:0] color_2to2; input [1:0] in;
+	case (in)
+		2'b00: color_2to2 = 2'b00; // 0mV
+		2'b01: color_2to2 = 2'b10; // 343mV +343
+		2'b10: color_2to2 = 2'b1z; // 505mV +162
+		2'b11: color_2to2 = 2'b11; // 675mV +170
+	endcase
+endfunction
+function [1:0] color_3to2; input [2:0] in;
+	case (in)
+		3'b000: color_3to2 = 2'b00; // 0mV
+		3'b001: color_3to2 = 2'b01; // 30mV  +30
+		3'b010: color_3to2 = 2'bz1; // 237mV +207
+		3'b011: color_3to2 = 2'b10; // 343mV +106
+		3'b100: color_3to2 = 2'b1z; // 505mV +162
+		3'b101: color_3to2 = 2'b1z; // 505mV +0
+		3'b110: color_3to2 = 2'b11; // 675mV +170
+		3'b111: color_3to2 = 2'b11; // 675mV +0
+	endcase
+endfunction
+
+always @(posedge clk28) begin
+	if (ck7) begin
+		if (blank)
+			{g, r, b} = 6'b000000;
+		else if (up_en) begin
+			g = color_3to2(pixel? up_ink[7:5] : up_paper[7:5]);
+			r = color_3to2(pixel? up_ink[4:2] : up_paper[4:2]);
+			b = color_2to2(pixel? up_ink[1:0] : up_paper[1:0]);
+		end
+		else begin
+			{g[1], r[1], b[1]} = (pixel ^ (attr[7] & blink))? attr[2:0] : attr[5:3];
+			{g[0], r[0], b[0]} = ((g[1] | r[1] | b[1]) & attr[6])? 3'b111 : 3'bzzz;
+		end
+		csync = ~(vsync0 ^ hsync0);
+		vsync = vsync0;
+		hsync = hsync0;
 	end
 end
 
@@ -308,7 +360,7 @@ wire snow = timings && xa[14] && ~xa[15] && n_rfsh == 0;
 /* CLOCK */
 assign clkwait = clkcpu && contention;
 always @(negedge clk28)
-	clkcpu <= clkwait? 1'b1 : turbo? hc0[1] : hc[0];
+	clkcpu <= clkwait? 1'b1 : turbo? hc0[1] : ~hc[0];
 assign n_clkcpu = ~clkcpu;
 
 
@@ -495,7 +547,7 @@ always @(posedge clk28 or negedge rst_n) begin
 end
 
 reg conmem, mapram;
-reg [4:0] divbank;
+reg [3:0] divbank;
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
 		divbank <= 0;
@@ -505,7 +557,7 @@ always @(posedge clk28 or negedge rst_n) begin
 	end
 	else if (!extlock && n_ioreq == 0 && n_wr == 0) begin
 		if (xa[7:0] == 8'hE3) begin
-			divbank <= xd[4:0];
+			divbank <= xd[3:0];
 			mapram <= xd[6] | mapram;
 			conmem <= xd[7];
 		end
@@ -588,24 +640,34 @@ always @(posedge clk28)
 
 
 /* ULAPLUS */
-wire port_bf3b = n_ioreq == 0 && xa == 16'hbf3b;
-wire port_ff3b = n_ioreq == 0 && xa == 16'hff3b;
+wire port_bf3b_cs = n_ioreq == 0 && xa == 16'hbf3b;
+wire port_ff3b_cs = n_ioreq == 0 && xa == 16'hff3b;
 reg port_ff3b_rd;
-wire [7:0] port_ff3b_rd_data = 0;
-reg [5:0] up_pallete_addr;
+wire port_ff3b_data = 8'h00;
+reg [7:0] up_addr_reg;
+reg up_write_req;
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
-		up_pallete_addr <= 0;
-		port_ff3b_rd <= 0;
+		port_ff3b_rd <= 1'b0;
+		up_en <= 1'b0;
+		up_write_req <= 1'b0;
+		up_addr_reg <= 1'b0;
 	end
 	else begin
-		port_ff3b_rd <= port_ff3b && n_rd == 0;
-		
-		if (port_bf3b && n_wr == 0) begin
-			up_pallete_addr <= xd;
+		port_ff3b_rd <= port_ff3b_cs && n_rd == 1'b0;
+		if (n_wr == 1'b0) begin
+			if (port_bf3b_cs)
+				up_addr_reg <= xd;
+			
+			if (port_ff3b_cs) begin
+				if (up_addr_reg == 8'b01000000)
+					up_en <= xd[0];
+				else if (up_addr_reg[7:6] == 2'b00)
+					up_write_req <= 1'b1;
+			end
 		end
-		if (port_ff3b && n_wr == 0) begin
-			// up_pallete[up_pallete_addr] <= d;
+		else begin
+			up_write_req <= 0;
 		end
 	end
 	
@@ -615,7 +677,7 @@ end
 /* MEMORY CONTROLLER */
 wire divmap = automap | conmem;
 wire div_ram = (conmem == 1 && xa[13] == 1) || (automap == 1 && xa[13] == 1) || (conmem == 0 && automap == 1 && mapram == 1);
-wire div_ramwr_mask = xa[15] == 0 && xa[14] == 0 && (xa[13] == 0 || divbank == 5'b00011) && conmem == 0 && automap == 1 && mapram == 1;
+wire div_ramwr_mask = xa[15] == 0 && xa[14] == 0 && (xa[13] == 0 || divbank == 4'b0011) && conmem == 0 && automap == 1 && mapram == 1;
 
 reg romreq, ramreq, ramreq_wr;
 always @(posedge clk28 or negedge rst_n) begin
@@ -663,12 +725,14 @@ assign ra[16:14] =
 	{2'b00, rombank128};
 
 assign va[18:0] =
-	screen_read & snow? {3'b111, vbank, screen_addr[14:8], xa[7:0]} :
+	screen_read && (up_ink_read || up_paper_read)? {13'b0111111111111, up_addr} :
+	screen_read && snow? {3'b111, vbank, screen_addr[14:8], xa[7:0]} :
 	screen_read? {3'b111, vbank, screen_addr} :
+	up_write_req? {13'b0111111111111, up_addr_reg[5:0]} :
 	{ram_a[18:13], xa[12:0]};
 
 assign xd[7:0] =
-	port_ff3b_rd? port_ff3b_rd_data :
+	port_ff3b_rd? port_ff3b_data :
 	div_rd? divmmc_data :
 	kempston_rd? kempston_data :
 	port_fe_rd? port_fe_data :
