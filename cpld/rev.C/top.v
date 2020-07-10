@@ -22,8 +22,8 @@ module zx_ula(
 `endif
 
 	output n_vrd,
-	output reg n_vwr,
-	output reg n_romcs,
+	output n_vwr,
+	output n_romcs,
 
 	input n_rd,
 	input n_wr,
@@ -617,39 +617,44 @@ wire divmap = automap | conmem;
 wire div_ram = (conmem == 1 && xa[13] == 1) || (automap == 1 && xa[13] == 1) || (conmem == 0 && automap == 1 && mapram == 1);
 wire div_ramwr_mask = xa[15] == 0 && xa[14] == 0 && (xa[13] == 0 || divbank == 5'b00011) && conmem == 0 && automap == 1 && mapram == 1;
 
-reg n_ramcs, n_romcs0, n_vwr0;
-reg [18:13] ram_a;
+reg romreq, ramreq, ramreq_wr;
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
-		n_romcs0 <= 1'b1;
-		n_ramcs <= 1'b1;
-		n_vwr0 <= 1'b1;
-		ram_a <= 0;
+		romreq <= 1'b0;
+		ramreq <= 1'b0;
+		ramreq_wr <= 1'b0;
 	end
 	else begin
-		n_romcs0 = (n_mreq == 0 && n_rfsh == 1 &&  xa[14] == 0    && xa[15] == 0 && !div_ram && !(dffd_d4 && !divmap))? 1'b0 : 1'b1;
-		n_ramcs  = (n_mreq == 0 && n_rfsh == 1 && (xa[14] == 1'b1 || xa[15] == 1'b1 || div_ram || (dffd_d4 && !divmap)))? 1'b0 : 1'b1;
-		n_vwr0 = n_ramcs | n_wr | div_ramwr_mask;
-		ram_a <=
-			divmap & ~xa[14] & ~xa[15] & xa[13]? {1'b0, divbank} :
-			divmap & ~xa[14] & ~xa[15]? {1'b0, 5'b00011} :
-			dffd_d3 & xa[15]? {2'b11, xa[14], xa[15], xa[14], xa[13]} :
-			dffd_d3 & xa[14]? {rambank_ext, rambank128, xa[13]} :
-			xa[15] & xa[14]? {rambank_ext, rambank128, xa[13]} :
-			{2'b11, xa[14], xa[15], xa[14], xa[13]} ;
+		romreq =  n_mreq == 0 && n_rfsh == 1 &&  xa[14] == 0    && xa[15] == 0 &&   !div_ram && !(dffd_d4 && !divmap);
+		ramreq = (n_mreq == 0 && n_rfsh == 1 && (xa[14] == 1'b1 || xa[15] == 1'b1 || div_ram ||  (dffd_d4 && !divmap))) || up_write_req;
+		ramreq_wr = ramreq && n_wr == 0 && div_ramwr_mask == 0;
 	end
 end
 
-assign n_romcs = n_romcs0 | n_mreq;
-assign n_vrd = (n_ramcs | n_rd) & ~screen_read;
-assign n_vwr = n_vwr0 | n_wr | screen_read;
+assign n_romcs = (romreq && n_mreq == 0)? 1'b0 : 1'b1;
+assign n_vrd = ((ramreq && n_rd == 0) || screen_read)? 1'b0 : 1'b1;
+assign n_vwr = (ramreq_wr && n_wr == 0 && screen_read == 0)? 1'b0 : 1'b1;
 
 
 `ifdef USE_FPGA
 assign dout = port_ff_rd || port_fe_rd || kempston_rd || div_rd;
-assign vdout = n_vwr;
+assign vdout = n_vrd == 1'b1;
 `endif
 
+
+reg [18:13] ram_a;
+always @(posedge clk28 or negedge rst_n) begin
+	if (!rst_n)
+		ram_a <= 0;
+	else
+		ram_a <=
+			divmap & ~xa[14] & ~xa[15] & xa[13]? {2'b00, divbank} :
+			divmap & ~xa[14] & ~xa[15]? {2'b00, 4'b0011} :
+			dffd_d3 & xa[15]? {2'b11, xa[14], xa[15], xa[14], xa[13]} :
+			dffd_d3 & xa[14]? {rambank_ext, rambank128, xa[13]} :
+			xa[15] & xa[14]? {rambank_ext, rambank128, xa[13]} :
+			{2'b11, xa[14], xa[15], xa[14], xa[13]} ;
+end
 
 assign ra[16:14] =
 	(extrom == 2'b01)? 3'b111 :
@@ -668,12 +673,12 @@ assign xd[7:0] =
 	kempston_rd? kempston_data :
 	port_fe_rd? port_fe_data :
 	port_ff_rd? port_ff_data :
-	n_ramcs == 0 && n_rd == 0? vd :
+	ramreq && n_rd == 0? vd :
 	{8{1'bz}};
 
 assign vd[7:0] =
 	n_vrd == 0? {8{1'bz}} :
-	xd ;
+	xd;
 
 
 endmodule
