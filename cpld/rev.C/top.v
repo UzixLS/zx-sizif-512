@@ -128,6 +128,7 @@ reg [`CLOG2(`MAX(V_TOTAL_S128, V_TOTAL_PENT))-1:0] vc;
 reg [`CLOG2(`MAX(H_TOTAL_S128, H_TOTAL_PENT))+1:0] hc0;
 wire [`CLOG2(`MAX(H_TOTAL_S128, H_TOTAL_PENT))-1:0] hc = hc0[$bits(hc0)-1:2];
 
+wire clk14 = hc0[0];
 wire clk7 = hc0[1];
 wire ck14 = hc0[0];
 wire ck7 = hc0[0] & hc0[1];
@@ -182,11 +183,14 @@ always @(negedge n_int or negedge rst_n) begin
 		blink_cnt <= blink_cnt + 1'b1;
 end
 
+wire [7:0] attr_border = {2'b00, border[2] ^ ~sd_miso, border[1] ^ ~n_magic, border[0], 3'b000};
+
 reg [7:0] bitmap, attr, bitmap_next, attr_next;
 reg [7:0] up_ink, up_paper, up_ink_next, up_paper_next;
 wire pixel = bitmap[7];
 reg screen_read;
 reg [1:0] screen_read_step;
+wire screen_read_step_reset = hc0[4:0] == 5'b11111 || hc0_reset;
 wire bitmap_read = screen_read && screen_read_step == 2'd0;
 wire attr_read = screen_read && screen_read_step == 2'd1;
 wire up_ink_read = screen_read && screen_read_step == 2'd2;
@@ -196,10 +200,11 @@ wire [14:0] screen_addr =  bitmap_read?
 										{ 5'b10110, vc[7:3], hc[7:3] };
 wire [5:0] up_addr = up_ink_read? { attr_next[7:6], 1'b0, attr_next[2:0] } : { attr_next[7:6], 1'b1, attr_next[5:3] };
 wire screen_load = (vc < V_AREA) && (hc < H_AREA || hc0_reset);
-wire screen_show = (vc < V_AREA) && (hc >= SCREEN_DELAY - 1) && (hc < H_AREA + SCREEN_DELAY);
-wire screen_update = vc < V_AREA && hc <= H_AREA && hc != 0 && hc0[4:0] == 5'b11111;
-wire border_update = !screen_show && (timings == 0 || hc0[4:0] == 5'b11111);
-wire screen_read_next = screen_load && ((n_iorqge == 1'b1 && n_mreq == 1'b1) || n_rfsh == 1'b0 || clkwait);
+wire screen_show = (vc < V_AREA) && (hc0 >= (SCREEN_DELAY<<2) - 2) && (hc0 < ((H_AREA + SCREEN_DELAY)<<2) - 2);
+wire screen_update = vc < V_AREA && hc <= H_AREA && hc != 0 && hc0[4:0] == 5'b11110;
+wire border_update = !screen_show && ((timings == 0 && ck7) || hc0[4:0] == 5'b11110);
+wire bitmap_shift = hc0[1:0] == 2'b10;
+wire screen_read_next = (screen_load || up_en) && ((n_iorqge == 1'b1 && n_mreq == 1'b1) || n_rfsh == 1'b0 || clkwait);
 
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
@@ -219,7 +224,9 @@ always @(posedge clk28 or negedge rst_n) begin
 			screen_read <= screen_read_next;
 			if (screen_read && screen_read_step[0] && !up_en)
 				screen_read_step <= 0;
-			else if (screen_update || hc0_reset)
+			else if (!screen_load && up_en)
+				screen_read_step <= 2'd3;
+			else if (screen_read_step_reset)
 				screen_read_step <= 0;
 			else if (screen_read)
 				screen_read_step <= screen_read_step + 1'b1;
@@ -227,7 +234,7 @@ always @(posedge clk28 or negedge rst_n) begin
 			if (attr_read)
 				attr_next <= vd;
 			else if (!screen_load)
-				attr_next <= 8'hff;
+				attr_next <= attr_border;
 			if (bitmap_read)
 				bitmap_next <= vd;
 			if (up_ink_read)
@@ -237,19 +244,19 @@ always @(posedge clk28 or negedge rst_n) begin
 		end
 
 		if (border_update)
-			attr <= {2'b00, border[2] ^ ~sd_miso, border[1] ^ ~n_magic, border[0], 3'b000};
+			attr <= attr_border;
 		else if (screen_update)
 			attr <= attr_next;
 
 		if (screen_update)
 			bitmap <= bitmap_next;
-		else if (ck7)
+		else if (bitmap_shift)
 			bitmap <= {bitmap[6:0], 1'b0};
 
-		if (screen_update) begin
+		if (screen_update)
 			up_ink <= up_ink_next;
+		if (screen_update || (!screen_show && !screen_load))
 			up_paper <= up_paper_next;
-		end
 	end
 end
 
@@ -258,41 +265,39 @@ end
 function [1:0] color_2to2; input [1:0] in;
 	case (in)
 		2'b00: color_2to2 = 2'b00; // 0mV
-		2'b01: color_2to2 = 2'b10; // 343mV +343
-		2'b10: color_2to2 = 2'b1z; // 505mV +162
-		2'b11: color_2to2 = 2'b11; // 675mV +170
+		2'b01: color_2to2 = 2'b10; // 343mV
+		2'b10: color_2to2 = clk14? 2'b10 : 2'bz1;
+		2'b11: color_2to2 = 2'b11; // 675mV
 	endcase
 endfunction
 function [1:0] color_3to2; input [2:0] in;
 	case (in)
 		3'b000: color_3to2 = 2'b00; // 0mV
-		3'b001: color_3to2 = 2'b01; // 30mV  +30
-		3'b010: color_3to2 = 2'bz1; // 237mV +207
-		3'b011: color_3to2 = 2'b10; // 343mV +106
-		3'b100: color_3to2 = 2'b1z; // 505mV +162
-		3'b101: color_3to2 = 2'b1z; // 505mV +0
-		3'b110: color_3to2 = 2'b11; // 675mV +170
-		3'b111: color_3to2 = 2'b11; // 675mV +0
+		3'b001: color_3to2 = clk14? 2'b00 : 2'b10;
+		3'b010: color_3to2 = 2'bz1; // 237mV
+		3'b011: color_3to2 = 2'b10; // 343mV
+		3'b100: color_3to2 = clk14? 2'b10 : 2'bz1;
+		3'b101: color_3to2 = 2'b1z; // 505mV
+		3'b110: color_3to2 = clk14? 2'bz1 : 2'b1z;
+		3'b111: color_3to2 = 2'b11; // 675mV
 	endcase
 endfunction
 
 always @(posedge clk28) begin
-	if (ck7) begin
-		if (blank)
-			{g, r, b} = 6'b000000;
-		else if (up_en) begin
-			g = color_3to2(pixel? up_ink[7:5] : up_paper[7:5]);
-			r = color_3to2(pixel? up_ink[4:2] : up_paper[4:2]);
-			b = color_2to2(pixel? up_ink[1:0] : up_paper[1:0]);
-		end
-		else begin
-			{g[1], r[1], b[1]} = (pixel ^ (attr[7] & blink))? attr[2:0] : attr[5:3];
-			{g[0], r[0], b[0]} = ((g[1] | r[1] | b[1]) & attr[6])? 3'b111 : 3'bzzz;
-		end
-		csync = ~(vsync0 ^ hsync0);
-		vsync = vsync0;
-		hsync = hsync0;
+	if (blank)
+		{g, r, b} = 6'b000000;
+	else if (up_en) begin
+		g = color_3to2(pixel? up_ink[7:5] : up_paper[7:5]);
+		r = color_3to2(pixel? up_ink[4:2] : up_paper[4:2]);
+		b = color_2to2(pixel? up_ink[1:0] : up_paper[1:0]);
 	end
+	else begin
+		{g[1], r[1], b[1]} = (pixel ^ (attr[7] & blink))? attr[2:0] : attr[5:3];
+		{g[0], r[0], b[0]} = ((g[1] | r[1] | b[1]) & attr[6])? 3'b111 : 3'bzzz;
+	end
+	csync = ~(vsync0 ^ hsync0);
+	vsync = vsync0;
+	hsync = hsync0;
 end
 
 
@@ -360,7 +365,7 @@ wire snow = timings && xa[14] && ~xa[15] && n_rfsh == 0;
 /* CLOCK */
 assign clkwait = clkcpu && contention;
 always @(negedge clk28)
-	clkcpu <= clkwait? 1'b1 : turbo? hc0[1] : ~hc[0];
+	clkcpu <= clkwait? 1'b1 : turbo? hc0[1] : hc[0];
 assign n_clkcpu = ~clkcpu;
 
 
@@ -400,7 +405,7 @@ end
 wire [7:0] port_ff_data = attr_next;
 reg port_ff_rd;
 always @(posedge clk28)
-	port_ff_rd <= n_rd == 0 && n_ioreq == 0 && (timings == 1 || xa[7:0] == 8'hFF);
+	port_ff_rd <= n_rd == 0 && n_ioreq == 0 && (timings == 1 || xa[7:0] == 8'hFF) && screen_load;
 
 
 /* PORT #FE */
@@ -640,10 +645,10 @@ always @(posedge clk28)
 
 
 /* ULAPLUS */
-wire port_bf3b_cs = n_ioreq == 0 && xa == 16'hbf3b;
-wire port_ff3b_cs = n_ioreq == 0 && xa == 16'hff3b;
+wire port_bf3b_cs = !extlock && n_ioreq == 0 && xa == 16'hbf3b;
+wire port_ff3b_cs = !extlock && n_ioreq == 0 && xa == 16'hff3b;
 reg port_ff3b_rd;
-wire port_ff3b_data = 8'h00;
+wire [7:0] port_ff3b_data = {7'b0000000, up_en};
 reg [7:0] up_addr_reg;
 reg up_write_req;
 always @(posedge clk28 or negedge rst_n) begin
