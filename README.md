@@ -11,7 +11,7 @@ Another CPLD-based ZX Spectrum clone for 48K rubber case with some sweet feature
 * Integrated DivMMC
 * PAL and RGB video out (Sega Mini-DIN/9 connector)
 * Digital video out (with EGA header ;))
-* 6-bit color pallete
+* ULAplus
 * Mono covox (Pentagon standart)
 * SounDrive (4-channel stereo covox)
 * WiFi
@@ -51,17 +51,20 @@ It's possible to connect to internet with additional [WiFi module](https://githu
 * Rev.A - first release. Please see [errata](pcb/rev.A/ERRATA.ru.txt) (in russian).
 * Rev.B - abandoned. Files keep for historical reason.
 * Rev.C - BDI has been removed; better video circuit; more capable CPLD. Work in progress.
-* Rev.C1 - fixed incorrect JTAG pinout; fixed incorrect silkscreen for power connector J3. Everything seems to work.
+* Rev.C1 - fixed incorrect JTAG pinout; fixed incorrect silkscreen for power connector J3, tuned some circuit values. Everything seems to work.
 
 ### Roadmap
-PCB rev.D:
+PCB rev.D (not soon):
 * add zxbus connector for in-case addons
 * add support for +3DOS floppy controller
+* improve video circuit for ulaplus (?)
 
 Firmware:
-* add ULAplus
-* improve 128K timings for 100% compatibility
+* add optional Magic-button's OSD menu
+* add support for MegaDrive 6-button gamepad
+* add ability to map kempston to any keyboard button
 * add 48K timings
+* improve 128K timings for 100% compatibility
 
 ### Acknowledgments
 This work is based on a lot of other projects and would hardly have been successful without them.
