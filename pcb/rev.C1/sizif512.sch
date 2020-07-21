@@ -3405,7 +3405,7 @@ L Device:C C36
 U 1 1 5D93D0BB
 P 9525 6875
 F 0 "C36" H 9425 6800 39  0000 C CNN
-F 1 "6p" H 9400 6975 39  0000 C CNN
+F 1 "22p" H 9400 6975 39  0000 C CNN
 F 2 "Capacitor_THT:C_Disc_D3.8mm_W2.6mm_P2.50mm" H 9563 6725 50  0001 C CNN
 F 3 "~" H 9525 6875 50  0001 C CNN
 	1    9525 6875
@@ -3427,7 +3427,7 @@ L Device:C C35
 U 1 1 5D93D085
 P 8925 6875
 F 0 "C35" H 8825 6800 39  0000 C CNN
-F 1 "6p" H 8825 6975 39  0000 C CNN
+F 1 "22p" H 8825 6975 39  0000 C CNN
 F 2 "Capacitor_THT:C_Disc_D3.8mm_W2.6mm_P2.50mm" H 8963 6725 50  0001 C CNN
 F 3 "~" H 8925 6875 50  0001 C CNN
 	1    8925 6875
@@ -7263,6 +7263,8 @@ F 3 "~" H 11850 6675 50  0001 C CNN
 	1    11850 6675
 	1    0    0    1   
 $EndComp
+Text Notes 13825 7350 0    39   ~ 0
+x1 x0 Vout(mV)\n---------\n0  0  0\n0  1  26\nz  1  222\n1  0  332\n1  z  494\n1  1  660
 Wire Wire Line
 	5000 7350 5375 7350
 Wire Bus Line
@@ -7321,6 +7323,4 @@ Wire Bus Line
 	3725 575  3725 8050
 Wire Bus Line
 	8600 575  8600 8050
-Text Notes 13825 7350 0    39   ~ 0
-x1 x0 Vout(mV)\n---------\n0  0  0\n0  1  26\nz  1  222\n1  0  332\n1  z  494\n1  1  660
 $EndSCHEMATC
