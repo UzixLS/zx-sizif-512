@@ -1,0 +1,3 @@
+- JTAG pinout differs from Altera standard
+- Incorrect silkscreen for J3 header
+- R5 should not be installed (this improves compatibility with some addons like Dandanator mini)

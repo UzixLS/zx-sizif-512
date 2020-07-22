@@ -1,0 +1,1 @@
+- R5 should not be installed (this improves compatibility with some addons like Dandanator mini)

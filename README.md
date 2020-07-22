@@ -50,26 +50,30 @@ It's possible to connect to internet with additional [WiFi module](https://githu
 ### Changelog & current status
 * Rev.A - first release. Please see [errata](pcb/rev.A/ERRATA.ru.txt) (in russian).
 * Rev.B - abandoned. Files keep for historical reason.
-* Rev.C - BDI has been removed; better video circuit; more capable CPLD. Work in progress.
-* Rev.C1 - fixed incorrect JTAG pinout; fixed incorrect silkscreen for power connector J3, tuned some circuit values. Everything seems to work.
+* Rev.C - BDI has been removed; improved video circuit; more capable CPLD; better power circuit; add mono AY mode. [Errata](pcb/rev.C/ERRATA.txt).
+* Rev.C1 - fixed incorrect JTAG pinout; fixed incorrect silkscreen for power connector J3, tuned some circuit values. Everything seems to work. [Errata](pcb/rev.C1/ERRATA.txt).
 
 ### Roadmap
 PCB rev.D (not soon):
 * add zxbus connector for in-case addons
 * add support for +3DOS floppy controller
+* improve tapein circuit to handle super-turbo loaders
 * improve video circuit for ulaplus (?)
 
 Firmware:
 * add optional Magic-button's OSD menu
 * add support for MegaDrive 6-button gamepad
 * add ability to map kempston to any keyboard button
+* add ROM banks switching menu
+* add +3 ports
 * add 48K timings
 * improve 128K timings for 100% compatibility
 
 ### Acknowledgments
 This work is based on a lot of other projects and would hardly have been successful without them.
-* Harlequin (no link?)
+* Harlequin (no official link?)
 * Karabas-128 ([link](https://github.com/andykarpov/karabas-128))
+* ZX Evolution ([link](http://nedopc.com/zxevo/zxevo.php))
 * zx_ula verilog implementation ([link](https://opencores.org/projects/zx_ula))
 * Робик АЛУ ([link](https://zx-pk.ru/threads/19862-robik-alu-modul-rasshireniya.html))
 * fbas_encoder ([link](https://opencores.org/projects/fbas_encoder))
