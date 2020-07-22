@@ -74,6 +74,12 @@ module zx_ula(
 	output reg sd_cs
 );
 
+`ifdef USE_FPGA
+	localparam PULLUP1 = 1'b1;
+`else
+	localparam PULLUP1 = 1'bz;
+`endif
+
 reg [2:0] border;
 reg [2:0] rambank128;
 reg timings;
@@ -341,9 +347,9 @@ always @(posedge clk28 or negedge rst_n) begin
 		n_rstcpu <= 0;
 	end
 	else begin
-		n_nmi <= (magic_enter && vc == 0)? 1'b0 : 1'b1;
+		n_nmi <= (magic_enter && vc == 0)? 1'b0 : PULLUP1;
 		if (blink_cnt[0])
-			n_rstcpu <= 1'b1;
+			n_rstcpu <= PULLUP1;
 	end
 end
 
