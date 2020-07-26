@@ -1,5 +1,6 @@
 ﻿## Sizif-512
 Another CPLD-based ZX Spectrum clone for 48K rubber case with some sweet features.
+[![photo](https://cloud.err200.net/index.php/s/73TR85tYZkMm8Ax/download?path=/&files=sizif-512-c.small.jpg)](https://cloud.err200.net/index.php/apps/files_sharing/publicpreview/73TR85tYZkMm8Ax?fileId=50629&file=/sizif-512-c.png&x=-1&y=-1)
 
 ### Features
 * Half-sized PCB for 48K rubber case, no case modifications necessary
@@ -16,9 +17,11 @@ Another CPLD-based ZX Spectrum clone for 48K rubber case with some sweet feature
 * SounDrive (4-channel stereo covox)
 * WiFi
 
-### Video demonstration
+### Demonstration
 Running Pentagon 128 and Spectrum 128 demos: [link](https://www.youtube.com/watch?v=_RoLKcfJSTY)  
-Playing music from SD: [link](https://www.youtube.com/watch?v=TmikKD3yqOU)
+Playing music from SD: [link](https://www.youtube.com/watch?v=TmikKD3yqOU)  
+Some photos: [link](https://cloud.err200.net/index.php/s/73TR85tYZkMm8Ax?path=%2Fsizif-512)
+
 
 ### Magic button
 Sizif have some configurable things which you may change at any moment and that's doesn't require reboot.
