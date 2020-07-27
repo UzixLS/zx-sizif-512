@@ -216,3 +216,8 @@ set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_iorqge
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_m1
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_mreq
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_rfsh
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_rstcpu
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_nmi
+set_location_assignment PIN_23 -to plus3_drd
+set_location_assignment PIN_21 -to plus3_mtr
+set_location_assignment PIN_24 -to plus3_dwr

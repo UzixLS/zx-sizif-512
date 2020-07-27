@@ -71,7 +71,11 @@ module zx_ula(
 	input sd_miso,
 	output sd_mosi,
 	output reg sd_sck,
-	output reg sd_cs
+	output reg sd_cs,
+
+	output reg plus3_drd,
+	output reg plus3_dwr,
+	output reg plus3_mtr
 );
 
 `ifdef USE_FPGA
@@ -437,7 +441,7 @@ end
 
 
 /* PORT #7FFD */
-wire port_7ffd_cs = n_ioreq == 0 && xa[1] == 0 && xa[15] == 0;
+wire port_7ffd_cs = n_ioreq == 0 && xa[1] == 0 && xa[15] == 0 && xa[14] == 1'b1;
 reg vbank;
 reg rombank128;
 reg lock_7ffd;
@@ -458,7 +462,7 @@ always @(posedge clk28 or negedge rst_n) begin
 end
 
 
-/* PORT DFFD */
+/* PORT #DFFD */
 wire port_dffd_cs = !extlock && n_ioreq == 0 && xa == 16'hDFFD;
 reg [1:0] rambank_ext;
 reg dffd_d3;
@@ -490,6 +494,35 @@ always @(posedge clk28 or negedge rst_n) begin
 	end
 end
 assign ay_clk = hc[1];
+
+
+/* PORT #1FFD */
+wire port_1ffd_cs = !extlock && n_ioreq == 0 && xa == 16'h1FFD;
+reg [2:0] p1ffd;
+always @(posedge clk28 or negedge rst_n) begin
+	if (!rst_n) begin
+		p1ffd <= 0;
+		plus3_mtr <= 1'bz;
+	end
+	else if (port_1ffd_cs && n_wr == 0) begin
+		p1ffd <= xd[2:0];
+		plus3_mtr <= xd[3]? 1'b0 : 1'bz;
+	end
+end
+
+
+/* PORTS #2FFD & #3FFD (+3DOS) */
+wire port_2ffd_3ffd_cs = !extlock && n_ioreq == 0 && (xa == 16'h2FFD || xa == 16'h3FFD);
+always @(posedge clk28 or negedge rst_n) begin
+	if (!rst_n) begin
+		plus3_dwr <= 1'b1;
+		plus3_drd <= 1'b1;
+	end
+	else begin
+		plus3_drd <= (n_rd == 0 && port_2ffd_3ffd_cs)? 1'b0 : 1'b1;
+		plus3_dwr <= (n_wr == 0 && port_2ffd_3ffd_cs)? 1'b0 : 1'b1;
+	end
+end
 
 
 /* COVOX & SOUNDRIVE */
@@ -589,7 +622,7 @@ always @(negedge clk28 or negedge rst_n) begin // negedge for timing of 3Dh entr
 		if (sd_cd || extlock) begin
 			automap_next <= 0;
 		end
-		else if (n_m1 == 0 && n_mreq == 0 && dffd_d4 == 0 && (
+		else if (n_m1 == 0 && n_mreq == 0 && dffd_d4 == 0 && p1ffd[0] == 0 && (
 				xa == 16'h0000 || // power-on/reset/rst0/software restart
 				xa == 16'h0008 || // syntax error
 				xa == 16'h0038 || // im1 interrupt/rst #38
@@ -698,8 +731,8 @@ always @(posedge clk28 or negedge rst_n) begin
 		ramreq_wr <= 1'b0;
 	end
 	else begin
-		romreq =  n_mreq == 0 && n_rfsh == 1 &&  xa[14] == 0    && xa[15] == 0 &&   !div_ram && !(dffd_d4 && !divmap);
-		ramreq = (n_mreq == 0 && n_rfsh == 1 && (xa[14] == 1'b1 || xa[15] == 1'b1 || div_ram ||  (dffd_d4 && !divmap))) || up_write_req;
+		romreq =  n_mreq == 0 && n_rfsh == 1 &&  xa[14] == 0    && xa[15] == 0 &&   !div_ram && !((dffd_d4 || p1ffd[0]) && !divmap);
+		ramreq = (n_mreq == 0 && n_rfsh == 1 && (xa[14] == 1'b1 || xa[15] == 1'b1 || div_ram ||  ((dffd_d4 || p1ffd[0]) && !divmap))) || up_write_req;
 		ramreq_wr = ramreq && n_wr == 0 && div_ramwr_mask == 0;
 	end
 end
@@ -710,7 +743,7 @@ assign n_vwr = (ramreq_wr && n_wr == 0 && screen_read == 0)? 1'b0 : 1'b1;
 
 
 `ifdef USE_FPGA
-assign dout = port_ff_rd || port_fe_rd || kempston_rd || div_rd;
+assign dout = port_ff_rd || port_fe_rd || kempston_rd || div_rd || port_ff3b_rd;
 assign vdout = n_vrd == 1'b1;
 `endif
 
@@ -725,6 +758,9 @@ always @(posedge clk28 or negedge rst_n) begin
 			divmap & ~xa[14] & ~xa[15]? {2'b00, 4'b0011} :
 			dffd_d3 & xa[15]? {2'b11, xa[14], xa[15], xa[14], xa[13]} :
 			dffd_d3 & xa[14]? {rambank_ext, rambank128, xa[13]} :
+			(p1ffd[2] == 1'b0 && p1ffd[0] == 1'b1)? {2'b11, p1ffd[1], xa[15], xa[14], xa[13]} :
+			(p1ffd == 3'b101)? {2'b11, ~(xa[15] & xa[14]), xa[15], xa[14]} :
+			(p1ffd == 3'b111)? {2'b11, ~(xa[15] & xa[14]), (xa[15] | xa[14]), xa[14]} :
 			xa[15] & xa[14]? {rambank_ext, rambank128, xa[13]} :
 			{2'b11, xa[14], xa[15], xa[14], xa[13]} ;
 end
