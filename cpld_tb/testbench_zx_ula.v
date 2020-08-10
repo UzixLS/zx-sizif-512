@@ -36,6 +36,24 @@ T80na cpu1(
     .D_o(d_cpu_o)
 );
 
+// z80_top_direct_n cpu1(
+//     .nM1(n_m1_cpu),
+//     .nMREQ(n_mreq_cpu),
+//     .nIORQ(n_iorq_cpu),
+//     .nRD(n_rd_cpu),
+//     .nWR(n_wr_cpu),
+//     .nRFSH(n_rfsh_cpu),
+//     .nWAIT(1'b1),
+//     .nINT(n_int),
+//     .nNMI(n_nmi),
+//     .nRESET(rst_n),
+//     .nBUSRQ(1'b1),
+//     .CLK(clkcpu),
+//     .A(a_cpu_cpu),
+//     .D(d_cpu_o)
+// );
+// assign d_cpu_o = n_wr? d_cpu_i : {8{1'bz}};
+
 
 /* ULA */
 wire [7:0] vd;
@@ -119,7 +137,7 @@ assign d_ula =
     dout? {8{1'bz}} :
     ~n_wr? d_cpu_o :
     ~n_romcs? rom_q :
-    {8{1'bz}};
+    {8{1'b1}};
 
 assign d_cpu_i = 
     ~n_wr? d_cpu_o :
@@ -183,7 +201,7 @@ initial begin
     $dumpfile("testbench_zx_ula.vcd");
     $dumpvars();
     #5000000 $finish;
-    //#21000000 $finish;
+    // #200000000 $finish;
 end
 
 
