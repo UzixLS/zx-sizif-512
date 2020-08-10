@@ -414,15 +414,23 @@ end
 /* PORT #FF */
 wire [7:0] port_ff_data = attr_next;
 reg port_ff_rd;
-always @(posedge clk28)
-	port_ff_rd <= n_rd == 0 && n_ioreq == 0 && (timings == 1 || xa[7:0] == 8'hFF) && screen_load;
+always @(posedge clk28 or negedge rst_n) begin
+	if (!rst_n)
+		port_ff_rd <= 0;
+	else
+		port_ff_rd <= n_rd == 0 && n_ioreq == 0 && (timings == 1 || xa[7:0] == 8'hFF) && screen_load;
+end
 
 
 /* PORT #FE */
 wire port_fe_cs = n_ioreq == 0 && xa[0] == 0;
 reg port_fe_rd;
-always @(posedge clk28)
-	port_fe_rd <= port_fe_cs && n_rd == 0;
+always @(posedge clk28 or negedge rst_n) begin
+	if (!rst_n)
+		port_fe_rd <= 0;
+	else
+		port_fe_rd <= port_fe_cs && n_rd == 0;
+end
 
 wire [7:0] port_fe_data = {n_magic0[0], tape_in, 1'b1, kd};
 reg tape_out, beeper;
@@ -576,8 +584,12 @@ end
 wire [7:0] kempston_data = {1'b0, ~n_joy_b3, ~n_joy_b2, ~n_joy_b1, ~n_joy_up,
 						~n_joy_down, ~n_joy_left, ~n_joy_right};
 reg kempston_rd;
-always @(posedge clk28)
-	kempston_rd <= !extlock && n_ioreq == 0 && n_rd == 0 && xa[7:5] == 3'b000;
+always @(posedge clk28 or negedge rst_n) begin
+	if (!rst_n)
+		kempston_rd <= 0;
+	else
+		kempston_rd <= !extlock && n_ioreq == 0 && n_rd == 0 && xa[7:5] == 3'b000;
+end
 
 
 /* DIVMMC */
