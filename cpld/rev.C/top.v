@@ -311,53 +311,6 @@ always @(posedge clk28) begin
 end
 
 
-/* INT GENERATOR */
-localparam INT_V_S48       = 248;
-localparam INT_H_FROM_S48  = 0;
-localparam INT_H_TO_S48    = 64;
-localparam INT_V_S128      = 248;
-localparam INT_H_FROM_S128 = 0;
-localparam INT_H_TO_S128   = 64;
-localparam INT_V_PENT      = 239;
-localparam INT_H_FROM_PENT = 318;
-localparam INT_H_TO_PENT   = 384;
-reg int0, int1;
-always @(posedge clk28) begin
-	int0 = timings?
-		vc == INT_V_S128 && hc >= INT_H_FROM_S128 && hc < INT_H_TO_S128 :
-		// (vc == INT_V_S128-1 && hc >= H_TOTAL_S128-2) || (vc == INT_V_S128 && hc < INT_H_TO_S128-2) :
-		vc == INT_V_PENT && hc >= INT_H_FROM_PENT && hc < INT_H_TO_PENT ;
-		// hc >= INT_H_FROM_PENT && hc < INT_H_TO_PENT ;
-	int1 = timings?
-		hc < INT_H_FROM_S128+(INT_H_TO_S128-INT_H_FROM_S128)/2 :
-		hc < INT_H_FROM_PENT+(INT_H_TO_PENT-INT_H_FROM_PENT)/2 ;
-	n_int <= ~(int0 && (turbo? int1 : 1'b1));
-end
-
-
-/* MAGIC */
-reg [1:0] n_magic0;
-wire magic_enter = n_magic0[0] == 0 && n_magic0[1] == 1'b1;
-always @(posedge n_int or negedge rst_n) begin
-	if (!rst_n)
-		n_magic0 <= 2'b11;
-	else
-		n_magic0 <= {n_magic0[0], n_magic};
-end
-
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
-		n_nmi <= 1'b1;
-		n_rstcpu <= 0;
-	end
-	else begin
-		n_nmi <= (magic_enter && vc == 0)? 1'b0 : PULLUP1;
-		if (blink_cnt[0])
-			n_rstcpu <= PULLUP1;
-	end
-end
-
-
 /* CONTENTION */
 reg n_mreq_delayed;
 always @(posedge clkcpu)
@@ -373,10 +326,68 @@ wire snow = timings && xa[14] && ~xa[15] && n_rfsh == 0;
 
 
 /* CLOCK */
+reg clkcpu_prev;
+wire clkcpu_ck = clkcpu && ! clkcpu_prev;
 assign clkwait = clkcpu && contention;
-always @(negedge clk28)
+always @(negedge clk28) begin
+	clkcpu_prev <= clkcpu;
 	clkcpu <= clkwait? 1'b1 : turbo? hc0[1] : hc[0];
+end
 assign n_clkcpu = ~clkcpu;
+
+
+/* INT GENERATOR */
+localparam INT_V_S48       = 248;
+localparam INT_H_S48       = 0;
+localparam INT_V_S128      = 248;
+localparam INT_H_S128      = 0;
+localparam INT_V_PENT      = 239;
+localparam INT_H_PENT       = 318;
+wire int_begin = timings?
+		vc == INT_V_S128 && hc == INT_H_S128 :
+		vc == INT_V_PENT && hc == INT_H_PENT ;
+		// hc == INT_H_PENT;
+reg [4:0] int0;
+wire n_int_next = (|int0)? 1'b0 : 1'b1;
+always @(posedge clk28 or negedge rst_n) begin
+	if (!rst_n) begin
+		int0 <= 0;
+		n_int <= 1'b1;
+	end
+	else begin
+		if (clkcpu_ck)
+			n_int <= n_int_next;
+		if ((int0 != 0 && clkcpu_ck) || (int0 == 0 && int_begin))
+			int0 <= int0 + 1'b1;
+	end
+end
+
+
+/* RESET */
+always @(posedge clk28 or negedge rst_n) begin
+	if (!rst_n)
+		n_rstcpu <= 0;
+	else if (blink_cnt[0])
+		n_rstcpu <= PULLUP1;
+end
+
+
+/* MAGIC */
+reg [1:0] n_magic0;
+wire magic_enter = n_magic0[0] == 0 && n_magic0[1] == 1'b1;
+always @(posedge n_int or negedge rst_n) begin
+	if (!rst_n)
+		n_magic0 <= 2'b11;
+	else
+		n_magic0 <= {n_magic0[0], n_magic};
+end
+
+always @(posedge clk28 or negedge rst_n) begin
+	if (!rst_n)
+		n_nmi <= 1'b1;
+	else
+		n_nmi <= (magic_enter && vc == 0)? 1'b0 : PULLUP1;
+end
 
 
 /* CONFIG */
