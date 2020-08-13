@@ -394,8 +394,10 @@ end
 
 
 /* CONFIG */
-reg [1:0] extrom;
-wire config_cs = extrom == 2'b01 && n_ioreq == 0 && xa[0] == 1'b1 && xa[1] == 1'b1;
+reg rom_magic;
+reg rom_plus3;
+reg rom_alt48;
+wire config_cs = rom_magic && n_ioreq == 0 && xa[0] == 1'b1 && xa[1] == 1'b1;
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
 		extlock <= 0;
@@ -403,7 +405,9 @@ always @(posedge clk28 or negedge rst_n) begin
 		turbo <= 0;
 		ay_abc <= 1'b1;
 		ay_mono <= 0;
-		extrom <= 0;
+		rom_plus3 <= 0;
+		rom_alt48 <= 0;
+		rom_magic <= 0;
 	end
 	else begin
 		if (config_cs && n_wr == 0) begin
@@ -416,10 +420,10 @@ always @(posedge clk28 or negedge rst_n) begin
 			if (xa[12])
 				ay_abc <= xd[0];
 			if (xa[11])
-				extrom <= xd[1:0];
+				{rom_plus3, rom_alt48, rom_magic} <= xd[2:0];
 		end
 		else if (magic_enter && n_mreq == 1'b0 && n_m1 == 1'b0 && xa == 16'h0066) begin
-			extrom <= 2'b01;
+			rom_magic <= 1'b1;
 		end
 	end
 end
@@ -792,10 +796,14 @@ always @(posedge clk28 or negedge rst_n) begin
 end
 
 assign ra[16:14] =
-	(extrom == 2'b01)? 3'b111 :
-	(extrom[1] == 1'b1)? {extrom, rombank128} :
-	divmap? 3'b011 :
-	{2'b00, rombank128};
+	rom_magic? 3'd2 :
+	divmap? 3'd3 :
+	(rom_plus3 && p1ffd[2] == 1'b0 && rombank128 == 1'b0)? 3'd4 :
+	(rom_plus3 && p1ffd[2] == 1'b0 && rombank128 == 1'b1)? 3'd5 :
+	(rom_plus3 && p1ffd[2] == 1'b1 && rombank128 == 1'b0)? 3'd6 :
+	(rombank128 == 1'b1 && rom_alt48 == 1'b1)? 3'd7 :
+	(rombank128 == 1'b1)? 3'd1 :
+	3'd0;
 
 assign va[18:0] =
 	screen_read && (up_ink_read || up_paper_read)? {13'b0111111111111, up_addr} :
