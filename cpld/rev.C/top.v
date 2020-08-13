@@ -337,6 +337,9 @@ assign n_clkcpu = ~clkcpu;
 
 
 /* INT GENERATOR */
+wire int_vector_rd = n_iorqge == 0 && n_m1 == 0;
+wire [7:0] int_vector_data = 8'hff;
+
 localparam INT_V_S48       = 248;
 localparam INT_H_S48       = 0;
 localparam INT_V_S128      = 248;
@@ -766,7 +769,7 @@ assign n_vwr = (ramreq_wr && n_wr == 0 && screen_read == 0)? 1'b0 : 1'b1;
 
 
 `ifdef USE_FPGA
-assign dout = port_ff_rd || port_fe_rd || kempston_rd || div_rd || port_ff3b_rd;
+assign dout = port_ff_rd || port_fe_rd || kempston_rd || div_rd || port_ff3b_rd || (ramreq && n_rd == 0) || int_vector_rd;
 assign vdout = n_vrd == 1'b1;
 `endif
 
@@ -808,6 +811,7 @@ assign xd[7:0] =
 	port_fe_rd? port_fe_data :
 	port_ff_rd? port_ff_data :
 	ramreq && n_rd == 0? vd :
+	int_vector_rd? int_vector_data :
 	{8{1'bz}};
 
 assign vd[7:0] =
