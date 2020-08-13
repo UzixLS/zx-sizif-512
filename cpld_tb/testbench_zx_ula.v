@@ -154,8 +154,17 @@ assign d_cpu_i =
 // assign n_rfsh = n_rfsh_cpu;
 // assign a_cpu = a_cpu_cpu;
 
+/* CPU SIGNALS (Z84C0020 timings) */
+//assign #400 n_rd = n_rd_cpu; //TdCf(RDf)
+//assign #400 n_wr = n_wr_cpu; //TdCf(WRf)
+//assign #400 n_iorq = n_iorq_cpu; //TdCr(IORQf)
+//assign #400 n_mreq = n_mreq_cpu; //TdCf(MREQf)
+//assign #450 n_m1 = n_m1_cpu; //TdCr(M1f)
+//assign #600 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
+//assign #570 a_cpu = a_cpu_cpu; //TdCr(A)
+
 /* CPU SIGNALS (Z84C0008 timings) */
-assign #600 n_rd = n_rd_cpu; //TdCf(RDf)
+assign #700 n_rd = n_rd_cpu; //TdCf(RDf)
 assign #600 n_wr = n_wr_cpu; //TdCf(WRf)
 assign #550 n_iorq = n_iorq_cpu; //TdCr(IORQf)
 assign #600 n_mreq = n_mreq_cpu; //TdCf(MREQf)

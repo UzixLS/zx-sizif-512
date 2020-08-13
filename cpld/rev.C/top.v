@@ -78,22 +78,31 @@ module zx_ula(
 	output reg plus3_mtr
 );
 
+
+/* CONSTANTS */
 `ifdef USE_FPGA
 	localparam PULLUP1 = 1'b1;
 `else
 	localparam PULLUP1 = 1'bz;
 `endif
+localparam TURBO_NONE   = 2'b00;
+localparam TURBO_7      = 2'b01;
+localparam TURBO_14     = 2'b11;
 
+
+/* REGISTER DEFINITIONS */
 reg [2:0] border;
 reg [2:0] rambank128;
 reg timings;
-reg turbo;
+reg [1:0] turbo;
 reg extlock;
 wire clkwait;
 reg up_en;
 
-reg n_iorq_delayed;
-wire n_ioreq = ~n_m1 | n_iorqge | n_iorq_delayed;
+reg n_iorqge_delayed;
+always @(posedge clk28)
+	n_iorqge_delayed <= n_iorqge;
+wire n_ioreq = ~n_m1 | n_iorqge | n_iorqge_delayed;
 
 
 /* SCREEN CONTROLLER */
@@ -312,7 +321,7 @@ end
 
 
 /* CONTENTION */
-reg n_mreq_delayed;
+reg n_mreq_delayed, n_iorq_delayed;
 always @(posedge clkcpu)
 	n_mreq_delayed <= n_mreq;
 always @(posedge clkcpu)
@@ -321,17 +330,27 @@ wire contention_mem_addr = xa[14] & (~xa[15] | (xa[15] & rambank128[0]));
 wire contention_mem = n_iorq_delayed == 1'b1 && n_mreq_delayed == 1'b1 && contention_mem_addr;
 wire contention_io = n_iorq_delayed == 1'b1 && n_iorqge == 0;
 wire contention0 = screen_load && (hc[2] || hc[3]) && (contention_mem || contention_io);
-wire contention = contention0 && !turbo && timings;
+wire contention = clkcpu && contention0 && turbo == TURBO_NONE && timings;
 wire snow = timings && xa[14] && ~xa[15] && n_rfsh == 0;
 
 
 /* CLOCK */
+reg [2:0] turbo_wait;
+wire turbo_wait_trig0 = n_rd == 0 || n_wr == 0;
+reg turbo_wait_trig1;
+always @(posedge clk28) begin
+	turbo_wait_trig1 <= turbo_wait_trig0;
+	turbo_wait[0] <= turbo == TURBO_14 && turbo_wait_trig0 && !turbo_wait_trig1;
+	turbo_wait[1] <= turbo_wait[0] && (n_iorqge == 0);
+	turbo_wait[2] <= turbo_wait[1];
+end
+
 reg clkcpu_prev;
 wire clkcpu_ck = clkcpu && ! clkcpu_prev;
-assign clkwait = clkcpu && contention;
+assign clkwait = contention || (|turbo_wait);
 always @(negedge clk28) begin
 	clkcpu_prev <= clkcpu;
-	clkcpu <= clkwait? 1'b1 : turbo? hc0[1] : hc[0];
+	clkcpu <= clkwait? clkcpu : (turbo == TURBO_14)? hc0[0] : (turbo == TURBO_7)? hc0[1] : hc[0];
 end
 assign n_clkcpu = ~clkcpu;
 
@@ -402,7 +421,7 @@ always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
 		extlock <= 0;
 		timings <= 0;
-		turbo <= 0;
+		turbo <= TURBO_NONE;
 		ay_abc <= 1'b1;
 		ay_mono <= 0;
 		rom_plus3 <= 0;
@@ -416,7 +435,7 @@ always @(posedge clk28 or negedge rst_n) begin
 			if (xa[14])
 				timings <= xd[0];
 			if (xa[13])
-				turbo <= xd[0];
+				turbo <= xd[1:0];
 			if (xa[12])
 				ay_abc <= xd[0];
 			if (xa[11])
@@ -682,7 +701,7 @@ always @(posedge clk28 or negedge rst_n) begin
 		divcnt <= 0;
 	else if (port_eb_cs && (n_rd == 0 || n_wr == 0))
 		divcnt <= 4'b1110;
-	else if (divcnt_en && ck7)
+	else if (divcnt_en && ck14)
 		divcnt <= divcnt + 1'b1;
 end
 
@@ -704,13 +723,12 @@ always @(posedge clk28 or negedge rst_n) begin
 	else if (port_eb_cs && n_wr == 0)
 		divmmc_data <= xd;
 	else if (divcnt[3] == 1'b0)
-		if (ck7)
+		if (ck14)
 			divmmc_data[7:0] <= {divmmc_data[6:0], sd_miso};
 end
 
 always @(posedge clk28)
-	if (ck14)
-		sd_sck <= ~sd_sck & ~divcnt[3];
+	sd_sck <= ~sd_sck & ~divcnt[3];
 
 
 /* ULAPLUS */
