@@ -85,6 +85,9 @@ module zx_ula(
 `else
 	localparam PULLUP1 = 1'bz;
 `endif
+localparam TIMINGS_PENT = 2'b00;
+localparam TIMINGS_S128 = 2'b01;
+localparam TIMINGS_S48  = 2'b11;
 localparam TURBO_NONE   = 2'b00;
 localparam TURBO_7      = 2'b01;
 localparam TURBO_14     = 2'b11;
@@ -93,7 +96,7 @@ localparam TURBO_14     = 2'b11;
 /* REGISTER DEFINITIONS */
 reg [2:0] border;
 reg [2:0] rambank128;
-reg timings;
+reg [1:0] timings;
 reg [1:0] turbo;
 reg extlock;
 wire clkwait;
@@ -110,15 +113,15 @@ localparam H_AREA         = 256;
 localparam V_AREA         = 192;
 localparam SCREEN_DELAY   = 8;
 
-localparam H_LBORDER_S48  = 32 - SCREEN_DELAY;
-localparam H_RBORDER_S48  = 64 + SCREEN_DELAY;
+localparam H_LBORDER_S48  = 48 - SCREEN_DELAY;
+localparam H_RBORDER_S48  = 48 + SCREEN_DELAY;
 localparam H_BLANK1_S48   = 16;
-localparam H_SYNC_S48     = 32;
-localparam H_BLANK2_S48   = 48;
+localparam H_SYNC_S48     = 33;
+localparam H_BLANK2_S48   = 47;
 localparam H_TOTAL_S48    = H_AREA + H_RBORDER_S48 + H_BLANK1_S48 + H_SYNC_S48 + H_BLANK2_S48 + H_LBORDER_S48;
-localparam V_BBORDER_S48  = 56;
+localparam V_BBORDER_S48  = 48;
 localparam V_SYNC_S48     = 8;
-localparam V_TBORDER_S48  = 56;
+localparam V_TBORDER_S48  = 64;
 localparam V_TOTAL_S48    = V_AREA + V_BBORDER_S48 + V_SYNC_S48 + V_TBORDER_S48;
 
 localparam H_LBORDER_S128 = 64 - SCREEN_DELAY;
@@ -152,27 +155,50 @@ wire clk7 = hc0[1];
 wire ck14 = hc0[0];
 wire ck7 = hc0[0] & hc0[1];
 
-wire hc0_reset = timings?
-	hc0 == (H_TOTAL_S128<<2) - 1'b1 :
-	hc0 == (H_TOTAL_PENT<<2) - 1'b1 ;
-wire vc_reset = timings?
-	vc == V_TOTAL_S128 - 1'b1 :
-	vc == V_TOTAL_PENT - 1'b1 ;
-wire hsync0 = timings?
-	(hc >= (H_AREA + H_RBORDER_S128 + H_BLANK1_S128)) &&
-		(hc <  (H_AREA + H_RBORDER_S128 + H_BLANK1_S128 + H_SYNC_S128)) :
-	(hc >= (H_AREA + H_RBORDER_PENT + H_BLANK1_PENT)) &&
-		(hc <  (H_AREA + H_RBORDER_PENT + H_BLANK1_PENT + H_SYNC_PENT));
-wire vsync0 = timings?
-	(vc >= (V_AREA + V_BBORDER_S128)) && (vc < (V_AREA + V_BBORDER_S128 + V_SYNC_S128)) :
-	(vc >= (V_AREA + V_BBORDER_PENT)) && (vc < (V_AREA + V_BBORDER_PENT + V_SYNC_PENT)) ;
-wire blank = timings?
-	((vc >= (V_AREA + V_BBORDER_S128)) && (vc < (V_AREA + V_BBORDER_S128 + V_SYNC_S128))) ||
-		((hc >= (H_AREA + H_RBORDER_S128)) &&
-		 (hc <  (H_AREA + H_RBORDER_S128 + H_BLANK1_S128 + H_SYNC_S128 + H_BLANK2_S128))) :
-	((vc >= (V_AREA + V_BBORDER_PENT)) && (vc < (V_AREA + V_BBORDER_PENT + V_SYNC_PENT))) ||
-		((hc >= (H_AREA + H_RBORDER_PENT)) &&
-		 (hc <  (H_AREA + H_RBORDER_PENT + H_BLANK1_PENT + H_SYNC_PENT + H_BLANK2_PENT)));
+wire hc0_reset =
+	(timings == TIMINGS_PENT)?
+		hc0 == (H_TOTAL_PENT<<2) - 1'b1 :
+	(timings == TIMINGS_S128)?
+		hc0 == (H_TOTAL_S128<<2) - 1'b1 :
+	// 48K
+		hc0 == (H_TOTAL_S48<<2) - 1'b1 ;
+wire vc_reset = 
+	(timings == TIMINGS_PENT)?
+		vc == V_TOTAL_PENT - 1'b1 :
+	(timings == TIMINGS_S128)?
+		vc == V_TOTAL_S128 - 1'b1 :
+	// 48K
+		vc == V_TOTAL_S48 - 1'b1;
+wire hsync0 =
+	(timings == TIMINGS_PENT)?
+		(hc >= (H_AREA + H_RBORDER_PENT + H_BLANK1_PENT)) &&
+			(hc <  (H_AREA + H_RBORDER_PENT + H_BLANK1_PENT + H_SYNC_PENT)) :
+	(timings == TIMINGS_S128)?
+		(hc >= (H_AREA + H_RBORDER_S128 + H_BLANK1_S128)) &&
+			(hc <  (H_AREA + H_RBORDER_S128 + H_BLANK1_S128 + H_SYNC_S128)) :
+	// 48K
+		(hc >= (H_AREA + H_RBORDER_S48 + H_BLANK1_S48)) &&
+			(hc <  (H_AREA + H_RBORDER_S48 + H_BLANK1_S48 + H_SYNC_S48)) ;
+wire vsync0 = 
+	(timings == TIMINGS_PENT)?
+		(vc >= (V_AREA + V_BBORDER_PENT)) && (vc < (V_AREA + V_BBORDER_PENT + V_SYNC_PENT)) :
+	(timings == TIMINGS_S128)?
+		(vc >= (V_AREA + V_BBORDER_S128)) && (vc < (V_AREA + V_BBORDER_S128 + V_SYNC_S128)) :
+	// 48K
+		(vc >= (V_AREA + V_BBORDER_S48)) && (vc < (V_AREA + V_BBORDER_S48 + V_SYNC_S48)) ;
+wire blank =
+	(timings == TIMINGS_PENT)?
+		((vc >= (V_AREA + V_BBORDER_PENT)) && (vc < (V_AREA + V_BBORDER_PENT + V_SYNC_PENT))) ||
+			((hc >= (H_AREA + H_RBORDER_PENT)) &&
+			 (hc <  (H_AREA + H_RBORDER_PENT + H_BLANK1_PENT + H_SYNC_PENT + H_BLANK2_PENT))) :
+	(timings == TIMINGS_S128)?
+		((vc >= (V_AREA + V_BBORDER_S128)) && (vc < (V_AREA + V_BBORDER_S128 + V_SYNC_S128))) ||
+			((hc >= (H_AREA + H_RBORDER_S128)) &&
+			 (hc <  (H_AREA + H_RBORDER_S128 + H_BLANK1_S128 + H_SYNC_S128 + H_BLANK2_S128))) :
+	// 48K
+		((vc >= (V_AREA + V_BBORDER_S48)) && (vc < (V_AREA + V_BBORDER_S48 + V_SYNC_S48))) ||
+			((hc >= (H_AREA + H_RBORDER_S48)) &&
+			 (hc <  (H_AREA + H_RBORDER_S48 + H_BLANK1_S48 + H_SYNC_S48 + H_BLANK2_S48))) ;
 
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
@@ -221,7 +247,7 @@ wire [5:0] up_addr = up_ink_read? { attr_next[7:6], 1'b0, attr_next[2:0] } : { a
 wire screen_load = (vc < V_AREA) && (hc < H_AREA || hc0_reset);
 wire screen_show = (vc < V_AREA) && (hc0 >= (SCREEN_DELAY<<2) - 2) && (hc0 < ((H_AREA + SCREEN_DELAY)<<2) - 2);
 wire screen_update = vc < V_AREA && hc <= H_AREA && hc != 0 && hc0[4:0] == 5'b11110;
-wire border_update = !screen_show && ((timings == 0 && ck7) || hc0[4:0] == 5'b11110);
+wire border_update = !screen_show && ((timings == TIMINGS_PENT && ck7) || hc0[4:0] == 5'b11110);
 wire bitmap_shift = hc0[1:0] == 2'b10;
 wire screen_read_next = (screen_load || up_en) && ((n_iorqge == 1'b1 && n_mreq == 1'b1) || n_rfsh == 1'b0 || clkwait);
 
@@ -330,8 +356,8 @@ wire contention_mem_addr = xa[14] & (~xa[15] | (xa[15] & rambank128[0]));
 wire contention_mem = n_iorq_delayed == 1'b1 && n_mreq_delayed == 1'b1 && contention_mem_addr;
 wire contention_io = n_iorq_delayed == 1'b1 && n_iorqge == 0;
 wire contention0 = screen_load && (hc[2] || hc[3]) && (contention_mem || contention_io);
-wire contention = clkcpu && contention0 && turbo == TURBO_NONE && timings;
-wire snow = timings && xa[14] && ~xa[15] && n_rfsh == 0;
+wire contention = clkcpu && contention0 && turbo == TURBO_NONE && timings != TIMINGS_PENT;
+wire snow = (timings != TIMINGS_PENT) && xa[14] && ~xa[15] && n_rfsh == 0;
 
 
 /* CLOCK */
@@ -359,16 +385,19 @@ assign n_clkcpu = ~clkcpu;
 wire int_vector_rd = n_iorqge == 0 && n_m1 == 0;
 wire [7:0] int_vector_data = 8'hff;
 
-localparam INT_V_S48       = 248;
-localparam INT_H_S48       = 0;
-localparam INT_V_S128      = 248;
-localparam INT_H_S128      = 0;
+localparam INT_V_S48       = 247;
+localparam INT_H_S48       = H_TOTAL_S48-6;
+localparam INT_V_S128      = 247;
+localparam INT_H_S128      = H_TOTAL_S128-6;
 localparam INT_V_PENT      = 239;
 localparam INT_H_PENT       = 318;
-wire int_begin = timings?
+wire int_begin =
+	(timings == TIMINGS_PENT)?
+		vc == INT_V_PENT && hc == INT_H_PENT :
+	(timings == TIMINGS_S128)?
 		vc == INT_V_S128 && hc == INT_H_S128 :
-		vc == INT_V_PENT && hc == INT_H_PENT ;
-		// hc == INT_H_PENT;
+	// 48K 
+		vc == INT_V_S48 && hc == INT_H_S48 ;
 reg [4:0] int0;
 wire n_int_next = (|int0)? 1'b0 : 1'b1;
 always @(posedge clk28 or negedge rst_n) begin
@@ -420,7 +449,7 @@ wire config_cs = rom_magic && n_ioreq == 0 && xa[0] == 1'b1 && xa[1] == 1'b1;
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
 		extlock <= 0;
-		timings <= 0;
+		timings <= TIMINGS_PENT;
 		turbo <= TURBO_NONE;
 		ay_abc <= 1'b1;
 		ay_mono <= 0;
@@ -433,7 +462,7 @@ always @(posedge clk28 or negedge rst_n) begin
 			if (xa[15])
 				extlock <= xd[0];
 			if (xa[14])
-				timings <= xd[0];
+				timings <= xd[1:0];
 			if (xa[13])
 				turbo <= xd[1:0];
 			if (xa[12])
@@ -455,7 +484,7 @@ always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n)
 		port_ff_rd <= 0;
 	else
-		port_ff_rd <= n_rd == 0 && n_ioreq == 0 && (timings == 1 || xa[7:0] == 8'hFF) && screen_load;
+		port_ff_rd <= n_rd == 0 && n_ioreq == 0 && (timings != TIMINGS_PENT || xa[7:0] == 8'hFF) && screen_load;
 end
 
 
@@ -477,7 +506,7 @@ always @(posedge clk28 or negedge rst_n) begin
 		tape_out <= 0;
 		border <= 0;
 	end
-	else if (port_fe_cs && n_wr == 0) begin
+	else if (port_fe_cs && n_wr == 0 && clkcpu_ck) begin // clkcpu_ck to synchronize border
 		beeper <= xd[4];
 		tape_out <= xd[3];
 		border <= xd[2:0];
