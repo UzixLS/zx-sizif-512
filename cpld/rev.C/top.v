@@ -32,7 +32,7 @@ module zx_ula(
 	input n_m1,
 	input n_rfsh,
 	output reg n_int,
-	output reg n_nmi,
+	output n_nmi,
 
 	input [4:0] kd,
 	input tape_in,
@@ -95,10 +95,10 @@ localparam TURBO_14     = 2'b11;
 
 /* REGISTER DEFINITIONS */
 reg [2:0] border;
+reg magic_beeper;
 reg [2:0] rambank128;
 reg [1:0] timings;
 reg [1:0] turbo;
-reg extlock;
 wire clkwait;
 reg up_en;
 
@@ -228,7 +228,7 @@ always @(negedge n_int or negedge rst_n) begin
 		blink_cnt <= blink_cnt + 1'b1;
 end
 
-wire [7:0] attr_border = {2'b00, border[2] ^ ~sd_miso, border[1] ^ ~n_magic, border[0], 3'b000};
+wire [7:0] attr_border = {2'b00, border[2] ^ ~sd_miso, border[1] ^ magic_beeper, border[0], 3'b000};
 
 reg [7:0] bitmap, attr, bitmap_next, attr_next;
 reg [7:0] up_ink, up_paper, up_ink_next, up_paper_next;
@@ -390,7 +390,7 @@ localparam INT_H_S48       = H_TOTAL_S48-6;
 localparam INT_V_S128      = 247;
 localparam INT_H_S128      = H_TOTAL_S128-6;
 localparam INT_V_PENT      = 239;
-localparam INT_H_PENT       = 318;
+localparam INT_H_PENT      = 318;
 wire int_begin =
 	(timings == TIMINGS_PENT)?
 		vc == INT_V_PENT && hc == INT_H_PENT :
@@ -424,30 +424,50 @@ end
 
 
 /* MAGIC */
-reg [1:0] n_magic0;
-wire magic_enter = n_magic0[0] == 0 && n_magic0[1] == 1'b1;
-always @(posedge n_int or negedge rst_n) begin
-	if (!rst_n)
-		n_magic0 <= 2'b11;
-	else
-		n_magic0 <= {n_magic0[0], n_magic};
-end
-
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n)
-		n_nmi <= 1'b1;
-	else
-		n_nmi <= (magic_enter && vc == 0)? 1'b0 : PULLUP1;
-end
-
-
-/* CONFIG */
-reg rom_magic;
-reg rom_plus3;
-reg rom_alt48;
-wire config_cs = rom_magic && n_ioreq == 0 && xa[0] == 1'b1 && xa[1] == 1'b1;
+reg magic_mode;
+reg magic_map;
+reg magic_unmap_next;
+reg magic_map_next;
+assign n_nmi = magic_mode? 1'b0 : PULLUP1;
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
+		magic_mode <= 0;
+		magic_map <= 0;
+		magic_unmap_next <= 0;
+		magic_map_next <= 0;
+	end
+	else begin
+		if (n_magic == 0 && n_int == 1'b1 && n_int_next == 1'b0)
+			magic_mode <= 1'b1;
+
+		if (magic_map && n_mreq == 1'b0 && n_rd == 1'b0 && xa == 16'hf000 && !magic_map_next) begin
+			magic_unmap_next <= 1'b1;
+			magic_mode <= 1'b0;
+		end
+		else if (magic_map && n_mreq == 1'b0 && n_rd == 1'b0 && xa == 16'hf008) begin
+			magic_unmap_next <= 1'b1;
+			magic_map_next <= 1'b1;
+		end
+		else if (magic_unmap_next && n_mreq == 1'b1) begin
+			magic_map <= 1'b0;
+			magic_unmap_next <= 1'b0;
+		end
+		else if (magic_mode && n_m1 == 1'b0 && n_mreq == 1'b0 && (xa == 16'h0066 || magic_map_next)) begin
+			magic_map <= 1'b1;
+			magic_map_next <= 1'b0;
+		end
+	end
+end
+
+
+/* MAGIC CONFIG */
+reg extlock;
+reg rom_plus3;
+reg rom_alt48;
+wire config_cs = magic_map && n_ioreq == 0 && xa[7:0] == 8'hff;
+always @(posedge clk28 or negedge rst_n) begin
+	if (!rst_n) begin
+		magic_beeper <= 0;
 		extlock <= 0;
 		timings <= TIMINGS_PENT;
 		turbo <= TURBO_NONE;
@@ -455,24 +475,22 @@ always @(posedge clk28 or negedge rst_n) begin
 		ay_mono <= 0;
 		rom_plus3 <= 0;
 		rom_alt48 <= 0;
-		rom_magic <= 0;
 	end
-	else begin
-		if (config_cs && n_wr == 0) begin
-			if (xa[15])
-				extlock <= xd[0];
-			if (xa[14])
-				timings <= xd[1:0];
-			if (xa[13])
-				turbo <= xd[1:0];
-			if (xa[12])
-				ay_abc <= xd[0];
-			if (xa[11])
-				{rom_plus3, rom_alt48, rom_magic} <= xd[2:0];
-		end
-		else if (magic_enter && n_mreq == 1'b0 && n_m1 == 1'b0 && xa == 16'h0066) begin
-			rom_magic <= 1'b1;
-		end
+	else if (config_cs && n_wr == 0) begin
+		if (xa[15:12] == 4'h0)
+ 			magic_beeper <= xd[0];
+		if (xa[15:12] == 4'h1)
+ 			extlock <= xd[0];
+		if (xa[15:12] == 4'h2)
+			timings <= xd[1:0];
+		if (xa[15:12] == 4'h3)
+			turbo <= xd[1:0];
+		if (xa[15:12] == 4'h4)
+			{ay_mono, ay_abc} <= xd[1:0];
+		if (xa[15:12] == 4'h5)
+			rom_plus3 <= xd[0];
+		if (xa[15:12] == 4'h6)
+			rom_alt48 <= xd[0];
 	end
 end
 
@@ -498,7 +516,7 @@ always @(posedge clk28 or negedge rst_n) begin
 		port_fe_rd <= port_fe_cs && n_rd == 0;
 end
 
-wire [7:0] port_fe_data = {n_magic0[0], tape_in, 1'b1, kd};
+wire [7:0] port_fe_data = {n_magic, tape_in, 1'b1, kd};
 reg tape_out, beeper;
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
@@ -628,8 +646,8 @@ end
 reg [10:0] snd_dac_l, snd_dac_r;
 assign snd_l = snd_dac_l[10];
 assign snd_r = snd_dac_r[10];
-wire [9:0] snd_dac_next_l = covox_data_l0 + covox_data_l1 + {beeper, tape_out, tape_in, sd_miso, 4'b0000};
-wire [9:0] snd_dac_next_r = covox_data_r0 + covox_data_r1 + {beeper, tape_out, tape_in, sd_miso, 4'b0000};
+wire [9:0] snd_dac_next_l = covox_data_l0 + covox_data_l1 + {beeper, tape_out ^ magic_beeper, tape_in, sd_miso, 4'b0000};
+wire [9:0] snd_dac_next_r = covox_data_r0 + covox_data_r1 + {beeper, tape_out ^ magic_beeper, tape_in, sd_miso, 4'b0000};
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
 		snd_dac_l <= 0;
@@ -696,30 +714,30 @@ always @(negedge clk28 or negedge rst_n) begin // negedge for timing of 3Dh entr
 		automap_next <= 0;
 		automap <= 0;
 	end
-	else begin
-		if (sd_cd || extlock) begin
+	else if (n_m1 == 0 && n_mreq == 0 && magic_map == 0) begin 
+		if (sd_cd || extlock || dffd_d4 || p1ffd[0]) begin
 			automap_next <= 0;
 		end
-		else if (n_m1 == 0 && n_mreq == 0 && dffd_d4 == 0 && p1ffd[0] == 0 && (
+		else if (xa[15:3] == 13'h3FF) begin // exit vectors 1FF8-1FFF
+			automap_next <= 0;
+		end
+		else if (
 				xa == 16'h0000 || // power-on/reset/rst0/software restart
 				xa == 16'h0008 || // syntax error
 				xa == 16'h0038 || // im1 interrupt/rst #38
-				(xa == 16'h0066 && !magic_enter) || // nmi routine
+				(xa == 16'h0066 && !magic_mode) || // nmi routine
 				xa == 16'h04C6 || // tape save routine
 				xa == 16'h0562    // tape load and verify routine
-				)) begin
+				) begin
 			automap_next <= 1'b1;
 		end
-		else if (n_m1 == 0 && n_mreq == 0 && xa[15:8] == 8'h3D) begin // tr-dos mapping area
+		else if (xa[15:8] == 8'h3D) begin // tr-dos mapping area
 			automap_next <= 1'b1;
 			automap <= 1'b1;
 		end
-		else if (n_m1 == 0 && n_mreq == 0 && xa[15:3] == 13'h3FF) begin
-			automap_next <= 0;
-		end
-		else if (n_m1 == 1'b1) begin
-			automap <= automap_next;
-		end
+	end
+	else if (n_m1 == 1'b1) begin
+		automap <= automap_next;
 	end
 end
 
@@ -791,7 +809,6 @@ always @(posedge clk28 or negedge rst_n) begin
 			up_write_req <= 0;
 		end
 	end
-	
 end
 
 
@@ -803,13 +820,14 @@ wire div_ramwr_mask = xa[15] == 0 && xa[14] == 0 && (xa[13] == 0 || divbank == 4
 reg romreq, ramreq, ramreq_wr;
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
-		romreq <= 1'b0;
-		ramreq <= 1'b0;
-		ramreq_wr <= 1'b0;
+		romreq = 1'b0;
+		ramreq = 1'b0;
+		ramreq_wr = 1'b0;
 	end
 	else begin
-		romreq =  n_mreq == 0 && n_rfsh == 1 &&  xa[14] == 0    && xa[15] == 0 &&   !div_ram && !((dffd_d4 || p1ffd[0]) && !divmap);
-		ramreq = (n_mreq == 0 && n_rfsh == 1 && (xa[14] == 1'b1 || xa[15] == 1'b1 || div_ram ||  ((dffd_d4 || p1ffd[0]) && !divmap))) || up_write_req;
+		romreq =  n_mreq == 0 && n_rfsh == 1 &&  xa[14] == 0    && xa[15] == 0 &&
+			(magic_map || (!div_ram && divmap) || (!div_ram && !dffd_d4 && !p1ffd[0]));
+		ramreq = (n_mreq == 0 && n_rfsh == 1 && !romreq) || up_write_req;
 		ramreq_wr = ramreq && n_wr == 0 && div_ramwr_mask == 0;
 	end
 end
@@ -831,8 +849,10 @@ always @(posedge clk28 or negedge rst_n) begin
 		ram_a <= 0;
 	else
 		ram_a <=
-			divmap & ~xa[14] & ~xa[15] & xa[13]? {2'b00, divbank} :
-			divmap & ~xa[14] & ~xa[15]? {2'b00, 4'b0011} :
+			magic_map & xa[15] & xa[14]? {2'b00, 3'b111, xa[13]} :
+			magic_map? {3'b111, vbank, xa[14:13]} :
+			divmap & ~xa[14] & ~xa[15] & xa[13]? {2'b01, divbank} :
+			divmap & ~xa[14] & ~xa[15]? {2'b01, 4'b0011} :
 			dffd_d3 & xa[15]? {2'b11, xa[14], xa[15], xa[14], xa[13]} :
 			dffd_d3 & xa[14]? {rambank_ext, rambank128, xa[13]} :
 			(p1ffd[2] == 1'b0 && p1ffd[0] == 1'b1)? {2'b11, p1ffd[1], xa[15], xa[14], xa[13]} :
@@ -843,7 +863,7 @@ always @(posedge clk28 or negedge rst_n) begin
 end
 
 assign ra[16:14] =
-	rom_magic? 3'd2 :
+	magic_map? 3'd2 :
 	divmap? 3'd3 :
 	(rom_plus3 && p1ffd[2] == 1'b0 && rombank128 == 1'b0)? 3'd4 :
 	(rom_plus3 && p1ffd[2] == 1'b0 && rombank128 == 1'b1)? 3'd5 :
@@ -853,10 +873,10 @@ assign ra[16:14] =
 	3'd0;
 
 assign va[18:0] =
-	screen_read && (up_ink_read || up_paper_read)? {13'b0111111111111, up_addr} :
+	screen_read && (up_ink_read || up_paper_read)? {2'b00, 3'b111, 8'b11111111, up_addr} :
 	screen_read && snow? {3'b111, vbank, screen_addr[14:8], xa[7:0]} :
 	screen_read? {3'b111, vbank, screen_addr} :
-	up_write_req? {13'b0111111111111, up_addr_reg[5:0]} :
+	up_write_req? {2'b00, 3'b111, 8'b11111111, up_addr_reg[5:0]} :
 	{ram_a[18:13], xa[12:0]};
 
 assign xd[7:0] =
