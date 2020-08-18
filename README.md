@@ -60,6 +60,7 @@ It's possible to connect to internet with additional [WiFi module](https://githu
 PCB rev.D (not soon):
 * add zxbus connector for in-case addons
 * add support for +3DOS floppy controller
+* add support for Sega 3/6-button gamepad
 * improve tapein circuit to handle super-turbo loaders
 * improve video circuit for ulaplus (?)
 

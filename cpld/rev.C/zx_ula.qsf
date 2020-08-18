@@ -150,7 +150,6 @@ set_location_assignment PIN_93 -to n_joy_down
 set_location_assignment PIN_94 -to n_joy_left
 set_location_assignment PIN_95 -to n_joy_right
 set_location_assignment PIN_96 -to n_joy_b2
-set_location_assignment PIN_97 -to n_joy_b3
 set_location_assignment PIN_98 -to csync
 set_location_assignment PIN_101 -to g[0]
 set_location_assignment PIN_102 -to b[0]
@@ -221,3 +220,7 @@ set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_nmi
 set_location_assignment PIN_23 -to plus3_drd
 set_location_assignment PIN_21 -to plus3_mtr
 set_location_assignment PIN_24 -to plus3_dwr
+set_location_assignment PIN_97 -to joy_sel
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to joy_sel
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MINIMUM CURRENT" -to joy_sel
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to rst_n
