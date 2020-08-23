@@ -77,7 +77,7 @@ PCB rev.D (not soon):
 Firmware:
 * add OSD for Magic button
 * add ability to map kempston to any keyboard button
-* add ROM banks switching menu
+* add configurable turbo-keys for kempston
 * improve 48K/128K timings for 100% compatibility
 
 ### Acknowledgments
