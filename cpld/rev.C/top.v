@@ -418,7 +418,7 @@ end
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n)
 		n_rstcpu <= 0;
-	else if (blink_cnt[0])
+	else if (vc[0])
 		n_rstcpu <= PULLUP1;
 end
 
