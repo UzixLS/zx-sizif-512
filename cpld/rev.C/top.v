@@ -101,6 +101,7 @@ reg [1:0] timings;
 reg [1:0] turbo;
 wire clkwait;
 reg pause;
+reg joy_mode;
 reg up_en;
 
 reg n_iorqge_delayed;
@@ -426,6 +427,7 @@ end
 
 
 /* MAGIC */
+wire magic_button = n_magic == 0 || joy_mode == 1'b1;
 reg magic_mode;
 reg magic_map;
 reg magic_unmap_next;
@@ -439,7 +441,7 @@ always @(posedge clk28 or negedge rst_n) begin
 		magic_map_next <= 0;
 	end
 	else begin
-		if (n_magic == 0 && n_int == 1'b1 && n_int_next == 1'b0)
+		if (magic_button == 1'b1 && n_int == 1'b1 && n_int_next == 1'b0)
 			magic_mode <= 1'b1;
 
 		if (magic_map && n_mreq == 1'b0 && n_rd == 1'b0 && xa == 16'hf000 && !magic_map_next) begin
@@ -518,7 +520,7 @@ always @(posedge clk28 or negedge rst_n) begin
 		port_fe_rd <= port_fe_cs && n_rd == 0;
 end
 
-wire [7:0] port_fe_data = {n_magic, tape_in, 1'b1, kd};
+wire [7:0] port_fe_data = {~magic_button, tape_in, 1'b1, kd};
 reg tape_out, beeper;
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
@@ -669,7 +671,7 @@ end
 
 
 /* JOYSTICK / GAMEPAD */
-reg joy_up, joy_down, joy_left, joy_right, joy_b1, joy_b2, joy_b3, joy_x, joy_y, joy_z, joy_start, joy_mode;
+reg joy_up, joy_down, joy_left, joy_right, joy_b1, joy_b2, joy_b3, joy_x, joy_y, joy_z, joy_start;
 reg joy_md, joy_md6;
 wire joy_rd_ena = hc < 256 && vc[6:0] == 0; // every ~8ms
 wire joy_rd_strobe = hc[4];
