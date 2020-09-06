@@ -731,7 +731,11 @@ always @(posedge clk28 or negedge rst_n) begin
 	end
 end
 
-wire [7:0] kempston_data = {1'b0, joy_b3, joy_b2, joy_b1, joy_up, joy_down, joy_left, joy_right};
+wire joy_b1_turbo = joy_b1 | (joy_y & blink_cnt[1]);
+wire joy_b2_turbo = joy_b2 | (joy_z & blink_cnt[1]);
+wire joy_b3_turbo = joy_b3 | (joy_x & blink_cnt[1]);
+
+wire [7:0] kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, joy_b1_turbo, joy_up, joy_down, joy_left, joy_right};
 reg kempston_rd;
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n)
