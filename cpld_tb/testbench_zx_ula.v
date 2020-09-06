@@ -90,6 +90,7 @@ zx_ula zx_ula1(
     .n_magic(n_magic),
     .tape_in(1'b1),
     .kd(5'b0),
+    .n_joy_b2(1'b1),
     .sd_cd(1'b0),
     .sd_miso(1'b0),
     .dout(dout),

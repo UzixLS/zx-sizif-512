@@ -46,7 +46,7 @@ module zx_ula(
 	output reg hsync,
 	output reg vsync,
 
-	output ay_clk,
+	output reg ay_clk,
 	output reg ay_bdir,
 	output reg ay_bc1,
 	output reg ay_abc,
@@ -100,6 +100,7 @@ reg [2:0] rambank128;
 reg [1:0] timings;
 reg [1:0] turbo;
 wire clkwait;
+reg pause;
 reg up_en;
 
 reg n_iorqge_delayed;
@@ -154,6 +155,7 @@ wire clk14 = hc0[0];
 wire clk7 = hc0[1];
 wire ck14 = hc0[0];
 wire ck7 = hc0[0] & hc0[1];
+wire ck35 = hc0[0] & hc0[1] && hc0[2];
 
 wire hc0_reset =
 	(timings == TIMINGS_PENT)?
@@ -221,14 +223,14 @@ end
 
 reg [4:0] blink_cnt;
 wire blink = blink_cnt[$bits(blink_cnt)-1];
-always @(negedge n_int or negedge rst_n) begin
+always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n)
 		blink_cnt <= 0;
-	else
+	else if (hc0_reset && vc_reset)
 		blink_cnt <= blink_cnt + 1'b1;
 end
 
-wire [7:0] attr_border = {2'b00, border[2] ^ ~sd_miso, border[1] ^ magic_beeper, border[0], 3'b000};
+wire [7:0] attr_border = {2'b00, border[2] ^ ~sd_miso, border[1] ^ magic_beeper, border[0] ^ (pause & blink), 3'b000};
 
 reg [7:0] bitmap, attr, bitmap_next, attr_next;
 reg [7:0] up_ink, up_paper, up_ink_next, up_paper_next;
@@ -373,7 +375,7 @@ end
 
 reg clkcpu_prev;
 wire clkcpu_ck = clkcpu && ! clkcpu_prev;
-assign clkwait = contention || (|turbo_wait);
+assign clkwait = pause || contention || (|turbo_wait);
 always @(negedge clk28) begin
 	clkcpu_prev <= clkcpu;
 	clkcpu <= clkwait? clkcpu : (turbo == TURBO_14)? hc0[0] : (turbo == TURBO_7)? hc0[1] : hc[0];
@@ -577,15 +579,17 @@ end
 /* AY */
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
+		ay_clk <= 0;
 		ay_bc1 <= 0;
 		ay_bdir <= 0;
 	end
 	else begin
+		if (ck35)
+			ay_clk = pause | ~ay_clk;
 		ay_bc1  <= xa[15] == 1'b1 && xa[14] == 1'b1 && xa[1] == 0 && n_ioreq == 0;
 		ay_bdir <= xa[15] == 1'b1 && xa[1] == 0 && n_ioreq == 0 && n_wr == 0;
 	end
 end
-assign ay_clk = hc[1];
 
 
 /* PORT #1FFD */
@@ -686,6 +690,7 @@ always @(posedge clk28 or negedge rst_n) begin
 		joy_x <= 0;
 		joy_y <= 0;
 		joy_z <= 0;
+		pause <= 0;
 	end
 	else begin
 		joy_sel <= (joy_rd_state[0] && joy_rd_ena)? 1'b1 : 1'b0;
@@ -693,8 +698,10 @@ always @(posedge clk28 or negedge rst_n) begin
 			if (joy_rd_state == 3'd2) begin
 				if (n_joy_left == 0 && n_joy_right == 0) begin
 					joy_md <= 1'b1;
-					joy_b3 = ~n_joy_b1;
-					joy_start = ~n_joy_b2;
+					joy_b3 <= ~n_joy_b1;
+					if (joy_start == 1'b0 && n_joy_b2 == 1'b0)
+						pause <= ~pause;
+					joy_start <= ~n_joy_b2;
 				end
 				else begin
 					joy_md <= 0;
