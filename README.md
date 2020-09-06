@@ -48,6 +48,23 @@ To do this there is a Magic button: just hold it and press key on keyboard:
 
 If you press Magic button and didn't change something, standard NMI handler 'll be called on button release.
 
+### Sega gamepad buttons
+Sega gamepad support will be available starting from PCB rev.D (or Rev.C with slight modifications).
+| Button | Function in Kempston mode | Function in Sinclair mode |
+| - | - | - |
+| Up | Up | 9 |
+| Down | Down | 8 |
+| Left | Left | 6 |
+| Right | Right | 7 |
+| A | Button 3 | N |
+| B | Button 1 | 0 |
+| C | Button 2 | M |
+| X | Turbo Button 3 | Turbo N |
+| Y | Turbo Button 1 | Turbo 0 |
+| Z | Turbo Button 2 | Turbo M |
+| Start | Pause | Pause |
+| Mode | Magic/NMI | Magic/NMI |
+
 ### RAM
 The board contains 512K RAM. There are two cases how to access it:
 1. DivMMC enabled (SD card insert) - 128K available via 7FFDh port, 128K via DFFDh and 128K reserved for DivMMC.
@@ -58,6 +75,13 @@ It's not a bug, it's a feature ;)
 
 ### WiFi module
 It's possible to connect to internet with additional [WiFi module](https://github.com/UzixLS/zx-sizif-512-wifi).
+
+### Tested addons
+* AYX-32 - OK
+* BDI-ZX ver 2.0 MVcomp - OK (if SD card isn't insert)
+* ZX Dandanator! Mini 2.1 - OK (if SD card isn't insert)
+* ZX TSid - OK
+* Noname +3DOS floppy controller - NO, planned to support in next PCB revision
 
 ### Changelog & current status
 * Rev.A - first release. Please see [errata](pcb/rev.A/ERRATA.ru.txt) (in russian).
@@ -70,14 +94,15 @@ PCB rev.D (not soon):
 * add zxbus connector for in-case addons
 * add support for +3DOS floppy controller
 * add support for Sega 3/6-button gamepad
+* add PS/2
+* add Bluetooth tape input (via M18 module)
 * improve tapein circuit to handle super-turbo loaders
 * improve video circuit for ulaplus (?)
-* create in-case addon with more RAM, general sound/turbosound, etc (or may be it will be Sizif-4096?)
+* create in-case addon with RAM extension, general sound/turbosound, etc (or may be it will be Sizif-4096?)
 
 Firmware:
 * add OSD for Magic button
-* add ability to map kempston to any keyboard button
-* add configurable turbo-keys for kempston
+* add Sinclair joystick
 * improve 48K/128K timings for 100% compatibility
 
 ### Acknowledgments
