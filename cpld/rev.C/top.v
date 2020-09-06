@@ -390,7 +390,7 @@ localparam INT_H_S48       = H_TOTAL_S48-6;
 localparam INT_V_S128      = 247;
 localparam INT_H_S128      = H_TOTAL_S128-6;
 localparam INT_V_PENT      = 239;
-localparam INT_H_PENT      = 318;
+localparam INT_H_PENT      = 316;
 wire int_begin =
 	(timings == TIMINGS_PENT)?
 		vc == INT_V_PENT && hc == INT_H_PENT :
