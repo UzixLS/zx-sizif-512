@@ -102,13 +102,25 @@ key_8:                   ; ay_abc <= 0
     jp key_checker_pressed
 key_9:                   ; ay_mono <= 1
     bit 1, a
-    jr nz, key_O
+    jr nz, key_U
     ld a, #42
     out (#ff), a
     jp key_checker_pressed
-key_O:                   ; extlock <= 0
+key_U:                   ; joystick_sinclair <= 0
     ld a, #df            ; read Y-P keys
     in a, (#fe)          ; ...
+    bit 3, a
+    jr nz, key_I
+    ld a, #70
+    out (#ff), a
+    jp key_checker_pressed
+key_I:                   ; joystick_sinclair <= 1
+    bit 2, a
+    jr nz, key_O
+    ld a, #71
+    out (#ff), a
+    jp key_checker_pressed
+key_O:                   ; extlock <= 0
     bit 1, a
     jr nz, key_P
     ld a, #10

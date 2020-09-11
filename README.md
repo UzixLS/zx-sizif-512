@@ -42,6 +42,8 @@ To do this there is a Magic button: just hold it and press key on keyboard:
 | W | Use alternative 48K BASIC (OpenSE) |
 | E | Use default 128K ROM |
 | R | Use +3e-divmmc ROM |
+| U | Use joystick in kempston mode (default) |
+| I | Use joystick in sinclair mode |
 | O | Enable all additional features: DivMMC, 512K RAM, Kempston, Covox (by default) |
 | P | Disable all additional features |
 | Space | Jump to #0 address (useful for ROM switching) |
@@ -102,7 +104,6 @@ PCB rev.D (not soon):
 
 Firmware:
 * add OSD for Magic button
-* add Sinclair joystick
 * improve 48K/128K timings for 100% compatibility
 
 ### Acknowledgments

@@ -102,6 +102,7 @@ reg [1:0] turbo;
 wire clkwait;
 reg pause;
 reg joy_mode;
+wire [7:0] kempston_data;
 reg up_en;
 
 reg n_iorqge_delayed;
@@ -468,6 +469,7 @@ end
 reg extlock;
 reg rom_plus3;
 reg rom_alt48;
+reg joy_sinclair;
 wire config_cs = magic_map && n_ioreq == 0 && xa[7:0] == 8'hff;
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
@@ -479,6 +481,7 @@ always @(posedge clk28 or negedge rst_n) begin
 		ay_mono <= 0;
 		rom_plus3 <= 0;
 		rom_alt48 <= 0;
+		joy_sinclair <= 0;
 	end
 	else if (config_cs && n_wr == 0) begin
 		if (xa[15:12] == 4'h0)
@@ -495,6 +498,8 @@ always @(posedge clk28 or negedge rst_n) begin
 			rom_plus3 <= xd[0];
 		if (xa[15:12] == 4'h6)
 			rom_alt48 <= xd[0];
+		if (xa[15:12] == 4'h7)
+			joy_sinclair <= xd[0];
 	end
 end
 
@@ -520,7 +525,8 @@ always @(posedge clk28 or negedge rst_n) begin
 		port_fe_rd <= port_fe_cs && n_rd == 0;
 end
 
-wire [7:0] port_fe_data = {~magic_button, tape_in, 1'b1, kd};
+reg [4:0] kd0;
+wire [7:0] port_fe_data = {~magic_button, tape_in, 1'b1, kd0};
 reg tape_out, beeper;
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n) begin
@@ -532,6 +538,20 @@ always @(posedge clk28 or negedge rst_n) begin
 		beeper <= xd[4];
 		tape_out <= xd[3];
 		border <= xd[2:0];
+	end
+end
+
+always @(posedge clk28 or negedge rst_n) begin
+	if (!rst_n) begin
+		kd0 <= 5'b11111;
+	end
+	else if (joy_sinclair) begin
+		kd0 <= kd
+			& (xa[12] == 0? {~kempston_data[1], ~kempston_data[0], ~kempston_data[2], ~kempston_data[3], ~kempston_data[4]} : 5'b11111) // 6-0 keys
+			& (xa[15] == 0? {1'b1, ~kempston_data[6], ~kempston_data[5], 2'b11} : 5'b11111 ) ; // b-space keys
+	end
+	else begin
+		kd0 <= kd;
 	end
 end
 
@@ -744,13 +764,13 @@ wire joy_b1_turbo = joy_b1 | (joy_y & blink_cnt[1]);
 wire joy_b2_turbo = joy_b2 | (joy_z & blink_cnt[1]);
 wire joy_b3_turbo = joy_b3 | (joy_x & blink_cnt[1]);
 
-wire [7:0] kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, joy_b1_turbo, joy_up, joy_down, joy_left, joy_right};
+assign kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, joy_b1_turbo, joy_up, joy_down, joy_left, joy_right};
 reg kempston_rd;
 always @(posedge clk28 or negedge rst_n) begin
 	if (!rst_n)
 		kempston_rd <= 0;
 	else
-		kempston_rd <= !extlock && n_ioreq == 0 && n_rd == 0 && xa[7:5] == 3'b000;
+		kempston_rd <= !extlock && n_ioreq == 0 && n_rd == 0 && xa[7:5] == 3'b000 && !joy_sinclair;
 end
 
 
