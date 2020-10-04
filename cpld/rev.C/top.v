@@ -93,6 +93,21 @@ localparam TURBO_7      = 2'b01;
 localparam TURBO_14     = 2'b11;
 
 
+/* RESET */
+reg rst_n0;
+reg [2:0] rst_n0_cnt;
+always @(posedge clk28) begin
+	if (rst_n == 1'b0) begin
+		if (! (&rst_n0_cnt))
+			rst_n0_cnt <= rst_n0_cnt + 1'b1;
+	end
+	else begin
+		rst_n0_cnt <= 0;
+	end
+	rst_n0 <= ~&rst_n0_cnt;
+end
+
+
 /* REGISTER DEFINITIONS */
 reg [2:0] border;
 reg magic_beeper;
@@ -204,8 +219,8 @@ wire blank =
 			((hc >= (H_AREA + H_RBORDER_S48)) &&
 			 (hc <  (H_AREA + H_RBORDER_S48 + H_BLANK1_S48 + H_SYNC_S48 + H_BLANK2_S48))) ;
 
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		hc0 <= 0;
 		vc <= 0;
 	end
@@ -225,8 +240,8 @@ end
 
 reg [4:0] blink_cnt;
 wire blink = blink_cnt[$bits(blink_cnt)-1];
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n)
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0)
 		blink_cnt <= 0;
 	else if (hc0_reset && vc_reset)
 		blink_cnt <= blink_cnt + 1'b1;
@@ -255,8 +270,8 @@ wire border_update = !screen_show && ((timings == TIMINGS_PENT && ck7) || hc0[4:
 wire bitmap_shift = hc0[1:0] == 2'b10;
 wire screen_read_next = (screen_load || up_en) && ((n_iorqge == 1'b1 && n_mreq == 1'b1) || n_rfsh == 1'b0 || clkwait);
 
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		screen_read <= 0;
 		screen_read_step <= 0;
 		attr <= 0;
@@ -404,8 +419,8 @@ wire int_begin =
 		vc == INT_V_S48 && hc == INT_H_S48 ;
 reg [4:0] int0;
 wire n_int_next = (|int0)? 1'b0 : 1'b1;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		int0 <= 0;
 		n_int <= 1'b1;
 	end
@@ -419,8 +434,8 @@ end
 
 
 /* RESET */
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n)
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0)
 		n_rstcpu <= 0;
 	else if (vc[0])
 		n_rstcpu <= PULLUP1;
@@ -434,8 +449,8 @@ reg magic_map;
 reg magic_unmap_next;
 reg magic_map_next;
 assign n_nmi = magic_mode? 1'b0 : PULLUP1;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		magic_mode <= 0;
 		magic_map <= 0;
 		magic_unmap_next <= 0;
@@ -471,8 +486,8 @@ reg rom_plus3;
 reg rom_alt48;
 reg joy_sinclair;
 wire config_cs = magic_map && n_ioreq == 0 && xa[7:0] == 8'hff;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		magic_beeper <= 0;
 		extlock <= 0;
 		timings <= TIMINGS_PENT;
@@ -507,8 +522,8 @@ end
 /* PORT #FF */
 wire [7:0] port_ff_data = attr_next;
 reg port_ff_rd;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n)
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0)
 		port_ff_rd <= 0;
 	else
 		port_ff_rd <= n_rd == 0 && n_ioreq == 0 && (timings != TIMINGS_PENT || xa[7:0] == 8'hFF) && screen_load;
@@ -518,8 +533,8 @@ end
 /* PORT #FE */
 wire port_fe_cs = n_ioreq == 0 && xa[0] == 0;
 reg port_fe_rd;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n)
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0)
 		port_fe_rd <= 0;
 	else
 		port_fe_rd <= port_fe_cs && n_rd == 0;
@@ -528,8 +543,8 @@ end
 reg [4:0] kd0;
 wire [7:0] port_fe_data = {~magic_button, tape_in, 1'b1, kd0};
 reg tape_out, beeper;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		beeper <= 0;
 		tape_out <= 0;
 		border <= 0;
@@ -541,8 +556,8 @@ always @(posedge clk28 or negedge rst_n) begin
 	end
 end
 
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		kd0 <= 5'b11111;
 	end
 	else if (joy_sinclair) begin
@@ -562,8 +577,8 @@ reg vbank;
 reg rombank128;
 reg lock_7ffd;
 reg dffd_d4;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		rambank128 <= 0;
 		vbank <= 0;
 		rombank128 <= 0;
@@ -582,8 +597,8 @@ end
 wire port_dffd_cs = !extlock && n_ioreq == 0 && xa == 16'hDFFD;
 reg [1:0] rambank_ext;
 reg dffd_d3;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		rambank_ext <= 2'b11;
 		dffd_d3 <= 1'b0;
 		dffd_d4 <= 1'b0;
@@ -599,8 +614,8 @@ end
 
 
 /* AY */
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		ay_clk <= 0;
 		ay_bc1 <= 0;
 		ay_bdir <= 0;
@@ -617,8 +632,8 @@ end
 /* PORT #1FFD */
 wire port_1ffd_cs = !extlock && n_ioreq == 0 && xa == 16'h1FFD;
 reg [2:0] p1ffd;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		p1ffd <= 0;
 		plus3_mtr <= 1'bz;
 	end
@@ -631,8 +646,8 @@ end
 
 /* PORTS #2FFD & #3FFD (+3DOS) */
 wire port_2ffd_3ffd_cs = !extlock && n_ioreq == 0 && (xa == 16'h2FFD || xa == 16'h3FFD);
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		plus3_dwr <= 1'b1;
 		plus3_drd <= 1'b1;
 	end
@@ -650,8 +665,8 @@ wire soundrive_a_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'h0F;
 wire soundrive_b_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'h1F;
 wire soundrive_c_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'h4F;
 wire soundrive_d_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'h5F;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		covox_data_l0 <= 8'h80;
 		covox_data_l1 <= 8'h80;
 		covox_data_r0 <= 8'h80;
@@ -674,8 +689,8 @@ assign snd_l = snd_dac_l[10];
 assign snd_r = snd_dac_r[10];
 wire [9:0] snd_dac_next_l = covox_data_l0 + covox_data_l1 + {beeper, tape_out ^ magic_beeper, tape_in, sd_miso, 4'b0000};
 wire [9:0] snd_dac_next_r = covox_data_r0 + covox_data_r1 + {beeper, tape_out ^ magic_beeper, tape_in, sd_miso, 4'b0000};
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		snd_dac_l <= 0;
 		snd_dac_r <= 0;
 	end
@@ -696,8 +711,8 @@ reg joy_md, joy_md6;
 wire joy_rd_ena = hc < 256 && vc[6:0] == 0; // every ~8ms
 wire joy_rd_strobe = hc[4];
 wire [2:0] joy_rd_state = hc[7:5]; // one step ~4.5us
-always @(posedge clk28 or negedge rst_n) begin
-	if (rst_n == 0) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		joy_md <= 0;
 		joy_md6 <= 0;
 		joy_up <= 0;
@@ -766,8 +781,8 @@ wire joy_b3_turbo = joy_b3 | (joy_x & blink_cnt[1]);
 
 assign kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, joy_b1_turbo, joy_up, joy_down, joy_left, joy_right};
 reg kempston_rd;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n)
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0)
 		kempston_rd <= 0;
 	else
 		kempston_rd <= !extlock && n_ioreq == 0 && n_rd == 0 && xa[7:5] == 3'b000 && !joy_sinclair;
@@ -777,8 +792,8 @@ end
 /* DIVMMC */
 wire port_eb_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'hEB;
 reg div_rd;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n)
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0)
 		div_rd <= 0;
 	else
 		div_rd <= n_rd == 0 && port_eb_cs;
@@ -786,8 +801,8 @@ end
 
 reg conmem, mapram;
 reg [3:0] divbank;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		divbank <= 0;
 		mapram <= 0;
 		conmem <= 0;
@@ -807,8 +822,8 @@ end
 
 reg automap_next;
 reg automap;
-always @(negedge clk28 or negedge rst_n) begin // negedge for timing of 3Dh entrypoint in turbo mode
-	if (!rst_n) begin
+always @(negedge clk28 or negedge rst_n0) begin // negedge for timing of 3Dh entrypoint in turbo mode
+	if (!rst_n0) begin
 		automap_next <= 0;
 		automap <= 0;
 	end
@@ -841,8 +856,8 @@ end
 
 reg [3:0] divcnt;
 wire divcnt_en = ~divcnt[3] | divcnt[2] | divcnt[1] | divcnt[0];
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n)
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0)
 		divcnt <= 0;
 	else if (port_eb_cs && (n_rd == 0 || n_wr == 0))
 		divcnt <= 4'b1110;
@@ -851,8 +866,8 @@ always @(posedge clk28 or negedge rst_n) begin
 end
 
 reg div_mosi_en;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n)
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0)
 		div_mosi_en <= 0;
 	else if (port_eb_cs && n_wr == 0)
 		div_mosi_en <= 1'b1;
@@ -862,8 +877,8 @@ end
 
 reg [7:0] divmmc_data;
 assign sd_mosi = div_mosi_en? divmmc_data[7] : 1'b1;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n)
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0)
 		divmmc_data <= 0;
 	else if (port_eb_cs && n_wr == 0)
 		divmmc_data <= xd;
@@ -883,8 +898,8 @@ reg port_ff3b_rd;
 wire [7:0] port_ff3b_data = {7'b0000000, up_en};
 reg [7:0] up_addr_reg;
 reg up_write_req;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		port_ff3b_rd <= 1'b0;
 		up_en <= 1'b0;
 		up_write_req <= 1'b0;
@@ -916,8 +931,8 @@ wire div_ram = (conmem == 1 && xa[13] == 1) || (automap == 1 && xa[13] == 1) || 
 wire div_ramwr_mask = xa[15] == 0 && xa[14] == 0 && (xa[13] == 0 || divbank == 4'b0011) && conmem == 0 && automap == 1 && mapram == 1;
 
 reg romreq, ramreq, ramreq_wr;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n) begin
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
 		romreq = 1'b0;
 		ramreq = 1'b0;
 		ramreq_wr = 1'b0;
@@ -942,8 +957,8 @@ assign vdout = n_vrd == 1'b1;
 
 
 reg [18:13] ram_a;
-always @(posedge clk28 or negedge rst_n) begin
-	if (!rst_n)
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0)
 		ram_a <= 0;
 	else
 		ram_a <=
