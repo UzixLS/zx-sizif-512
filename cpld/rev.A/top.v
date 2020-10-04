@@ -740,7 +740,7 @@ wire [7:0] divmmc_data = 0;
 /* VIDEO */
 `ifdef USE_CHROMA
 reg [2:0] chroma0;
-chroma_gen chroma_gen1(
+chroma_gen #(.CLK_FREQ(32_000_000)) chroma_gen1(
 	.cg_clock(clk32),
 	.cg_rgb({g,r,b}),
 	.cg_hsync(~hsync),
