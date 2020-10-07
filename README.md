@@ -92,14 +92,14 @@ It's possible to connect to internet with additional [WiFi module](https://githu
 * Rev.C1 - fixed incorrect JTAG pinout; fixed incorrect silkscreen for power connector J3, tuned some circuit values. Everything seems to work. [Errata](pcb/rev.C1/ERRATA.txt).
 
 ### Roadmap
-PCB rev.D (not soon):
+PCB rev.D:
 * add zxbus connector for in-case addons
 * add support for +3DOS floppy controller
 * add support for Sega 3/6-button gamepad
 * add PS/2
 * add Bluetooth tape input (via M18 module)
 * improve tapein circuit to handle super-turbo loaders
-* improve video circuit for ulaplus (?)
+* fix compatibility with some keyboards
 * create in-case addon with RAM extension, general sound/turbosound, etc (or may be it will be Sizif-4096?)
 
 Firmware:
