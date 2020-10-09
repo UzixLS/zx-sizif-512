@@ -94,6 +94,9 @@ localparam TURBO_14     = 2'b11;
 
 
 /* RESET */
+`ifdef USE_FPGA
+wire rst_n0 = rst_n;
+`else
 reg rst_n0;
 reg [2:0] rst_n0_cnt;
 always @(posedge clk28) begin
@@ -106,6 +109,7 @@ always @(posedge clk28) begin
 	end
 	rst_n0 <= ~&rst_n0_cnt;
 end
+`endif
 
 
 /* REGISTER DEFINITIONS */
