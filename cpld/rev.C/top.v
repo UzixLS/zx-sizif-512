@@ -391,7 +391,7 @@ reg turbo_wait_trig1;
 always @(posedge clk28) begin
 	turbo_wait_trig1 <= turbo_wait_trig0;
 	turbo_wait[0] <= turbo == TURBO_14 && turbo_wait_trig0 && !turbo_wait_trig1;
-	turbo_wait[1] <= turbo_wait[0] && ((n_iorqge == 0) || div_wait);
+	turbo_wait[1] <= turbo_wait[0] && ((n_iorqge == 0) || div_wait || up_en);
 	turbo_wait[2] <= turbo_wait[1];
 end
 
