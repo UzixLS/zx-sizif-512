@@ -794,49 +794,18 @@ end
 
 
 /* DIVMMC */
-wire port_eb_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'hEB;
-reg div_rd;
-always @(posedge clk28 or negedge rst_n0) begin
-	if (!rst_n0)
-		div_rd <= 0;
-	else
-		div_rd <= n_rd == 0 && port_eb_cs;
-end
-
-reg conmem, mapram;
-reg [3:0] divbank;
-always @(posedge clk28 or negedge rst_n0) begin
-	if (!rst_n0) begin
-		divbank <= 0;
-		mapram <= 0;
-		conmem <= 0;
-		sd_cs <= 1'b1;
-	end
-	else if (!extlock && n_ioreq == 0 && n_wr == 0) begin
-		if (xa[7:0] == 8'hE3) begin
-			divbank <= xd[3:0];
-			mapram <= xd[6] | mapram;
-			conmem <= xd[7];
-		end
-		if (xa[7:0] == 8'hE7) begin
-			sd_cs <= xd[0];
-		end
-	end
-end
-
-reg automap_next;
-reg automap;
+reg div_automap, div_automap_next;
 always @(negedge clk28 or negedge rst_n0) begin // negedge for timing of 3Dh entrypoint in turbo mode
 	if (!rst_n0) begin
-		automap_next <= 0;
-		automap <= 0;
+		div_automap_next <= 0;
+		div_automap <= 0;
 	end
 	else if (n_m1 == 0 && n_mreq == 0 && magic_map == 0) begin 
 		if (sd_cd || extlock || dffd_d4 || p1ffd[0]) begin
-			automap_next <= 0;
+			div_automap_next <= 0;
 		end
 		else if (xa[15:3] == 13'h3FF) begin // exit vectors 1FF8-1FFF
-			automap_next <= 0;
+			div_automap_next <= 0;
 		end
 		else if (
 				xa == 16'h0000 || // power-on/reset/rst0/software restart
@@ -846,15 +815,42 @@ always @(negedge clk28 or negedge rst_n0) begin // negedge for timing of 3Dh ent
 				xa == 16'h04C6 || // tape save routine
 				xa == 16'h0562    // tape load and verify routine
 				) begin
-			automap_next <= 1'b1;
+			div_automap_next <= 1'b1;
 		end
 		else if (xa[15:8] == 8'h3D) begin // tr-dos mapping area
-			automap_next <= 1'b1;
-			automap <= 1'b1;
+			div_automap_next <= 1'b1;
+			div_automap <= 1'b1;
 		end
 	end
 	else if (n_m1 == 1'b1) begin
-		automap <= automap_next;
+		div_automap <= div_automap_next;
+	end
+end
+
+reg div_rd;
+reg div_conmem, div_mapram;
+reg [3:0] div_bank;
+wire port_e3_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'hE3;
+wire port_e7_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'hE7;
+wire port_eb_cs = !extlock && n_ioreq == 0 && xa[7:0] == 8'hEB;
+always @(posedge clk28 or negedge rst_n0) begin
+	if (!rst_n0) begin
+		div_rd <= 0;
+		div_bank <= 0;
+		div_mapram <= 0;
+		div_conmem <= 0;
+		sd_cs <= 1'b1;
+	end
+	else begin
+		div_rd <= port_eb_cs && n_rd == 0;
+		if (port_e3_cs && n_wr == 0) begin
+			div_bank <= xd[3:0];
+			div_mapram <= xd[6] | div_mapram;
+			div_conmem <= xd[7];
+		end
+		if (port_e7_cs && n_wr == 0) begin
+			sd_cs <= xd[0];
+		end
 	end
 end
 
@@ -879,16 +875,15 @@ always @(posedge clk28 or negedge rst_n0) begin
 		div_mosi_en <= 0;
 end
 
-reg [7:0] divmmc_data;
-assign sd_mosi = div_mosi_en? divmmc_data[7] : 1'b1;
+reg [7:0] div_data;
+assign sd_mosi = div_mosi_en? div_data[7] : 1'b1;
 always @(posedge clk28 or negedge rst_n0) begin
 	if (!rst_n0)
-		divmmc_data <= 0;
+		div_data <= 0;
 	else if (port_eb_cs && n_wr == 0)
-		divmmc_data <= xd;
-	else if (divcnt[3] == 1'b0)
-		if (ck14)
-			divmmc_data[7:0] <= {divmmc_data[6:0], sd_miso};
+		div_data <= xd;
+	else if (divcnt[3] == 1'b0 && ck14)
+		div_data[7:0] <= {div_data[6:0], sd_miso};
 end
 
 always @(posedge clk28)
@@ -930,9 +925,9 @@ end
 
 
 /* MEMORY CONTROLLER */
-wire divmap = automap | conmem;
-wire div_ram = (conmem == 1 && xa[13] == 1) || (automap == 1 && xa[13] == 1) || (conmem == 0 && automap == 1 && mapram == 1);
-wire div_ramwr_mask = xa[15] == 0 && xa[14] == 0 && (xa[13] == 0 || divbank == 4'b0011) && conmem == 0 && automap == 1 && mapram == 1;
+wire div_map = div_automap | div_conmem;
+wire div_ram = (div_conmem == 1 && xa[13] == 1) || (div_automap == 1 && xa[13] == 1) || (div_conmem == 0 && div_automap == 1 && div_mapram == 1);
+wire div_ramwr_mask = xa[15] == 0 && xa[14] == 0 && (xa[13] == 0 || div_bank == 4'b0011) && div_conmem == 0 && div_automap == 1 && div_mapram == 1;
 
 reg romreq, ramreq, ramreq_wr;
 always @(posedge clk28 or negedge rst_n0) begin
@@ -943,7 +938,7 @@ always @(posedge clk28 or negedge rst_n0) begin
 	end
 	else begin
 		romreq =  n_mreq == 0 && n_rfsh == 1 &&  xa[14] == 0    && xa[15] == 0 &&
-			(magic_map || (!div_ram && divmap) || (!div_ram && !dffd_d4 && !p1ffd[0]));
+			(magic_map || (!div_ram && div_map) || (!div_ram && !dffd_d4 && !p1ffd[0]));
 		ramreq = (n_mreq == 0 && n_rfsh == 1 && !romreq) || up_write_req;
 		ramreq_wr = ramreq && n_wr == 0 && div_ramwr_mask == 0;
 	end
@@ -968,8 +963,8 @@ always @(posedge clk28 or negedge rst_n0) begin
 		ram_a <=
 			magic_map & xa[15] & xa[14]? {2'b00, 3'b111, xa[13]} :
 			magic_map? {3'b111, vbank, xa[14:13]} :
-			divmap & ~xa[14] & ~xa[15] & xa[13]? {2'b01, divbank} :
-			divmap & ~xa[14] & ~xa[15]? {2'b01, 4'b0011} :
+			div_map & ~xa[14] & ~xa[15] & xa[13]? {2'b01, div_bank} :
+			div_map & ~xa[14] & ~xa[15]? {2'b01, 4'b0011} :
 			dffd_d3 & xa[15]? {2'b11, xa[14], xa[15], xa[14], xa[13]} :
 			dffd_d3 & xa[14]? {rambank_ext, rambank128, xa[13]} :
 			(p1ffd[2] == 1'b0 && p1ffd[0] == 1'b1)? {2'b11, p1ffd[1], xa[15], xa[14], xa[13]} :
@@ -981,7 +976,7 @@ end
 
 assign ra[16:14] =
 	magic_map? 3'd2 :
-	divmap? 3'd3 :
+	div_map? 3'd3 :
 	(rom_plus3 && p1ffd[2] == 1'b0 && rombank128 == 1'b0)? 3'd4 :
 	(rom_plus3 && p1ffd[2] == 1'b0 && rombank128 == 1'b1)? 3'd5 :
 	(rom_plus3 && p1ffd[2] == 1'b1 && rombank128 == 1'b0)? 3'd6 :
@@ -998,7 +993,7 @@ assign va[18:0] =
 
 assign xd[7:0] =
 	port_ff3b_rd? port_ff3b_data :
-	div_rd? divmmc_data :
+	div_rd? div_data :
 	kempston_rd? kempston_data :
 	port_fe_rd? port_fe_data :
 	port_ff_rd? port_ff_data :
