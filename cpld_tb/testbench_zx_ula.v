@@ -67,6 +67,7 @@ wire dout;
 wire vdout;
 wire n_iorqge;
 reg n_magic;
+wire sd_mosi_miso;
 zx_ula zx_ula1(
     .rst_n(rst_n),
     .clk28(clk28),
@@ -92,7 +93,8 @@ zx_ula zx_ula1(
     .kd(5'b0),
     .n_joy_b2(1'b1),
     .sd_cd(1'b0),
-    .sd_miso(1'b0),
+    .sd_mosi(sd_mosi_miso),
+    .sd_miso(sd_mosi_miso),
     .dout(dout),
     .vdout(vdout)
     );

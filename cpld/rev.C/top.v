@@ -119,6 +119,7 @@ reg [2:0] rambank128;
 reg [1:0] timings;
 reg [1:0] turbo;
 wire clkwait;
+wire div_wait;
 reg pause;
 reg joy_mode;
 wire [7:0] kempston_data;
@@ -390,7 +391,7 @@ reg turbo_wait_trig1;
 always @(posedge clk28) begin
 	turbo_wait_trig1 <= turbo_wait_trig0;
 	turbo_wait[0] <= turbo == TURBO_14 && turbo_wait_trig0 && !turbo_wait_trig1;
-	turbo_wait[1] <= turbo_wait[0] && (n_iorqge == 0);
+	turbo_wait[1] <= turbo_wait[0] && ((n_iorqge == 0) || div_wait);
 	turbo_wait[2] <= turbo_wait[1];
 end
 
@@ -856,12 +857,13 @@ end
 
 reg [3:0] divcnt;
 wire divcnt_en = ~divcnt[3] | divcnt[2] | divcnt[1] | divcnt[0];
+assign div_wait = ~divcnt[3];
 always @(posedge clk28 or negedge rst_n0) begin
 	if (!rst_n0)
 		divcnt <= 0;
 	else if (port_eb_cs && (n_rd == 0 || n_wr == 0))
 		divcnt <= 4'b1110;
-	else if (divcnt_en && ck14)
+	else if (divcnt_en && ck7)
 		divcnt <= divcnt + 1'b1;
 end
 
@@ -882,12 +884,13 @@ always @(posedge clk28 or negedge rst_n0) begin
 		div_data <= 0;
 	else if (port_eb_cs && n_wr == 0)
 		div_data <= xd;
-	else if (divcnt[3] == 1'b0 && ck14)
+	else if (divcnt[3] == 1'b0 && ck7)
 		div_data[7:0] <= {div_data[6:0], sd_miso};
 end
 
 always @(posedge clk28)
-	sd_sck <= ~sd_sck & ~divcnt[3];
+	if (ck14)
+		sd_sck <= ~sd_sck & ~divcnt[3];
 
 
 /* ULAPLUS */
