@@ -11,73 +11,72 @@ module chroma_gen #(
     output reg [2:0] cg_out // chroma out
 );
 
-parameter CARRIER_WIDTH =
-    (CLK_FREQ == 17_734_475)? 4 :  
-    (CLK_FREQ == 14_318_180)? 17 :
-    (CLK_FREQ == 40_000_000)? 15 :
-    (CLK_FREQ == 20_000_000)? 14 :
-    (CLK_FREQ == 32_000_000)? 15 :
-    (CLK_FREQ == 16_000_000)? 14 :
-    (CLK_FREQ == 28_000_000)? 18 :
+localparam CARRIER_WIDTH =
     (CLK_FREQ == 14_000_000)? 17 :
+    (CLK_FREQ == 14_318_180)? 17 :
+    (CLK_FREQ == 16_000_000)? 14 :
+    (CLK_FREQ == 17_734_475)? 3 :
+    (CLK_FREQ == 20_000_000)? 14 :
+    (CLK_FREQ == 24_000_000)? 17 :
+    (CLK_FREQ == 25_000_000)? 16 :
+    (CLK_FREQ == 28_000_000)? 18 :
+    (CLK_FREQ == 32_000_000)? 15 :
+    (CLK_FREQ == 40_000_000)? 15 :
     0;
-parameter PAL_CARRIER =
-    (CLK_FREQ == 17_734_475)? 8 :
-    (CLK_FREQ == 14_318_180)? 81173 :
-    (CLK_FREQ == 40_000_000)? 7264 :
-    (CLK_FREQ == 20_000_000)? 7264 :
-    (CLK_FREQ == 32_000_000)? 9080 :
-    (CLK_FREQ == 16_000_000)? 9080 :
-    (CLK_FREQ == 28_000_000)? 83018 :
-    (CLK_FREQ == 14_000_000)? 83018 :
+localparam PAL_CARRIER =
+    (CLK_FREQ == 14_000_000)? 83018 : // 20.776 error
+    (CLK_FREQ == 14_318_180)? 81173 : // 11.72 error
+    (CLK_FREQ == 16_000_000)? 9080 :  // 25 error
+    (CLK_FREQ == 17_734_475)? 4 :     // 0 error
+    (CLK_FREQ == 20_000_000)? 7264 :  // 25 error
+    (CLK_FREQ == 24_000_000)? 48427 : // 5.51 error
+    (CLK_FREQ == 25_000_000)? 23245 : // 13.14 error
+    (CLK_FREQ == 28_000_000)? 83018 : // 20.78 error
+    (CLK_FREQ == 32_000_000)? 9080 :  // 25 error
+    (CLK_FREQ == 40_000_000)? 7264 :  // 25 error
     0;
-parameter NTSC_CARRIER =
-    (CLK_FREQ == 17_734_475)? 8 : // NTSC4.43
-    (CLK_FREQ == 14_318_180)? 65536 :
-    (CLK_FREQ == 40_000_000)? 5865 :
-    (CLK_FREQ == 20_000_000)? 5865 :
-    (CLK_FREQ == 32_000_000)? 7331 :
-    (CLK_FREQ == 16_000_000)? 7331 :
-    (CLK_FREQ == 28_000_000)? 67025 :
-    (CLK_FREQ == 14_000_000)? 67025 :
+localparam NTSC_CARRIER =
+    (CLK_FREQ == 14_000_000)? 67025 : // 23.82 error
+    (CLK_FREQ == 14_318_180)? 65536 : // 0 errror
+    (CLK_FREQ == 16_000_000)? 7331 :  // 44.84 error
+    (CLK_FREQ == 17_734_475)? 4 :     // 0 error (NTSC4.43)
+    (CLK_FREQ == 20_000_000)? 5865 :  // 166.91 error
+    (CLK_FREQ == 24_000_000)? 39098 : // 16.19 error
+    (CLK_FREQ == 25_000_000)? 18767 : // 23.82 error
+    (CLK_FREQ == 28_000_000)? 67025 : // 23.82 error
+    (CLK_FREQ == 32_000_000)? 7331 :  // 44.84 error
+    (CLK_FREQ == 40_000_000)? 5865 :  // 166.91 error
     0;
 
 reg [CARRIER_WIDTH:0] carrier;
-reg [3:0] bcounter;
+wire [31:0] carrier_next;
+reg [3:0] burst_cnt;
+wire burst;
+reg oddeven;
 reg [3:0] phase;
 reg [3:0] scarrier;
-reg oddeven;
-reg burst, bstop;
-reg cenable;
+wire cenable;
 
 
 // DDS for PAL-carrier
+assign carrier_next = (cg_pnsel == 1'b0)?
+        (carrier + PAL_CARRIER)  :
+        (carrier + NTSC_CARRIER) ;
+
 always @(posedge cg_clock) begin
-    if (cg_pnsel == 1'b0)
-        carrier <= carrier + PAL_CARRIER;
-    else
-        carrier <= carrier + NTSC_CARRIER;
+    carrier <= carrier_next[CARRIER_WIDTH:0];
 end
 
-// burst generator  
-always @* begin
-    if (bcounter == 4'b0000) 
-        bstop <= 1'b1;
-    else
-        bstop <= 1'b0;
-end
-
+// burst generator
 always @(posedge carrier[CARRIER_WIDTH] or negedge cg_hsync) begin
     if (cg_hsync == 1'b0)
-        bcounter <= 4'b0100;
-    else if (carrier[CARRIER_WIDTH] == 1'b1 && bstop == 1'b0)
-        bcounter <= bcounter + 1;   
+        burst_cnt <= 4'b0100;
+    else if (burst_cnt != 4'b0000)
+        burst_cnt <= burst_cnt + 1'b1;
 end
+assign burst = burst_cnt[3];
 
-always @*
-    burst <= bcounter[3];
-
-// odd/even line    
+// odd/even line
 always @(posedge cg_hsync) begin
     if (cg_pnsel == 1'b0)
         oddeven <= ~oddeven;
@@ -89,7 +88,7 @@ end
 always @* begin
     if (burst == 1'b1) begin
         if ((oddeven == 1'b0) && (cg_pnsel == 1'b0))
-            phase <= 4'b0110; // burst phase 135 deg 
+            phase <= 4'b0110; // burst phase 135 deg
         else
             phase <= 4'b1010; // burst phase -135 deg
     end
@@ -114,7 +113,7 @@ always @* begin
             3'b110:  phase <= 4'b1001; // yellow phase
             default: phase <= 4'b0000; // dummy function
         endcase
-    end 
+    end
 end
 
 // modulated carrier
@@ -122,12 +121,10 @@ always @*
     scarrier <= carrier[CARRIER_WIDTH:CARRIER_WIDTH-3] + phase;
 
 // colour enable
-always @* begin
-    if ((cg_rgb != 3'b000) && (cg_rgb != 3'b111) && (cg_enable == 1'b1))
-        cenable <= 1'b1;
-    else
-        cenable <= 1'b0;
-end
+assign cenable =
+    cg_enable == 1'b1 &&
+    cg_rgb != 3'b000 &&
+    cg_rgb != 3'b111;
 
 // chroma signal
 always @(posedge cg_clock) begin
@@ -137,4 +134,4 @@ always @(posedge cg_clock) begin
 end
 
 
-endmodule 
+endmodule
