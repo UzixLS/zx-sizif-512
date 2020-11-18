@@ -175,6 +175,7 @@ wire [`CLOG2(`MAX(H_TOTAL_S128, H_TOTAL_PENT))-1:0] hc = hc0[$bits(hc0)-1:2];
 
 wire clk14 = hc0[0];
 wire clk7 = hc0[1];
+wire clk35 = hc0[2];
 wire ck14 = hc0[0];
 wire ck7 = hc0[0] & hc0[1];
 wire ck35 = hc0[0] & hc0[1] && hc0[2];
@@ -400,7 +401,7 @@ wire clkcpu_ck = clkcpu && ! clkcpu_prev;
 assign clkwait = pause || contention || (|turbo_wait);
 always @(negedge clk28) begin
 	clkcpu_prev <= clkcpu;
-	clkcpu <= clkwait? clkcpu : (turbo == TURBO_14)? hc0[0] : (turbo == TURBO_7)? hc0[1] : hc[0];
+	clkcpu <= clkwait? clkcpu : (turbo == TURBO_14)? clk14 : (turbo == TURBO_7)? clk7 : clk35;
 end
 assign n_clkcpu = ~clkcpu;
 
