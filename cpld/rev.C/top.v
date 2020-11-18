@@ -252,7 +252,7 @@ always @(posedge clk28 or negedge rst_n0) begin
 		blink_cnt <= blink_cnt + 1'b1;
 end
 
-wire [7:0] attr_border = {2'b00, border[2] ^ ~sd_miso, border[1] ^ magic_beeper, border[0] ^ (pause & blink), 3'b000};
+wire [7:0] attr_border = {2'b00, border[2] ^ ~sd_cs, border[1] ^ magic_beeper, border[0] ^ (pause & blink), 3'b000};
 
 reg [7:0] bitmap, attr, bitmap_next, attr_next;
 reg [7:0] up_ink, up_paper, up_ink_next, up_paper_next;
@@ -692,8 +692,8 @@ end
 reg [10:0] snd_dac_l, snd_dac_r;
 assign snd_l = snd_dac_l[10];
 assign snd_r = snd_dac_r[10];
-wire [9:0] snd_dac_next_l = covox_data_l0 + covox_data_l1 + {beeper, tape_out ^ magic_beeper, tape_in, sd_miso, 4'b0000};
-wire [9:0] snd_dac_next_r = covox_data_r0 + covox_data_r1 + {beeper, tape_out ^ magic_beeper, tape_in, sd_miso, 4'b0000};
+wire [9:0] snd_dac_next_l = covox_data_l0 + covox_data_l1 + {beeper, tape_out ^ magic_beeper, tape_in, sd_cs, 4'b0000};
+wire [9:0] snd_dac_next_r = covox_data_r0 + covox_data_r1 + {beeper, tape_out ^ magic_beeper, tape_in, sd_cs, 4'b0000};
 always @(posedge clk28 or negedge rst_n0) begin
 	if (!rst_n0) begin
 		snd_dac_l <= 0;
