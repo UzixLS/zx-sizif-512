@@ -1,6 +1,7 @@
 `include "util.vh"
 // `define USE_FPGA
-
+//`define REV_C
+`define REV_D
 
 module zx_ula(
 	input rst_n,
@@ -332,6 +333,7 @@ end
 
 
 /* VIDEO OUTPUT */
+`ifdef REV_C
 function [1:0] color_2to2; input [1:0] in;
 	case (in)
 		2'b00: color_2to2 = 2'b00; // 0mV
@@ -352,6 +354,29 @@ function [1:0] color_3to2; input [2:0] in;
 		3'b111: color_3to2 = 2'b11; // 675mV
 	endcase
 endfunction
+`endif
+`ifdef REV_D
+function [1:0] color_2to2; input [1:0] in;
+	case (in)
+		2'b00: color_2to2 = 2'b00;
+		2'b01: color_2to2 = clk14? 2'b10 : 2'b0z;
+		2'b10: color_2to2 = clk14? 2'b1z : 2'bz0;
+		2'b11: color_2to2 = 2'b11;
+	endcase
+endfunction
+function [1:0] color_3to2; input [2:0] in;
+	case (in)
+		3'b000: color_3to2 = 2'b00;
+		3'b001: color_3to2 = clk14? 2'bz1 : 2'bzz;
+		3'b010: color_3to2 = clk14? 2'b1z : 2'b00;
+		3'b011: color_3to2 = clk14? 2'b11 : 2'b00;
+		3'b100: color_3to2 = clk14? 2'b10 : 2'bzz;
+		3'b101: color_3to2 = 2'b10;
+		3'b110: color_3to2 = clk14? 2'b11 : 2'b10;
+		3'b111: color_3to2 = 2'b11;
+	endcase
+endfunction
+`endif
 
 always @(posedge clk28) begin
 	if (blank)
@@ -363,7 +388,12 @@ always @(posedge clk28) begin
 	end
 	else begin
 		{g[1], r[1], b[1]} = (pixel ^ (attr[7] & blink))? attr[2:0] : attr[5:3];
-		{g[0], r[0], b[0]} = ((g[1] | r[1] | b[1]) & attr[6])? 3'b111 : 3'bzzz;
+		{g[0], r[0], b[0]} = ((g[1] | r[1] | b[1]) & attr[6])? 3'b111 : 
+		`ifdef REV_C
+			3'bzzz;
+		`else
+			3'b000;
+		`endif
 	end
 	csync = ~(vsync0 ^ hsync0);
 	vsync = vsync0;
