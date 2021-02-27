@@ -1,6 +1,6 @@
 ## Sizif-512
 Another CPLD-based ZX Spectrum clone for 48K rubber case with some sweet features.
-[![photo](https://cloud.err200.net/index.php/s/73TR85tYZkMm8Ax/download?path=/&files=sizif-512-c.small.jpg)](https://cloud.err200.net/index.php/apps/files_sharing/publicpreview/73TR85tYZkMm8Ax?fileId=50629&file=/sizif-512-c.png&x=-1&y=-1)
+[![photo](https://cloud.err200.net/index.php/s/73TR85tYZkMm8Ax/download?path=/&files=sizif-512-d.small.jpg)](https://cloud.err200.net/index.php/apps/files_sharing/publicpreview/73TR85tYZkMm8Ax?fileId=50629&file=/sizif-512-d.png&x=-1&y=-1)
 
 ### Tech specs
 * Half-sized PCB for 48K rubber case, case modifications isn't necessary
@@ -10,7 +10,7 @@ Another CPLD-based ZX Spectrum clone for 48K rubber case with some sweet feature
 * Switchable 128K / +3e-divmmc ROM
 * 512K RAM
 * Real AY-8910 with switchable stereo ABC/ACB/mono output
-* Kempston joystick
+* Sega 6-button joystick input; Kempston/Sinclair modes
 * Integrated DivMMC, 1x microSD socket
 * PAL and RGB video out (Sega Mini-DIN/9 connector)
 * Digital video out for EGA monitors
@@ -18,8 +18,9 @@ Another CPLD-based ZX Spectrum clone for 48K rubber case with some sweet feature
 * Mono covox (Pentagon standard)
 * SounDrive (4-channel stereo covox)
 * WiFi
-* 9-24V power supply with any polarity
-* Reset and Magic buttons and headers, header for power button
+* Tape input via 3.5" jack and Bluetooth
+* 9-12V power supply with any polarity
+* Reset and Magic buttons and , header for power button
 
 ### Demonstration
 Running Pentagon 128 and Spectrum 128 demos: [link](https://www.youtube.com/watch?v=_RoLKcfJSTY)  
@@ -93,21 +94,24 @@ It's possible to connect to internet with additional [WiFi module](https://githu
 * Rev.B - abandoned. Files kept for historical reason.
 * Rev.C - BDI has been removed; improved video circuit; more capable CPLD; better power circuit; add mono AY mode. [Errata](pcb/rev.C/ERRATA.txt).
 * Rev.C1 - fixed incorrect JTAG pinout; fixed incorrect silkscreen for power connector J3, tuned some circuit values. Everything seems to work. [Errata](pcb/rev.C1/ERRATA.txt).
+* Rev.D:
+    * added zxbus connector for in-case addons
+    * added support for +3DOS floppy controller (TODO: check)
+    * added support for Sega 3/6-button gamepad
+    * added PS/2 (TODO: check)
+    * added Bluetooth tape input (via M18 module)
+    * added alternative microSD card socket footprint
+    * fixed compatibility with some keyboards
+* Rev.D1: minor changes in pcb layout
 
 ### Roadmap
-PCB rev.D:
-* add zxbus connector for in-case addons
-* add support for +3DOS floppy controller
-* add support for Sega 3/6-button gamepad
-* add PS/2
-* add Bluetooth tape input (via M18 module)
-* improve tapein circuit to handle super-turbo loaders
-* fix compatibility with some keyboards
-* create in-case addon with RAM extension, general sound, turbosound fm, etc
+PCB:
+* create in-case addon with General Sound, TurboSound FM, SAA1099, MIDI etc
 
 Firmware:
 * add OSD for Magic button
 * improve 48K/128K timings for 100% compatibility
+* implement PS/2
 
 ### Acknowledgments
 This work is based on a lot of other projects and would hardly have been successful without them.
