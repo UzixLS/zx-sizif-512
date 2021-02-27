@@ -9,6 +9,7 @@ pcb/**/*.xml
 pcb/**/out/
 pcb/mask-color.png
 pcb.*/
+pcb/rev*~*/
 
 ## Quartus
 db/
