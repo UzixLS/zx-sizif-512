@@ -1,7 +1,7 @@
 `include "util.vh"
 // `define USE_FPGA
-//`define REV_C
-`define REV_D
+// `define REV_C
+// `define REV_D
 
 module zx_ula(
 	input rst_n,
@@ -15,7 +15,7 @@ module zx_ula(
 	inout [7:0] xd,
 	output [18:0] va,
 	inout [7:0] vd,
-	output [16:14] ra,
+	output [17:14] ra,
 
 `ifdef USE_FPGA
 	output dout,
@@ -1008,7 +1008,7 @@ always @(posedge clk28 or negedge rst_n0) begin
 			{2'b11, xa[14], xa[15], xa[14], xa[13]} ;
 end
 
-assign ra[16:14] =
+assign ra[17:14] =
 	magic_map? 3'd2 :
 	div_map? 3'd3 :
 	(rom_plus3 && p1ffd[2] == 1'b0 && rombank128 == 1'b0)? 3'd4 :
