@@ -87,7 +87,7 @@ It's possible to connect to internet with additional [WiFi module](https://githu
 * ZX Dandanator! Mini 2.1 - OK (if SD card isn't insert)
 * ZX TSid - OK
 * Multiface 128 1.00 by Steve Smith - OK (if SD card isn't insert)
-* Noname +3DOS floppy controller - NO, planned to support in next PCB revision
+* Noname +3DOS floppy controller - OK (since rev.D)
 
 ### Changelog & current status
 * Rev.A - first release. Please note the [errata](pcb/rev.A/ERRATA.ru.txt) (in russian).
@@ -96,7 +96,7 @@ It's possible to connect to internet with additional [WiFi module](https://githu
 * Rev.C1 - fixed incorrect JTAG pinout; fixed incorrect silkscreen for power connector J3, tuned some circuit values. Everything seems to work. [Errata](pcb/rev.C1/ERRATA.txt).
 * Rev.D:
     * added zxbus connector for in-case addons
-    * added support for +3DOS floppy controller (TODO: check)
+    * added support for +3DOS floppy controller
     * added support for Sega 3/6-button gamepad
     * added PS/2 (TODO: check)
     * added Bluetooth tape input (via M18 module)
