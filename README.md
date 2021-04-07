@@ -88,6 +88,7 @@ It's possible to connect to internet with additional [WiFi module](https://githu
 * ZX TSid - OK
 * Multiface 128 1.00 by Steve Smith - OK (if SD card isn't insert)
 * Noname +3DOS floppy controller - OK (since rev.D)
+* DivIDE 5.7d - OK (if SD card isn't insert)
 
 ### Changelog & current status
 * Rev.A - first release. Please note the [errata](pcb/rev.A/ERRATA.ru.txt) (in russian).
