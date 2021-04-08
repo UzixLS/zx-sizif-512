@@ -5,6 +5,8 @@
 *.sch-bak
 *.kicad_pcb-bak
 *.dcm
+*.kicad_prl
+pcb/**/*-backups/
 pcb/**/*.xml
 pcb/**/out/
 pcb/mask-color.png

@@ -1,3 +1,4 @@
 out/* linguist-vendored
 *.kicad_pcb linguist-detectable=true
+*.kicad_sch linguist-detectable=true
 *.sch linguist-detectable=true
