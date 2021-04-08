@@ -1,6 +1,7 @@
 ## Sizif-512
 Another CPLD-based ZX Spectrum clone for 48K rubber case with some sweet features.
-[![photo](https://cloud.err200.net/index.php/s/73TR85tYZkMm8Ax/download?path=/&files=sizif-512-d.small.jpg)](https://cloud.err200.net/index.php/apps/files_sharing/publicpreview/73TR85tYZkMm8Ax?fileId=50629&file=/sizif-512-d.png&x=-1&y=-1)
+
+[![photo](images/revD.small.jpg)](images/revD.jpg?raw=true)
 
 ### Tech specs
 * Half-sized PCB for 48K rubber case, case modifications isn't necessary
