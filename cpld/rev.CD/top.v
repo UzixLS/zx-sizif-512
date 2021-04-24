@@ -608,7 +608,7 @@ end
 
 
 /* PORT #7FFD */
-wire port_7ffd_cs = n_ioreq == 0 && xa[1] == 0 && xa[15] == 0 && xa[14] == 1'b1;
+wire port_7ffd_cs = n_ioreq == 0 && xa[1] == 0 && xa[15] == 0 && (xa[14] == 1'b1 || !rom_plus3);
 reg vbank;
 reg rombank128;
 reg lock_7ffd;
@@ -666,7 +666,7 @@ end
 
 
 /* PORT #1FFD */
-wire port_1ffd_cs = !extlock && n_ioreq == 0 && xa == 16'h1FFD;
+wire port_1ffd_cs = rom_plus3 && n_ioreq == 0 && xa == 16'h1FFD;
 reg [2:0] p1ffd;
 always @(posedge clk28 or negedge rst_n0) begin
 	if (!rst_n0) begin
@@ -681,7 +681,7 @@ end
 
 
 /* PORTS #2FFD & #3FFD (+3DOS) */
-wire port_2ffd_3ffd_cs = !extlock && n_ioreq == 0 && (xa == 16'h2FFD || xa == 16'h3FFD);
+wire port_2ffd_3ffd_cs = rom_plus3 && n_ioreq == 0 && (xa == 16'h2FFD || xa == 16'h3FFD);
 always @(posedge clk28 or negedge rst_n0) begin
 	if (!rst_n0) begin
 		plus3_dwr <= 1'b1;
