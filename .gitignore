@@ -29,13 +29,13 @@ cpld/*/chroma_gen28.vhd
 cpld.*/
 
 ## Testbench
-cpld_tb/ivl_vhdl_work/
-cpld_tb/work/
-cpld_tb/*.gtkw
-cpld_tb/*.vcd
-cpld_tb/*.bin
-cpld_tb/*.mem
-cpld_tb.*/
+cpld/tb/ivl_vhdl_work/
+cpld/tb/work/
+cpld/tb/*.gtkw
+cpld/tb/*.vcd
+cpld/tb/*.bin
+cpld/tb/*.mem
+cpld/tb.*/
 
 ## Etc.
 *.bak

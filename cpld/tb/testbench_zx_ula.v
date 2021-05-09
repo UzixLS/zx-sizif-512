@@ -2,6 +2,7 @@
 module testbench_zx_ula();
 
 reg rst_n;
+reg clk32;
 reg clk28;
 
 
@@ -15,13 +16,14 @@ wire n_iorq, n_iorq_cpu;
 wire n_mreq, n_mreq_cpu;
 wire n_m1, n_m1_cpu;
 wire n_rfsh, n_rfsh_cpu;
+wire n_wait_cpu;
 wire n_int;
 wire n_nmi;
 
 T80na cpu1(
     .RESET_n(rst_n),
     .CLK_n(clkcpu),
-    .WAIT_n(1'b1),
+    .WAIT_n(n_wait_cpu),
     .INT_n(n_int),
     .NMI_n(n_nmi),
     .BUSRQ_n(1'b1),
@@ -59,7 +61,7 @@ T80na cpu1(
 wire [7:0] vd;
 wire [7:0] d_ula;
 wire [18:0] va;
-wire [16:14] ra;
+wire [17:14] ra;
 wire m_romcs;
 wire n_vrd;
 wire n_vwr;
@@ -100,6 +102,21 @@ zx_ula zx_ula1(
     );
 
 
+/* TSID */
+wire n_wait_tsid;
+tsid tsid1(
+    .rst_n(rst_n),
+    .clkcpu(~clkcpu),
+    .clk32(clk32),
+    .a(a_cpu),
+    .d(d_cpu_o),
+    .n_rd(n_rd),
+    .n_wr(n_wr),
+    .n_iorq(n_iorq),
+    .n_wait(n_wait_tsid),
+    .cfg(1'b1)
+    );
+
 /* MEMORY */
 reg [7:0] rom [0:16383];
 wire [13:0] rom_addr;
@@ -129,6 +146,7 @@ end
 
 
 /* BUS ARBITER */
+assign n_wait_cpu = (n_wait_tsid != 1'b0)? 1'b1 : 1'b0;
 assign rom_addr = {ra[14],a_cpu[13:0]};
 assign ram_addr_a = va[15:0];
 
@@ -205,6 +223,12 @@ always begin
     clk28 = 0;
     #178 clk28 = 1;
     #179;
+end
+
+always begin
+    clk32 = 0;
+    #156 clk32 = 1;
+    #156;
 end
 
 

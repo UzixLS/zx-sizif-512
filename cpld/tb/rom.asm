@@ -24,9 +24,11 @@ Main:
 	im 2
 	ei
 
-	ld bc, #7ffd
-	ld a, #11
-	out (c), a
+	ld hl, #0000
+	ld bc, #20cf
+	otir
+	ld bc, #20cf
+	inir
 
 	//.72 nop
 	//ld a, 7

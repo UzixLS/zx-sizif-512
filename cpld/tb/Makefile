@@ -4,9 +4,9 @@ V_AZ80=$(wildcard ./az80/*.v)
 
 all: testbench_zx_ula
 
-testbench_zx_ula: IVFLAGS+=-I./az80/ -I./t80/ -I../cpld/rev.CD
+testbench_zx_ula: IVFLAGS+=-I./az80/ -I./t80/ -I../rtl
 testbench_zx_ula: VSIMFLAGS+=+nowarn3722 +nowarn8822 +nowarn3017 +nowarn3155
-testbench_zx_ula: V=$@.v zx_ula.v ${V_T80}
+testbench_zx_ula: V=$@.v zx_ula.v tsid.v ${V_T80}
 testbench_zx_ula: rom.mem zero64.mem
 
 testbench_memcontroller: V=testbench_memcontroller.v
