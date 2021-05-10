@@ -58,16 +58,12 @@ T80na cpu1(
 
 
 /* ULA */
-wire [7:0] vd;
-wire [7:0] d_ula;
+wire [7:0] vd, xd;
 wire [18:0] va;
 wire [17:14] ra;
 wire m_romcs;
 wire n_vrd;
 wire n_vwr;
-wire dout;
-wire vdout;
-wire n_iorqge;
 reg n_magic;
 wire sd_mosi_miso;
 zx_ula zx_ula1(
@@ -78,7 +74,7 @@ zx_ula zx_ula1(
     .va(va),
     .ra(ra),
     .xa(a_cpu),
-    .xd(d_ula),
+    .xd(xd),
     .n_rd(n_rd),
     .n_wr(n_wr),
     .n_iorqge(n_iorq),
@@ -94,76 +90,58 @@ zx_ula zx_ula1(
     .tape_in(1'b1),
     .kd(5'b0),
     .n_joy_b2(1'b1),
-    .sd_cd(1'b0),
+    .sd_cd(1'b1),
     .sd_mosi(sd_mosi_miso),
-    .sd_miso(sd_mosi_miso),
-    .dout(dout),
-    .vdout(vdout)
+    .sd_miso(sd_mosi_miso)
     );
 
-
-/* TSID */
-wire n_wait_tsid;
-tsid tsid1(
-    .rst_n(rst_n),
-    .clkcpu(~clkcpu),
-    .clk32(clk32),
-    .a(a_cpu),
-    .d(d_cpu_o),
-    .n_rd(n_rd),
-    .n_wr(n_wr),
-    .n_iorq(n_iorq),
-    .n_wait(n_wait_tsid),
-    .cfg(1'b1)
-    );
 
 /* MEMORY */
-reg [7:0] rom [0:16383];
-wire [13:0] rom_addr;
-reg [13:0] rom_addr0;
-wire [7:0] rom_q = rom[rom_addr0];
+reg [7:0] rom [0:65535];
+reg [7:0] rom_q;
+wire [16:0] rom_addr;
 always @(posedge clk28) begin
-    rom_addr0 <= rom_addr;
+    rom_q <= rom[rom_addr];
 end
 initial begin
     $readmemh("rom.mem", rom);
 end
 
-reg [7:0] ram [0:65535];
-wire [15:0] ram_addr_a;
-reg [15:0] ram_addr_a0;
-wire [7:0] ram_q_a = ram[ram_addr_a0];
-
+reg [7:0] ram [0:524288];
+reg [7:0] ram_q;
+wire [18:0] ram_addr_a;
 always @(posedge clk28) begin
     if (n_vwr == 0) begin
         ram[ram_addr_a] <= vd;
     end
-    ram_addr_a0 <= ram_addr_a;
+    ram_q <= ram[ram_addr_a];
 end
 initial begin
-    $readmemh("zero64.mem", ram);
+    integer i;
+    for (i = 0; i < 524288; i++)
+        ram[i] <= 0;
 end
 
 
 /* BUS ARBITER */
-assign n_wait_cpu = (n_wait_tsid != 1'b0)? 1'b1 : 1'b0;
-assign rom_addr = {ra[14],a_cpu[13:0]};
-assign ram_addr_a = va[15:0];
+assign n_wait_cpu = 1'b1;
+assign (pull1, highz0) n_nmi = 1'b1;
+assign rom_addr = {ra[16:14], a_cpu[13:0]};
+assign ram_addr_a = va;
 
 assign vd =
-    ~n_vrd? ram_q_a :
+    ~n_vrd? ram_q :
     {8{1'bz}};
 
-assign d_ula =
-    dout? {8{1'bz}} :
+assign (weak0, weak1) xd =
     ~n_wr? d_cpu_o :
     ~n_romcs? rom_q :
-    {8{1'b1}};
+    {8{1'bz}};
 
 assign d_cpu_i = 
     ~n_wr? d_cpu_o :
     ~n_romcs? rom_q :
-    d_ula;
+    xd;
 
 
 /* CPU SIGNALS (ideal timings) */
@@ -235,7 +213,7 @@ end
 /* TESTBENCH CONTROL */
 initial begin
     $dumpfile("testbench_zx_ula.vcd");
-    $dumpvars();
+    $dumpvars;
     #5000000 $finish;
     // #200000000 $finish;
 end

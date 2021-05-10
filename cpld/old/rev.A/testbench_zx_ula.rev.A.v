@@ -1,5 +1,5 @@
 `define USE_FPGA
-`include "../cpld/rev.A/top.v"
+`include "top.v"
 
 `timescale 100ps/10ps 
 module testbench_zx_ula();
