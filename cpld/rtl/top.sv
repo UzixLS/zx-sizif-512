@@ -93,8 +93,8 @@ end
 /* SHARED DEFINITIONS */
 timings_t timings;
 turbo_t turbo;
-wire joy_pause, joy_mode;
-wire pause = joy_pause;
+wire ps2_key_pause, joy_pause, joy_mode;
+wire pause = ps2_key_pause | joy_pause;
 wire [2:0] border;
 wire magic_beeper;
 wire up_en;
@@ -183,6 +183,35 @@ rgb rgb0(
 );
 
 
+/* PS/2 KEYBOARD */
+wire [4:0] ps2_kd;
+wire ps2_key_magic, ps2_key_reset;
+wire usrrst_n = ~ps2_key_reset;
+wire ps2_joy_up, ps2_joy_down, ps2_joy_left, ps2_joy_right, ps2_joy_fire;
+`ifndef REV_C
+ps2 #(.CLK_FREQ(28_000_000)) ps2_0(
+    .rst_n(rst_n0),
+    .clk(clk28),
+    .ps2_clk_in(ps2_clk),
+    .ps2_dat_in(ps2_dat),
+    .zxkb_addr(bus.a[15:8]),
+    .zxkb_data(ps2_kd),
+    .key_magic(ps2_key_magic),
+    .key_reset(ps2_key_reset),
+    .key_pause(ps2_key_pause),
+    .joy_up(ps2_joy_up),
+    .joy_down(ps2_joy_down),
+    .joy_left(ps2_joy_left),
+    .joy_right(ps2_joy_right),
+    .joy_fire(ps2_joy_fire)
+);
+`else
+assign ps2_kd = 5'b11111;
+assign {ps2_key_magic, ps2_key_reset, ps2_key_pause} = 0;
+assign {ps2_joy_up, ps2_joy_down, ps2_joy_left, ps2_joy_right, ps2_joy_fire} = 0;
+`endif
+
+
 /* JOYSTICK / GAMEPAD */
 wire joy_up, joy_down, joy_left, joy_right, joy_start, joy_b1_turbo, joy_b2_turbo, joy_b3_turbo;
 joysega joysega0(
@@ -213,7 +242,8 @@ joysega joysega0(
     .pause(joy_pause)
 );
 
-wire [7:0] kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, joy_b1_turbo, joy_up, joy_down, joy_left, joy_right};
+wire [7:0] kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, ps2_joy_fire | joy_b1_turbo, 
+    ps2_joy_up | joy_up, ps2_joy_down | joy_down, ps2_joy_left | joy_left, ps2_joy_right | joy_right};
 
 
 /* CPU CONTROLLER */
@@ -223,7 +253,7 @@ wire n_rstcpu0;
 assign n_rstcpu = n_rstcpu0? 1'bz : 1'b0;
 assign n_clkcpu = ~clkcpu;
 cpucontrol cpucontrol0(
-    .rst_n(rst_n0),
+    .rst_n(rst_n0 & usrrst_n),
     .clk28(clk28),
     .clk14(clk14),
     .clk7(clk7),
@@ -259,7 +289,7 @@ wire n_nmi0;
 assign n_nmi = n_nmi0? 1'bz : 1'b0;
 wire extlock, joy_sinclair, rom_plus3, rom_alt48;
 magic magic0(
-    .rst_n(rst_n0),
+    .rst_n(rst_n0 & usrrst_n),
     .clk28(clk28),
 
     .bus(bus),
@@ -267,7 +297,7 @@ magic magic0(
     .n_int_next(n_int_next),
     .n_nmi(n_nmi0),
 
-    .magic_button(n_magic == 0 || joy_mode),
+    .magic_button(n_magic == 0 || joy_mode || ps2_key_magic),
 
     .magic_mode(magic_mode),
     .magic_map(magic_map),
@@ -298,7 +328,7 @@ wire port_dffd_d4;
 wire plus3_mtr0;
 assign plus3_mtr = plus3_mtr0? 1'bz : 1'b0;
 ports ports0 (
-    .rst_n(rst_n0),
+    .rst_n(rst_n0 & usrrst_n),
     .clk28(clk28),
 
     .bus(bus),
@@ -315,7 +345,7 @@ ports ports0 (
     .clkcpu_ck(clkcpu_ck),
     .screen_loading(screen_loading),
     .attr_next(attr_next),
-    .kd(kd),
+    .kd(kd & ps2_kd),
     .kempston_data(kempston_data),
     .magic_active_next(magic_active_next),
     .tape_in(tape_in),
@@ -339,7 +369,7 @@ ports ports0 (
 
 /* AY */
 ay ay0(
-    .rst_n(rst_n0),
+    .rst_n(rst_n0 & usrrst_n),
     .clk28(clk28),
     .bus(bus),
     .ck35(ck35 && !pause),
@@ -352,7 +382,7 @@ ay ay0(
 /* COVOX & SOUNDRIVE */
 wire [7:0] soundrive_l0, soundrive_l1, soundrive_r0, soundrive_r1;
 soundrive soundrive0(
-    .rst_n(rst_n0),
+    .rst_n(rst_n0 & usrrst_n),
     .clk28(clk28),
     .en_covox(!extlock),
     .en_soundrive(!extlock),
@@ -389,7 +419,7 @@ wire div_map, div_ram, div_ramwr_mask, div_dout_active;
 wire [7:0] div_dout;
 wire [3:0] div_page;
 divmmc divmmc0(
-    .rst_n(rst_n0),
+    .rst_n(rst_n0 & usrrst_n),
     .clk28(clk28),
     .ck14(ck14),
     .ck7(ck7),
@@ -423,7 +453,7 @@ wire [7:0] up_dout;
 wire up_write_req;
 wire [5:0] up_write_addr;
 ulaplus ulaplus0(
-    .rst_n(rst_n),
+    .rst_n(rst_n & usrrst_n),
     .clk28(clk28),
     .en(!extlock),
     

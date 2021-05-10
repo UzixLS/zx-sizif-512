@@ -231,6 +231,8 @@ set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/ulaplus.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/soundrive.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/screen.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/rgb.sv
+set_global_assignment -name VERILOG_FILE ../rtl/ps2_rxtx.v
+set_global_assignment -name VERILOG_FILE ../rtl/ps2.v
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/ports.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/mixer.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/magic.sv
