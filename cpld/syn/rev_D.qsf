@@ -216,9 +216,16 @@ set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_mreq
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_rfsh
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_rstcpu
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_nmi
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to joy_sel
-set_instance_assignment -name CURRENT_STRENGTH_NEW "MINIMUM CURRENT" -to joy_sel
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to rst_n
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MINIMUM CURRENT" -to joy_sel
+set_instance_assignment -name PCI_IO ON -to n_nmi
+set_instance_assignment -name PCI_IO ON -to n_rstcpu
+set_instance_assignment -name PCI_IO ON -to n_joy_b1
+set_instance_assignment -name PCI_IO ON -to n_joy_b2
+set_instance_assignment -name PCI_IO ON -to n_joy_down
+set_instance_assignment -name PCI_IO ON -to n_joy_left
+set_instance_assignment -name PCI_IO ON -to n_joy_right
+set_instance_assignment -name PCI_IO ON -to n_joy_up
 set_global_assignment -name VERILOG_MACRO "REV_D=<None>"
 
 set_global_assignment -name USE_CONFIGURATION_DEVICE ON
