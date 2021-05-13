@@ -6,7 +6,7 @@ module magic(
     cpu_bus bus,
     input n_int,
     input n_int_next,
-    output n_nmi,
+    output reg n_nmi,
 
     input magic_button,
 
@@ -28,17 +28,20 @@ module magic(
 assign magic_active_next = magic_button;
 reg magic_unmap_next;
 reg magic_map_next;
-assign n_nmi = magic_mode? 1'b0 : 1'b1;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
+        n_nmi <= 1'b1;
         magic_mode <= 0;
         magic_map <= 0;
         magic_unmap_next <= 0;
         magic_map_next <= 0;
     end
     else begin
-        if (magic_button == 1'b1 && n_int == 1'b1 && n_int_next == 1'b0)
+        if (magic_button == 1'b1 && n_int == 1'b1 && n_int_next == 1'b0) begin
+            if (!magic_mode)
+                n_nmi <= 1'b0;
             magic_mode <= 1'b1;
+        end
 
         if (magic_map && bus.mreq && bus.rd && bus.a == 16'hf000 && !magic_map_next) begin
             magic_unmap_next <= 1'b1;
@@ -53,6 +56,7 @@ always @(posedge clk28 or negedge rst_n) begin
             magic_unmap_next <= 1'b0;
         end
         else if (magic_mode && bus.m1 && bus.mreq && (bus.a == 16'h0066 || magic_map_next)) begin
+            n_nmi <= 1'b1;
             magic_map <= 1'b1;
             magic_map_next <= 1'b0;
         end
