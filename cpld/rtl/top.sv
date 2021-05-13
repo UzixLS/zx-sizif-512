@@ -286,7 +286,10 @@ cpucontrol cpucontrol0(
 wire magic_mode, magic_map;
 wire magic_active_next;
 wire n_nmi0;
-assign n_nmi = n_nmi0? 1'bz : 1'b0;
+reg n_nmi0_prev;
+always @(posedge clk28)    // burst to 1 - this is required because of weak n_nmi pullup ...
+    n_nmi0_prev <= n_nmi0; // ... which may cause multiple nmi triggering in Z80 in 14MHz mode
+assign n_nmi = n_nmi0? (n_nmi0_prev? 1'bz : 1'b1) : 1'b0;
 wire extlock, joy_sinclair, rom_plus3, rom_alt48;
 magic magic0(
     .rst_n(rst_n0 & usrrst_n),
