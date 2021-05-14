@@ -18,14 +18,14 @@ wire n_m1, n_m1_cpu;
 wire n_rfsh, n_rfsh_cpu;
 wire n_wait_cpu;
 wire n_int;
-wire n_nmi;
+wire n_nmi, n_nmi0;
 
 T80na cpu1(
     .RESET_n(rst_n),
     .CLK_n(clkcpu),
     .WAIT_n(n_wait_cpu),
     .INT_n(n_int),
-    .NMI_n(n_nmi),
+    .NMI_n(n_nmi0),
     .BUSRQ_n(1'b1),
     .M1_n(n_m1_cpu),
     .MREQ_n(n_mreq_cpu),
@@ -126,6 +126,7 @@ end
 /* BUS ARBITER */
 assign n_wait_cpu = 1'b1;
 assign (pull1, highz0) n_nmi = 1'b1;
+assign n_nmi0 = n_nmi; // workarround because for some reason T80na+ModelSim isn't working with pulled-up n_nmi
 assign rom_addr = {ra[16:14], a_cpu[13:0]};
 assign ram_addr_a = va;
 
