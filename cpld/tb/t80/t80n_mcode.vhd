@@ -213,7 +213,7 @@ begin
 
    --Z80N_data_o <= Z80N_data_s;
 
-   process (IR, ISet, MCycle, F, NMICycle, IntCycle, ext_Data_i, ext_ACC_i)
+   process (IR, ISet, MCycle, F, NMICycle, IntCycle, ext_Data_i, ext_ACC_i, XY_State)
       variable DDD : std_logic_vector(2 downto 0);
       variable SSS : std_logic_vector(2 downto 0);
       variable DPair : std_logic_vector(1 downto 0);
@@ -829,14 +829,16 @@ begin
                Set_Addr_To <= aSP;
                Set_BusB_To <= "1101";
             when 2 =>
-               TStates <= "100";
+               --TStates <= "100";
                Write <= '1';
                IncDec_16 <= "1111";
                Set_Addr_To <= aSP;
                Set_BusB_To <= "1100";
+               Z80N_command_o <= NMIACK_MSB;
             when 3 =>
-               TStates <= "100";
+               --TStates <= "100";
                Write <= '1';
+               Z80N_command_o <= NMIACK_LSB;
             when others => null;
             end case;
          elsif IntCycle = '1' then
@@ -2269,7 +2271,7 @@ begin
          when "01010110"|"01110110" =>
             -- IM 1
             IMode <= "01";
-         when "01011110"|"01110111" =>
+         when "01011110"|"01111110" =>
             -- IM 2
             IMode <= "10";
 -- 16 bit arithmetic
@@ -2377,8 +2379,8 @@ begin
                Write <= '1';
             when others =>
             end case;
-         when "01000101"|"01001101"|"01010101"|"01011101"|"01100101"|"01101101"|"01110101"|"01111101" =>
-            -- RETI, RETN
+         when "01001101" =>
+            -- RETI
             MCycles <= "011";
             case to_integer(unsigned(MCycle)) is
             when 1 =>
@@ -2391,6 +2393,24 @@ begin
                Jump <= '1';
                IncDec_16 <= "0111";
                I_RETN <= '1';
+            when others => null;
+            end case;
+         when "01000101"|"01010101"|"01011101"|"01100101"|"01101101"|"01110101"|"01111101" =>
+            -- RETN
+            MCycles <= "011";
+            case to_integer(unsigned(MCycle)) is
+            when 1 =>
+               Set_Addr_TO <= aSP;
+            when 2 =>
+               IncDec_16 <= "0111";
+               Set_Addr_To <= aSP;
+               LDZ <= '1';
+               Z80N_command_o <= RETN_LSB;
+            when 3 =>
+               Jump <= '1';
+               IncDec_16 <= "0111";
+               I_RETN <= '1';
+               Z80N_command_o <= RETN_MSB;
             when others => null;
             end case;
          when "01000000"|"01001000"|"01010000"|"01011000"|"01100000"|"01101000"|"01110000"|"01111000" =>

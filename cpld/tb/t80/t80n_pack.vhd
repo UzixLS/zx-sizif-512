@@ -62,10 +62,10 @@ library ieee;
 use ieee.std_logic_1164.std_logic_vector;
 
 package Z80N_pack is 
-   type Z80N_seq is ( NONE, MMU, NEXTREGW, MUL_DE, ADD_HL_A, ADD_DE_A, ADD_BC_A, SWAPNIB_A, PIXELDN, SET_A_E, PIXELAD, MIRROR_A, PUSH_nn, LDPIRX, ADD_HL_nn , ADD_DE_nn , ADD_BC_nn,
-   LDIRSCALE,
-   BSLA_DE_B, BSRA_DE_B, BSRL_DE_B, BSRF_DE_B, BRLC_DE_B,
-   JP_C);
+   type Z80N_seq is ( NONE, MMU, NEXTREGW, MUL_DE, ADD_HL_A, ADD_DE_A, ADD_BC_A, SWAPNIB_A, 
+                       PIXELDN, SET_A_E, PIXELAD, MIRROR_A, PUSH_nn, LDPIRX, ADD_HL_nn, ADD_DE_nn,
+                       ADD_BC_nn, LDIRSCALE, BSLA_DE_B, BSRA_DE_B, BSRL_DE_B, BSRF_DE_B, BRLC_DE_B,
+                       JP_C, NMIACK_LSB, NMIACK_MSB, RETN_LSB, RETN_MSB );
    signal Z80N_seq_s    : Z80N_seq;
 end package;
 
