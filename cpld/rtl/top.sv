@@ -247,8 +247,7 @@ wire [7:0] kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, ps2_joy_fire | joy
 
 
 /* CPU CONTROLLER */
-wire n_int_next, clkcpu_ck, snow, int_vector_rd;
-wire [7:0] int_vector_data;
+wire n_int_next, clkcpu_ck, snow;
 wire n_rstcpu0;
 assign n_rstcpu = n_rstcpu0? 1'bz : 1'b0;
 assign n_clkcpu = ~clkcpu;
@@ -276,9 +275,7 @@ cpucontrol cpucontrol0(
     .clkwait(clkwait),
     .n_int(n_int),
     .n_int_next(n_int_next),
-    .snow(snow),
-    .int_vector_rd(int_vector_rd),
-    .int_vector_data(int_vector_data)
+    .snow(snow)
 );
 
 
@@ -287,7 +284,7 @@ wire magic_mode, magic_map;
 wire magic_active_next;
 wire n_nmi0;
 reg n_nmi0_prev;
-always @(posedge clk28)    // burst to 1 - this is required because of weak n_nmi pullup ...
+always @(posedge clk28)    // precharge to 1 - this is required because of weak n_nmi pullup ...
     n_nmi0_prev <= n_nmi0; // ... which may cause multiple nmi triggering in Z80 in 14MHz mode
 assign n_nmi = n_nmi0? (n_nmi0_prev? 1'bz : 1'b1) : 1'b0;
 wire extlock, joy_sinclair, rom_plus3, rom_alt48;
@@ -471,20 +468,10 @@ ulaplus ulaplus0(
 
 
 /* MEMORY CONTROLLER */
-reg romreq, ramreq, ramreq_wr;
-always @(posedge clk28 or negedge rst_n0) begin
-    if (!rst_n0) begin
-        romreq = 1'b0;
-        ramreq = 1'b0;
-        ramreq_wr = 1'b0;
-    end
-    else begin
-        romreq =  bus.mreq && !bus.rfsh &&  bus.a[14] == 0 && bus.a[15] == 0 &&
-            (magic_map || (!div_ram && div_map) || (!div_ram && !port_dffd_d4 && !port_1ffd[0]));
-        ramreq = (bus.mreq && !bus.rfsh && !romreq) || up_write_req;
-        ramreq_wr = ramreq && bus.wr && div_ramwr_mask == 0;
-    end
-end
+wire romreq =  bus.mreq && !bus.rfsh &&  bus.a[14] == 0 && bus.a[15] == 0 &&
+        (magic_map || (!div_ram && div_map) || (!div_ram && !port_dffd_d4 && !port_1ffd[0]));
+wire ramreq = (bus.mreq && !bus.rfsh && !romreq) || up_write_req;
+wire ramreq_wr = ramreq && bus.wr && div_ramwr_mask == 0;
 
 assign n_romcs = (romreq && bus.mreq)? 1'b0 : 1'b1;
 assign n_vrd = ((ramreq && bus.rd) || screen_fetch)? 1'b0 : 1'b1;
@@ -493,21 +480,18 @@ assign n_vwr = (ramreq_wr && bus.wr && !screen_fetch)? 1'b0 : 1'b1;
 // reserve 128K RAM for DivMMC if sd card is insterted
 wire [1:0] rampage_ext0 = {~sd_cd? 1'b0 : rampage_ext[1], rampage_ext[0]};
 
-reg [18:13] ram_a;
-always @(posedge clk28) begin
-    ram_a <=
-        magic_map & bus.a[15] & bus.a[14]? {2'b00, 3'b111, bus.a[13]} :
-        magic_map? {3'b111, screenpage, bus.a[14:13]} :
-        div_map & ~bus.a[14] & ~bus.a[15] & bus.a[13]? {2'b01, div_page} :
-        div_map & ~bus.a[14] & ~bus.a[15]? {2'b01, 4'b0011} :
-        port_dffd_d3 & bus.a[15]? {2'b11, bus.a[14], bus.a[15], bus.a[14], bus.a[13]} :
-        port_dffd_d3 & bus.a[14]? {~rampage_ext0[1:0], rampage128, bus.a[13]} :
-        (port_1ffd[2] == 1'b0 && port_1ffd[0] == 1'b1)? {2'b11, port_1ffd[1], bus.a[15], bus.a[14], bus.a[13]} :
-        (port_1ffd == 3'b101)? {2'b11, ~(bus.a[15] & bus.a[14]), bus.a[15], bus.a[14]} :
-        (port_1ffd == 3'b111)? {2'b11, ~(bus.a[15] & bus.a[14]), (bus.a[15] | bus.a[14]), bus.a[14]} :
-        bus.a[15] & bus.a[14]? {~rampage_ext0[1:0], rampage128, bus.a[13]} :
-        {2'b11, bus.a[14], bus.a[15], bus.a[14], bus.a[13]} ;
-end
+wire [18:13] ram_a =
+    magic_map & bus.a[15] & bus.a[14]? {2'b00, 3'b111, bus.a[13]} :
+    magic_map? {3'b111, screenpage, bus.a[14:13]} :
+    div_map & ~bus.a[14] & ~bus.a[15] & bus.a[13]? {2'b01, div_page} :
+    div_map & ~bus.a[14] & ~bus.a[15]? {2'b01, 4'b0011} :
+    port_dffd_d3 & bus.a[15]? {2'b11, bus.a[14], bus.a[15], bus.a[14], bus.a[13]} :
+    port_dffd_d3 & bus.a[14]? {~rampage_ext0[1:0], rampage128, bus.a[13]} :
+    (port_1ffd[2] == 1'b0 && port_1ffd[0] == 1'b1)? {2'b11, port_1ffd[1], bus.a[15], bus.a[14], bus.a[13]} :
+    (port_1ffd == 3'b101)? {2'b11, ~(bus.a[15] & bus.a[14]), bus.a[15], bus.a[14]} :
+    (port_1ffd == 3'b111)? {2'b11, ~(bus.a[15] & bus.a[14]), (bus.a[15] | bus.a[14]), bus.a[14]} :
+    bus.a[15] & bus.a[14]? {~rampage_ext0[1:0], rampage128, bus.a[13]} :
+    {2'b11, bus.a[14], bus.a[15], bus.a[14], bus.a[13]} ;
 
 assign ra[17:14] =
     magic_map? 3'd2 :
@@ -526,13 +510,19 @@ assign va[18:0] =
     up_write_req? {2'b00, 3'b111, 8'b11111111, up_write_addr} :
     {ram_a[18:13], bus.a[12:0]};
 
+// this is required because of weak xd pullup causing garbage reads from nonexisting ports
+reg [1:0] xd_precharge0;
+wire xd_precharge = clk28 & xd_precharge0[1] && !xd_precharge0[0];
+always @(posedge clk28)
+    xd_precharge0 <= {bus.iorq && (bus.rd || bus.m1), xd_precharge0[1]};
+
 assign xd[7:0] =
-    ramreq && bus.rd? vd :
+    (ramreq && bus.rd)? vd :
     up_dout_active? up_dout :
     div_dout_active? div_dout :
     ports_dout_active? ports_dout :
-    int_vector_rd? int_vector_data :
-    {8{1'bz}};
+    xd_precharge? 8'hFF :
+    {8{1'bz}} ;
 
 assign vd[7:0] =
     n_vrd == 0? {8{1'bz}} :

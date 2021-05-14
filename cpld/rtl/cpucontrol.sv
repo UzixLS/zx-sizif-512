@@ -8,9 +8,6 @@ module cpucontrol(
 
     cpu_bus bus,
 
-    output int_vector_rd,
-    output [7:0] int_vector_data,
-
     input [8:0] vc,
     input [8:0] hc,
     input [2:0] rampage128,
@@ -92,11 +89,6 @@ always @(posedge clk28 or negedge rst_n) begin
             int_cnt <= int_cnt + 1'b1;
     end
 end
-
-
-/* INT VECTOR */
-assign int_vector_rd = bus.iorq && bus.m1;
-assign int_vector_data = 8'hff;
 
 
 /* RESET */
