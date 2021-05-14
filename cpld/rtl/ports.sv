@@ -27,7 +27,7 @@ module ports(
     output reg screenpage,
     output reg rompage128,
     output reg [2:0] rampage128,
-    output reg [3:0] rampage_ext,
+    output reg [2:0] rampage_ext,
     output reg [2:0] port_1ffd,
     output reg port_dffd_d3,
     output reg port_dffd_d4,
