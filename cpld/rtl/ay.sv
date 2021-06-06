@@ -11,6 +11,11 @@ module ay(
     output reg ay_bdir
 );
 
+//              bdir bc1 description
+// bffd read  |   0   0  inactive
+// bffd write |   1   0  write to psg
+// fffd read  |   0   1  read from psg
+// fffd write |   1   1  latch address
 
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
@@ -25,6 +30,7 @@ always @(posedge clk28 or negedge rst_n) begin
         ay_bdir <= bus.a[15] == 1'b1 && bus.a[1] == 0 && bus.ioreq && bus.wr;
     end
 end
+
 
 
 endmodule

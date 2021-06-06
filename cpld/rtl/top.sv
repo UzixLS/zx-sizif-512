@@ -512,7 +512,7 @@ assign va[18:0] =
 
 // this is required because of weak xd pullup causing garbage reads from nonexisting ports
 reg [1:0] xd_precharge0;
-wire xd_precharge = clk28 & xd_precharge0[1] && !xd_precharge0[0];
+wire xd_precharge = clk28 && xd_precharge0[1] && !xd_precharge0[0];
 always @(posedge clk28)
     xd_precharge0 <= {bus.iorq && (bus.rd || bus.m1), xd_precharge0[1]};
 
