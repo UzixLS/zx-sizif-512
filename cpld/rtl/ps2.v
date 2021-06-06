@@ -164,7 +164,7 @@ always @(posedge clk or negedge rst_n) begin
     if (!rst_n)
         key_reset <= 0;
     else
-        key_reset <= (key2_l_ctrl || key2_r_ctrl) && key2_alt && key2_del;
+        key_reset <= (key2_l_ctrl || key2_r_ctrl) && key2_alt && (key2_del || key2_backspace);
 end
 
 
