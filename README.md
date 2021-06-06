@@ -18,10 +18,16 @@ Another CPLD-based ZX Spectrum clone for 48K rubber case with some sweet feature
 * ULAplus
 * Mono covox (Pentagon standard)
 * SounDrive (4-channel stereo covox)
-* WiFi
+* WiFi addon ([link](https://github.com/UzixLS/zx-sizif-512-wifi))
 * Tape input via 3.5" jack and Bluetooth
 * 9-12V power supply with any polarity
-* Reset and Magic buttons and , header for power button
+* Reset and Magic buttons; header for power button
+
+With extension board ([link](https://github.com/UzixLS/zx-sizif-512-ext)) more features may be added:
+* Turbo Sound FM
+* General Sound (12MHz / 512Kb RAM)
+* SAA1099
+* MIDI sound
 
 ### Demonstration
 Running Pentagon 128 and Spectrum 128 demos: [link](https://www.youtube.com/watch?v=_RoLKcfJSTY)  
@@ -79,9 +85,6 @@ Sizif contains 512K RAM. There are two cases how to access it:
 ### Strange lines on border and creaky sounds on SD card access
 It's not a bug, it's a feature ;)
 
-### WiFi module
-It's possible to connect to internet with additional [WiFi module](https://github.com/UzixLS/zx-sizif-512-wifi).
-
 ### Tested addons
 * AYX-32 - OK
 * BDI-ZX ver 2.0 MVcomp - OK (if SD card isn't insert)
@@ -107,13 +110,9 @@ It's possible to connect to internet with additional [WiFi module](https://githu
 * Rev.D1: minor changes in pcb layout
 
 ### Roadmap
-PCB:
-* create in-case addon with General Sound, TurboSound FM, SAA1099, MIDI etc
-
 Firmware:
 * add OSD for Magic button
 * improve 48K/128K timings for 100% compatibility
-* implement PS/2
 
 ### Acknowledgments
 This work is based on a lot of other projects and would hardly have been successful without them.
