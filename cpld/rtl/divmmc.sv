@@ -33,7 +33,7 @@ always @(posedge clk28 or negedge rst_n) begin
         div_automap_next <= 0;
         div_automap <= 0;
     end
-    else if (bus.m1 && bus.mreq && magic_map == 0) begin 
+    else if (bus.m1 && bus.mreq && magic_map == 0) begin
         if (sd_cd || !en || rammap) begin
             div_automap_next <= 0;
         end

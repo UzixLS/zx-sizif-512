@@ -3,11 +3,11 @@ module ulaplus(
     input rst_n,
     input clk28,
     input en,
-    
+
     cpu_bus bus,
     output [7:0] d_out,
     output d_out_active,
-    
+
     output reg active,
     output reg write_req,
     output [5:0] write_addr
@@ -33,7 +33,7 @@ always @(posedge clk28 or negedge rst_n) begin
 
         if (bus.wr && port_bf3b_cs)
             addr_reg <= bus.d;
-        
+
         if (bus.wr && port_ff3b_cs) begin
             if (addr_reg == 8'b01000000)
                 active <= bus.d[0];
@@ -51,6 +51,6 @@ end
 
 
 assign d_out = port_ff3b_data;
-assign d_out_active = port_ff3b_rd; 
+assign d_out_active = port_ff3b_rd;
 
 endmodule

@@ -5,12 +5,12 @@ module ps2#(
     ) (
     input rst_n,
     input clk,
-    
+
     input ps2_clk_in,
     input ps2_dat_in,
     output ps2_clk_out,
     output ps2_dat_out,
-    
+
     input [7:0] zxkb_addr,
     output reg [4:0] zxkb_data,
     output reg key_magic,
@@ -139,7 +139,7 @@ always @(posedge clk or negedge rst_n) begin
                 `PS2_F11:       key_pause <= 1'b0;
                 `PS2_F12:       key_pause <= 1'b1;
                 `PS2_DELETE:    key2_del <= is_press;
-                
+
                 `PS2_KP_8:      joy_up <= is_press;
                 `PS2_KP_2:      joy_down <= is_press;
                 `PS2_KP_5:      joy_down <= is_press;

@@ -165,7 +165,7 @@ end
 /* BUS CONTROLLER */
 assign d_out_active = port_fe_rd | port_ff_rd | kempston_rd;
 
-assign d_out = 
+assign d_out =
     kempston_rd? kempston_data :
     port_fe_rd? port_fe_data :
     port_ff_data ;

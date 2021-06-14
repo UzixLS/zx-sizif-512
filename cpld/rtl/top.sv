@@ -242,7 +242,7 @@ joysega joysega0(
     .pause(joy_pause)
 );
 
-wire [7:0] kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, ps2_joy_fire | joy_b1_turbo, 
+wire [7:0] kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, ps2_joy_fire | joy_b1_turbo,
     ps2_joy_up | joy_up, ps2_joy_down | joy_down, ps2_joy_left | joy_left, ps2_joy_right | joy_right};
 
 
@@ -434,7 +434,7 @@ divmmc divmmc0(
     .sd_mosi(sd_mosi),
     .sd_sck(sd_sck),
     .sd_cs(sd_cs),
-    
+
     .rammap(port_dffd_d4 | port_1ffd[0]),
     .magic_mode(magic_mode),
     .magic_map(magic_map),
@@ -456,11 +456,11 @@ ulaplus ulaplus0(
     .rst_n(rst_n & usrrst_n),
     .clk28(clk28),
     .en(!extlock),
-    
+
     .bus(bus),
     .d_out(up_dout),
     .d_out_active(up_dout_active),
-    
+
     .active(up_en),
     .write_req(up_write_req),
     .write_addr(up_write_addr)

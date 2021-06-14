@@ -1,6 +1,6 @@
 `include "util.vh"
 import common::*;
-module screen (
+module screen(
     input rst_n,
     input clk28,
 
@@ -25,7 +25,7 @@ module screen (
     output loading,
     output blink,
     output reg [7:0] attr_next,
-    
+
     output [8:0] hc_out,
     output [8:0] vc_out,
     output reg [4:0] blink_cnt,
@@ -80,14 +80,14 @@ reg [`CLOG2(`MAX(H_TOTAL_S128, H_TOTAL_PENT))+1:0] hc0;
 wire [`CLOG2(`MAX(H_TOTAL_S128, H_TOTAL_PENT))-1:0] hc = hc0[$bits(hc0)-1:2];
 
 assign vc_out = vc;
-assign hc_out = hc; 
+assign hc_out = hc;
 
 assign clk14 = hc0[0];
 assign clk7 = hc0[1];
 assign clk35 = hc0[2];
 assign ck14 = hc0[0];
 assign ck7 = hc0[0] & hc0[1];
-assign ck35 = hc0[0] & hc0[1] && hc0[2];
+assign ck35 = hc0[0] & hc0[1] & hc0[2];
 
 wire hc0_reset =
     (timings == TIMINGS_PENT)?
@@ -96,7 +96,7 @@ wire hc0_reset =
         hc0 == (H_TOTAL_S128<<2) - 1'b1 :
     // 48K
         hc0 == (H_TOTAL_S48<<2) - 1'b1 ;
-wire vc_reset = 
+wire vc_reset =
     (timings == TIMINGS_PENT)?
         vc == V_TOTAL_PENT - 1'b1 :
     (timings == TIMINGS_S128)?
@@ -113,7 +113,7 @@ wire hsync0 =
     // 48K
         (hc >= (H_AREA + H_RBORDER_S48 + H_BLANK1_S48)) &&
             (hc <  (H_AREA + H_RBORDER_S48 + H_BLANK1_S48 + H_SYNC_S48)) ;
-wire vsync0 = 
+wire vsync0 =
     (timings == TIMINGS_PENT)?
         (vc >= (V_AREA + V_BBORDER_PENT)) && (vc < (V_AREA + V_BBORDER_PENT + V_SYNC_PENT)) :
     (timings == TIMINGS_S128)?
@@ -176,7 +176,7 @@ wire fetch_up_ink   = fetch && fetch_step == 2'd2;
 wire fetch_up_paper = fetch && fetch_step == 2'd3;
 assign fetch_up = fetch_up_ink | fetch_up_paper;
 
-assign addr = fetch_bitmap? 
+assign addr = fetch_bitmap?
     { 2'b10, vc[7:6], vc[2:0], vc[5:3], hc[7:3] } :
     { 5'b10110, vc[7:3], hc[7:3] };
 assign up_addr = fetch_up_ink?

@@ -3,12 +3,12 @@ module ps2_rxtx#(
     ) (
     input rst_n,
     input clk,
-    
+
     input ps2_clk_in,
     input ps2_dat_in,
     output ps2_clk_out,
     output ps2_dat_out,
-    
+
     output [7:0] dataout,
     output reg dataout_valid,
     output reg dataout_error
@@ -33,7 +33,7 @@ always @(posedge clk or negedge rst_n) begin
         ps2_dat <= 1'b1;
         ps2_clk <= 2'b11;
     end
-    else begin    
+    else begin
         if (timer == CLKWAIT_TICKS)
             ps2_freeze <= 1'b0;
         else if (ps2_clk_fall)
@@ -79,7 +79,7 @@ always @(posedge clk or negedge rst_n) begin
             end
             timer <= timer + 1'b1;
         end
-    end    
+    end
 end
 
 

@@ -73,7 +73,7 @@ wire int_begin =
         vc == INT_V_PENT && hc == INT_H_PENT :
     (timings == TIMINGS_S128)?
         vc == INT_V_S128 && hc == INT_H_S128 :
-    // 48K 
+    // 48K
         vc == INT_V_S48 && hc == INT_H_S48 ;
 reg [4:0] int_cnt;
 assign n_int_next = (|int_cnt)? 1'b0 : 1'b1;

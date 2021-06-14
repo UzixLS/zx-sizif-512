@@ -80,9 +80,9 @@ always @(posedge clk28 or negedge rst_n) begin
     end
     else if (config_cs && bus.wr) begin
         if (bus.a[15:12] == 4'h0)
-             magic_beeper <= bus.d[0];
+            magic_beeper <= bus.d[0];
         if (bus.a[15:12] == 4'h1)
-             extlock <= bus.d[0];
+            extlock <= bus.d[0];
         if (bus.a[15:12] == 4'h2)
             timings <= timings_t'(bus.d[1:0]);
         if (bus.a[15:12] == 4'h3)

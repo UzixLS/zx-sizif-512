@@ -10,7 +10,7 @@ module mixer(
     input [7:0] sd_l1,
     input [7:0] sd_r0,
     input [7:0] sd_r1,
-    
+
     output dac_l,
     output dac_r
 );
@@ -21,7 +21,7 @@ reg [WIDTH:0] dac_l_cnt, dac_r_cnt;
 assign dac_l = dac_l_cnt[WIDTH];
 assign dac_r = dac_r_cnt[WIDTH];
 
-wire [WIDTH-1:0] dac_next_l = 
+wire [WIDTH-1:0] dac_next_l =
     sd_l0 + sd_l1 +
     {beeper, tape_out, tape_in, 5'b00000}
     ;
