@@ -93,8 +93,8 @@ end
 /* SHARED DEFINITIONS */
 timings_t timings;
 turbo_t turbo;
+reg pause = 0;
 wire ps2_key_pause, joy_pause, joy_mode;
-wire pause = ps2_key_pause | joy_pause;
 wire [2:0] border;
 wire magic_beeper;
 wire up_en;
@@ -118,6 +118,12 @@ assign bus.rd = ~n_rd;
 assign bus.wr = ~n_wr;
 assign bus.ioreq = ~(~n_m1 | n_iorqge | n_iorqge_delayed);
 
+
+/* PAUSE */
+always @(posedge clk28) begin
+    if (n_int == 1'b0 && bus.rfsh)
+        pause <= ps2_key_pause || joy_pause;
+end
 
 /* SCREEN CONTROLLER */
 wire blink;
