@@ -430,12 +430,12 @@ divmmc divmmc0(
     .ck14(ck14),
     .ck7(ck7),
     .en(!extlock),
+    .en_hooks(~sd_cd),
 
     .bus(bus),
     .d_out(div_dout),
     .d_out_active(div_dout_active),
 
-    .sd_cd(sd_cd),
     .sd_miso(sd_miso),
     .sd_mosi(sd_mosi),
     .sd_sck(sd_sck),

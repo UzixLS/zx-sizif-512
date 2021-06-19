@@ -23,26 +23,19 @@ assign write_addr = addr_reg[5:0];
 
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
-        port_ff3b_rd <= 1'b0;
-        active <= 1'b0;
-        write_req <= 1'b0;
-        addr_reg <= 1'b0;
+        active <= 0;
+        addr_reg <= 0;
+        write_req <= 0;
+        port_ff3b_rd <= 0;
     end
     else begin
-        port_ff3b_rd <= port_ff3b_cs && bus.rd;
-
-        if (bus.wr && port_bf3b_cs)
+        if (port_bf3b_cs && bus.wr)
             addr_reg <= bus.d;
+        if (port_ff3b_cs && bus.wr && addr_reg == 8'b01000000)
+            active <= bus.d[0];
 
-        if (bus.wr && port_ff3b_cs) begin
-            if (addr_reg == 8'b01000000)
-                active <= bus.d[0];
-            else if (addr_reg[7:6] == 2'b00)
-                write_req <= 1'b1;
-        end
-        else begin
-            write_req <= 0;
-        end
+        write_req <= port_ff3b_cs && bus.wr && addr_reg[7:6] == 2'b00;
+        port_ff3b_rd <= port_ff3b_cs && bus.rd;
 
         if (!en)
             active <= 0;
