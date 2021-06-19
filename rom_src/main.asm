@@ -1,16 +1,22 @@
-; Sizif-512 Service ROM.
-; Running while magic (NMI) button hold and changes CPLD configuration register by keypresses.
-; If no keypress was registered - jump to default NMI handler. Otherwise - exit NMI.
     DEVICE ZXSPECTRUM48
-    OPT --syntax=m
+    OPT --syntax=F
+
+app_begin:
+; Startup handler
+    ORG #0000
+    jp startup_handler
+    DB 0,"Sizif Magic ROM",0
 
 ; NMI handler
     ORG #0066
-    jp nmi_enter
+    jp nmi_handler
 
 ; INT IM1 handler
     ORG #0038
-    ld hl, #0038 ; set jump address for exit_nmi routine
+    push bc
+    ld bc, #0038
+    ld (var_int_vector), bc
+    pop bc
     ret
 
 ; INT IM2 handler
@@ -18,296 +24,393 @@
     ret
 
 ; INT IM2 vector table
-    ORG #0F00
+    ORG #0600
     .257 db #01 ; by Z80 user manual int vector is I * 256 + (D & 0xFE)
                 ; but by other references and by T80/A-Z80 implementation int vector is I * 256 + D
                 ; so we just play safe and use symmetric int handler address and vector table with one extra byte
 
-; Main program
-nmi_enter:
-    ld (Saved_sp_value), sp
+
+startup_handler:
+    ld ix, #5800    ; draw 4 rygb boxes on left top corner to indicate boot
+    ld (ix+0), #D2  ; r
+    ld (ix+1), #F6  ; y
+    ld (ix+2), #E4  ; g
+    ld (ix+3), #C9  ; b
+    call init_config
+    call init_cpld
+    ld hl, 0
+    jp exit_with_jp
+
+
+nmi_handler:
+    ld (var_sp_reg), sp
     ld sp, Stack_top
     push af
     push hl
-    ld a, #01                    ; show magic border
-    out (#ff), a                 ; ...
-    xor a                        ; reset variables to initial state
-    ld (Magic_leave_cnt), a      ; ...
-    ld (Key_was_pressed_flag), a ; ...
-    ld (Reset_flag), a           ; ...
-
-loop:
-    call key_checker
-    call check_magic_hold        ; return A
-    or a                         ; check leave flag
-    jp nz, exit_nmi              ; yes?
-    jr loop
-
-; check all functional keys and change zx configuration depending on pressed keys
-; input parameters: none
-; output parameters: none
-key_checker:
-    push af
-key_1:                   ; timings <= pentagon
-    ld a, #f7            ; read 0-5 keys
-    in a, (#fe)          ; ...
-    bit 0, a
-    jr nz, key_2
-    ld a, #20
-    out (#ff), a
-    jp key_checker_pressed
-key_2:                   ; timings <= 128
-    bit 1, a
-    jr nz, key_3
-    ld a, #21
-    out (#ff), a
-    jp key_checker_pressed
-key_3:                   ; turbo <= 48
-    bit 2, a
-    jr nz, key_4
-    ld a, #23
-    out (#ff), a
-    jp key_checker_pressed
-key_4:                   ; turbo <= none
-    bit 3, a
-    jr nz, key_5
-    ld a, #30
-    out (#ff), a
-    jp key_checker_pressed
-key_5:                   ; turbo <= 7
-    bit 4, a
-    jr nz, key_6
-    ld a, #31
-    out (#ff), a
-    jp key_checker_pressed
-key_6:                   ; turbo <= 14
-    ld a, #ef            ; read 6-0 keys
-    in a, (#fe)          ; ...
-    bit 4, a
-    jr nz, key_7
-    ld a, #33
-    out (#ff), a
-    jp key_checker_pressed
-key_7:                   ; ay_abc <= 1
-    bit 3, a
-    jr nz, key_8
-    ld a, #41
-    out (#ff), a
-    jp key_checker_pressed
-key_8:                   ; ay_abc <= 0
-    bit 2, a
-    jr nz, key_9
-    ld a, #40
-    out (#ff), a
-    jp key_checker_pressed
-key_9:                   ; ay_mono <= 1
-    bit 1, a
-    jr nz, key_U
-    ld a, #42
-    out (#ff), a
-    jp key_checker_pressed
-key_U:                   ; joystick_sinclair <= 0
-    ld a, #df            ; read Y-P keys
-    in a, (#fe)          ; ...
-    bit 3, a
-    jr nz, key_I
-    ld a, #70
-    out (#ff), a
-    jp key_checker_pressed
-key_I:                   ; joystick_sinclair <= 1
-    bit 2, a
-    jr nz, key_O
-    ld a, #71
-    out (#ff), a
-    jp key_checker_pressed
-key_O:                   ; extlock <= 0
-    bit 1, a
-    jr nz, key_P
-    ld a, #10
-    out (#ff), a
-    jp key_checker_pressed
-key_P:                   ; extlock <= 1
-    bit 0, a
-    jr nz, key_Q
-    ld a, #11
-    out (#ff), a
-    jp key_checker_pressed
-key_Q:                   ; rom_alt48 <= 0
-    ld a, #fb            ; read Q-T keys
-    in a, (#fe)          ; ...
-    bit 0, a
-    jr nz, key_W
-    ld a, #60
-    out (#ff), a
-    jp key_checker_pressed
-key_W:                   ; rom_alt48 <= 1
-    bit 1, a
-    jr nz, key_E
-    ld a, #61
-    out (#ff), a
-    jp key_checker_pressed
-key_E:                   ; rom_plus3 <= 0
-    bit 2, a
-    jr nz, key_R
-    ld a, #50
-    out (#ff), a
-    jp key_checker_pressed
-key_R:                   ; rom_plus3 <= 1
-    bit 3, a
-    jr nz, Key_Space
-    ld a, #51
-    out (#ff), a
-    jp key_checker_pressed
-Key_Space:               ; jump to #00 on exit
-    ld a, #7f            ; read B-Space keys
-    in a, (#fe)          ; ...
-    bit 0, a
-    jr nz, key_checker_done
-    ld a, #01
-    ld (Reset_flag), a
-    jp key_checker_pressed
-key_checker_pressed:
-    ld a, #01
-    ld (Key_was_pressed_flag), a
-    call beep
-key_checker_done:
-    pop af
-    ret
-
-; check magic keys is still holding. if no - debounce and set leave flag then
-; input parameters: none
-; output parameters: A != 0 - leave, A == 0 - do not leave
-check_magic_hold: 
-    push af
-    ld a, #ff                  ; read magic key state in bit 7 of #FE port
-    in a, (#fe)                ; ...
-    bit 7, a                   ; check key is hold
-    ld a, #00
-    jr z, check_magic_hold_l1  ; yes?
-    ld a, (Magic_leave_cnt)
-    inc a
-    jp nz, check_magic_hold_l1 ; check is counter overflow?
-    pop af                     ; yes? set A=1 and exit
-    ld a, #01
-    ret
-check_magic_hold_l1:
-    ld (Magic_leave_cnt), a
-    pop af
-    xor a                      ; counter didn't overflow
-    ret
-
-; do beep and flash border
-; input parameters: none
-; output parameters: none
-beep: 
-    push af
     push bc
-    push de
-    ld de, #10         ; set total length
-beep_length:
-    ld bc, #30         ; set beeper toggling period
-beep_period0:
-    dec bc             ; check it is time to toggle beeper
-    ld a, b            ; ...
-    or c               ; ...
-    jr nz, beep_period0 ; no?
-    ld a, #00          ; yes? doing beep
-    out (#ff), a       ; ...
-    ld bc, #20         ; set beeper toggling period
-beep_period1:
-    dec bc             ; check it is time to toggle beeper
-    ld a, b            ; ...
-    or c               ; ...
-    jr nz, beep_period1 ; no? 
-    ld a, #01          ; yes? doing beep
-    out (#ff), a       ; ...
-    dec de             ; check whether time is over
-    ld a, d            ; ...
-    or e               ; ...
-    jr nz, beep_length ; no?
-    pop de
-    pop bc
-    pop af
-    ret
-
-; read non-magic im2 table and returns im2 handler address
-; input parameters: A - im2 table address hight byte
-; output parameters: HL - handler address
-get_im2_handler:
-    push af
-    ld h, a                   ; hl = im2 table address
-    ld l, #ff                 ; hl = im2 table address
-    ld a, #2a                 ; 2a - ld hl, (nn)
-    ld (Readout_vector-2), a  ; ...
-    ld (Readout_vector-1), hl ; hl was set earlier by im2 table address
-    ld a, #c9                 ; c9 - ret
-    ld (Readout_vector+1), a  ; ...
-    call Readout_vector-2     ; hl contains default im2 handler address now
-    pop af
-    ret
-
-exit_nmi:
-    xor a                ; disable border
+    ld a, #01            ; show magic border
     out (#ff), a         ; ...
-    ld a, (Reset_flag)   ; should we jump to #0000 at exit?
-    or a                 ; ...
-    ld hl, #0000         ; ...
-    jp nz, exit_with_jp  ; yes?
-    ld a, (Key_was_pressed_flag) ; was key pressed?
-    or a                         ; ...
-    ld hl, #0066         ; ...
-    jp z, exit_with_jp   ; no? jump to default nmi handler
-    ld a, i              ; save interrupt table address
-    push af
-    call get_im2_handler ; hl = im2 handler address
-    ld a, #0f            ; set our interrupt table address (#0Fxx)
-    ld i, a              ; ...
-    ei                   ; determine im1 or im2
-    halt                 ; ... also sync execution flow with int for safety
-    pop af
-    ld i, a              ; restore default interrupt table address
-    jp po, exit_with_ret ; check int was enabled by default. no? just do retn
+    xor a
+    ld (var_magic_enter_cnt), a
+    ld (var_magic_leave_cnt), a
+.loop:
+    call check_magic_delay
+    call check_magic_hold   ; A == 1 if we are entering menu, A == 2 if we are leaving to...
+    bit 0, a                ; ...default nmi handler, A == 0 otherwise
+    jp nz, main             ; ...
+    bit 1, a                ; ...
+    jr z, .loop             ; ...
+.leave:
+    xor a                ; disable border
+    ld bc, #01ff         ; ...
+    out (c), a           ; ...
+    ld hl, #0066         ; jump to default nmi handler
+    jp exit_with_jp      ; ...
 
+
+; IN  - HL - jump address
 exit_with_jp:
-    ld (Exit_vector-1), hl   ; hl argument is jump address
+    ld (Exit_vector-1), hl
     ld a, #c3                ; c3 - jp
     ld (Exit_vector-2), a
+    pop bc
     pop hl
     pop af
-    ld sp, (Saved_sp_value)
+    ld sp, (var_sp_reg)
     jp Exit_vector-2
 
 exit_with_ret:
     ld hl, #45ed             ; ed45 - retn; reverse bytes order
     ld (Exit_vector-1), hl
+    pop bc
     pop hl
     pop af
-    ld sp, (Saved_sp_value)
+    ld sp, (var_sp_reg)
     jp Exit_vector-1
 
+
+init_config:
+    ld hl, cfg_initialized     ; if (cfg_initialized == "magic word") {restore cfg} else {default cfg}
+    ld a, #B1                  ; ...
+    cpi                        ; ... hl++
+    jr nz, .init_default       ; ...
+    ld a, #5B                  ; ...
+    cpi                        ; ... hl++
+    jr nz, .init_default       ; ...
+    ld a, #00                  ; ...
+    cpi                        ; ... hl++
+    jr nz, .init_default       ; ...
+    ld a, #B5                  ; ...
+    cpi                        ; ... hl++
+    jr nz, .init_default       ; ...
+    jr .restore                ; ...
+.init_default:
+    ld bc, CFG_T               ; cfg_saved = cfg_default
+    ld de, cfg_saved           ; ...
+    ld hl, CFG_DEFAULT         ; ...
+    ldir                       ; ...
+.restore:
+    ld bc, CFG_T               ; cfg = cfg_saved
+    ld de, cfg                 ; ...
+    ld hl, cfg_saved           ; ...
+    ldir                       ; ...
+.save_magic:
+    ld hl, #5BB1               ; cfg_initialized = "magic word"
+    ld (cfg_initialized+0), hl ; ...
+    ld hl, #B500               ; ...
+    ld (cfg_initialized+2), hl ; ...
+    ret
+
+save_config:
+    ld bc, CFG_T     ; cfg_saved = cfg
+    ld de, cfg_saved ; ...
+    ld hl, cfg       ; ... 
+    ldir             ; ...
+    ret
+
+
+init_cpld:
+    ld a, (cfg.ram)    ; if ram == 48K - run basic48
+    cp 1               ; ...
+    jr nz, .do_load    ; ...
+    ld a, #10          ; ...
+    ld bc, #7ffd       ; ...
+    out (c), a         ; ...
+.do_load:
+    ld b, CFG_T        ; B = registers count
+    ld c, #ff          ; 
+    ld hl, cfg+CFG_T-1 ; HL = &cfg[registers count-1]
+    otdr               ; do { b--; out(bc, *hl); hl--; } while(b)
+    ret
+
+
+; OUT -  A = 1 if we are entering menu, A = 2 if we are leaving menu, A = 0 otherwise
+; OUT -  F - garbage
+check_magic_hold: 
+    ld a, #ff                   ; read magic key state in bit 7 of #FE port
+    in a, (#fe)                 ; ...
+    bit 7, a                    ; check key is hold
+    jr z, .is_hold              ; yes?
+.not_hold:
+    ld a, (var_magic_leave_cnt) ; leave_counter++
+    inc a                       ; ...
+    ld (var_magic_leave_cnt), a ; ...
+    cp MENU_LEAVE_DELAY         ; if (counter == MENU_LEAVE_DELAY) - return 2
+    jr nz, .return0             ; ...
+    ld a, 2
+    ret
+.is_hold:
+    ld a, (var_magic_enter_cnt) ; enter_counter++
+    inc a                       ; ...
+    ld (var_magic_enter_cnt), a ; ...
+    cp MENU_ENTER_DELAY         ; if (counter == MENU_ENTER_DELAY) - return 1
+    jr nz, .return0             ; ...
+    ld a, 1
+    ret
+.return0:
+    xor a
+    ret
+
+
+; OUT - AF - garbage
+; OUT - BC - garbage
+check_magic_delay:
+    ld c, MENU_HOLDCHECK_DELAY
+    ld a, (cfg.clock)
+    or a
+    jr z, .loop
+    ld c, MENU_HOLDCHECK_DELAY*2
+    dec a
+    jr z, .loop
+    ld c, MENU_HOLDCHECK_DELAY*4
+.loop:
+    ld a, c
+.loop_outer:
+    ld b, 255                 ; ~1ms cycle at 3.5MHz
+.loop_inner:                  ; ...
+    djnz .loop_inner          ; 13 T-states
+    dec a
+    jr nz, .loop_outer
+    ret
+
+
+; read non-magic im2 table and returns im2 handler address
+; IN  -  A - im2 table address hight byte
+; OUT - HL - handler address
+; OUT - AF - garbage
+get_im2_handler:
+    ld h, a                   ; HL = im2 table address
+    ld l, #ff                 ; HL = im2 table address
+    ld a, #2a                 ; 2a - ld hl, (nn)
+    ld (Readout_vector-2), a  ; ...
+    ld (Readout_vector-1), hl ; HL was set earlier by im2 table address
+    ld a, #c9                 ; c9 - ret
+    ld (Readout_vector+1), a  ; ...
+    call Readout_vector-2     ; HL = default im2 handler address
+    ret
+
+
+save:
+.save_ay:
+    ld hl, var_save_ay ; select first AY chip in TurboSound
+    ld a, #ff          ; ...
+    call .save_ay_sub
+    ld a, #fe          ; select second AY chip in TurboSound
+    call .save_ay_sub
+.save_screen:
+    ld bc, 6912
+    ld de, var_save_screen
+    ld hl, #4000
+    ldir
+.save_ulaplus:
+    ld bc, #bf3b       ; set ulaplus address = mode register
+    ld a, #40          ; ...
+    out (c), a         ; ...
+    ld bc, #ff3b       ; save mode register value
+    in a, (c)          ; ...
+    ld (var_save_ulaplus), a ; ...
+    xor a              ; disable ulaplus
+    out (c), a         ; ...
+    ret
+
+.save_ay_sub:
+    ld bc, #fffd       ; ...
+    out (c), a         ; ...
+    ld d, 16           ; register_number=16
+.save_ay_sub_loop:
+    dec d              ; register_number--
+    ld b, #ff          ; select register number
+    out (c), d         ; ...
+    in a, (c)          ; read register
+    ld (hl), a         ; save to ram
+    xor a              ; set register to 0
+    ld b, #bf          ; ...
+    out (c), a         ; ...
+    inc hl             ; ram++
+    or d               ; register_number == 0?
+    jr nz, .save_ay_sub_loop
+    ret
+
+
+restore:
+.restore_ulaplus:
+    ld bc, #bf3b       ; set ulaplus address = mode register
+    ld a, #40          ; ...
+    out (c), a         ; ...
+    ld bc, #ff3b       ; restore mode register value
+    ld a, (var_save_ulaplus) ; ...
+    out (c), a         ; ...
+.restore_screen:
+    ld bc, 6912
+    ld de, #4000
+    ld hl, var_save_screen
+    ldir
+.restore_ay:
+    ld hl, var_save_ay+16 ; select second AY chip in TurboSound
+    ld a, #fe          ; ...
+    call .restore_ay_sub
+    ld hl, var_save_ay ; select first AY chip in TurboSound
+    ld a, #ff          ; ...
+    call .restore_ay_sub
+.restore_ret:
+    ret
+
+.restore_ay_sub:
+    ld bc, #fffd       ; ...
+    out (c), a         ; ...
+    ld d, 16           ; register_number=16
+.restore_ay_sub_loop:
+    dec d              ; register_number--
+    ld b, #ff          ; select register number
+    out (c), d         ; ...
+    ld b, #bf          ; restore register
+    ld a, (hl)         ; ...
+    out (c), a         ; ...
+    inc hl             ; ram++
+    xor a              ; register_number == 0?
+    or d               ; ...
+    jr nz, .restore_ay_sub_loop ;
+    ret
+
+
+; Main program
+main:
+    push de
+    push ix
+    push iy
+
+    ld a, i              ; save I reg and IFF2
+    push af              ; ...
+    ld a, #06            ; set our interrupt table address (#06xx)
+    ld i, a              ; ...
+
+    xor a
+    ld (var_exit_flag), a
+    ld (var_exit_reboot), a
+    ld (var_input_key), a
+    ld (var_input_key_last), a
+    ld (var_input_key_hold_timer), a
+    ld (var_menu_current_item), a
+    ld (var_menu_animate_cnt), a
+
+    call save
+    call menu_init
+
+.loop:
+    ei
+    halt
+    call input_process          ; B = 32 if exit key pressed
+    bit 5, b
+    jr nz, .wait_for_keys_release
+
+    call menu_process
+    ld a, (var_exit_flag)
+    or a
+    jr z, .loop
+
+.wait_for_keys_release:
+    ei
+    halt
+    call input_process           ; B = 0 if no keys pressed
+    xor a
+    or b
+    jr nz, .wait_for_keys_release
+
+.leave:
+    call save_config
+    call restore
+    ld a, (var_exit_reboot) ; should we reboot?
+    or a                    ; ...
+    jr z, .leave_without_reboot ; ...
+    ld a, 1                 ; reboot
+    ld bc, #00ff            ; ...
+    out (c), a              ; ...
+.leave_without_reboot:
+    pop af               ; A = I
+    push af              ; 
+    call get_im2_handler ; HL = default im2 handler address
+    ld (var_int_vector), hl
+    xor a                ; disable border
+    ld bc, #01ff         ; ...
+    out (c), a           ; ...
+    pop af
+    pop iy
+    pop ix
+    pop de
+    ei                   ; wait for int just for safety
+    halt                 ; ...
+    ld i, a              ; restore default interrupt table address
+    jp po, exit_with_ret ; check int was enabled by default. no? just do retn
+    ld hl, (var_int_vector) ; ...
+    jp exit_with_jp      ; yes? goto default int handler
+
+
+; Includes
+    include config.asm
+    include draw.asm
+    include input.asm
+    include menu.asm
+    include menu_structure.asm
+    include font.asm
+    include strings.asm
+
+app_end:
+    ORG #3FE8
+    DB 0,"End of Sizif Magic ROM",0
+
 ; Magic vectors
-    ORG #F000
-Exit_vector:
-    nop
-    ORG #F008
-Readout_vector:
-    nop
+Exit_vector EQU #F000
+Readout_vector EQU #F008
 
 ; Variables
-    ORG #FC00
-Reset_flag:
-    db 0
-Key_was_pressed_flag:
-    db 0
-Magic_leave_cnt:
-    db 0
-Saved_sp_value:
-    dw 0
-Stack_bottom:
+    ORG #D500
+var_save_screen: .6912 DB 0
+    ORG #F020
+var_save_ay: .32 DB 0
+var_save_ulaplus: DB 0
+var_sp_reg: DW 0
+var_int_vector: DW 0
+var_magic_enter_cnt: DB 0
+var_magic_leave_cnt: DB 0
+var_exit_flag: DB 0
+var_exit_reboot: DB 0
+var_input_key: DB 0
+var_input_key_last: DB 0
+var_input_key_hold_timer: DB 0
+var_menu_current_item: DB 0
+var_menu_animate_cnt: DB 0
+
+cfg CFG_T
+cfg_saved CFG_T
+cfg_initialized: DB #B1, #5B, #00, #B5
+
     ORG #FFBE
 Stack_top:
     ORG #FFC0
 Ulaplus_pallete:
-    .64 db 0
+    .64 DB 0
 
-    SAVEBIN "rom1.bin",0,16384
+
+    DISPLAY "Application size: ",/D,app_end-app_begin
+    CSPECTMAP "main.map"
+    SAVEBIN "main.bin",0,16384

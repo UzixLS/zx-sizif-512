@@ -1,7 +1,7 @@
 all:
 	cat 128p-0.rom \
 		128-1.rom \
-		../rom_src/rom1.bin \
+		../rom_src/main.bin \
 		ESXMMC.BIN ESXMMC.BIN \
 		dvmen3e0.rom \
 		dvmen3e1.rom \

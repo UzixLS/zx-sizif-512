@@ -38,10 +38,12 @@ cpld/tb/*.mem
 cpld/tb.*/
 
 ## Etc.
+rom/sizif-*.rom
+rom_src/*.bin
+rom_src/*.hex
+rom_src/*.map
+rom_src/*.sna
+rom_src.*/
 *.bak
 *.*~
 *.sublime-*
-rom/sizif-*.rom
-rom_src/*.bin
-rom_src.*/
-videoout/
