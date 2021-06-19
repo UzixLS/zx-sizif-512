@@ -75,28 +75,14 @@ module zx_ula (
 );
 
 
-/* RESET */
-reg rst_n0 = 0;
-reg [2:0] rst_n0_cnt = 0;
-always @(posedge clk28) begin
-    if (rst_n == 1'b0) begin
-        if (! (&rst_n0_cnt))
-            rst_n0_cnt <= rst_n0_cnt + 1'b1;
-    end
-    else begin
-        rst_n0_cnt <= 0;
-    end
-    rst_n0 <= ~&rst_n0_cnt;
-end
-
-
 /* SHARED DEFINITIONS */
 timings_t timings;
 turbo_t turbo;
+rammode_t ram_mode;
 reg pause = 0;
-wire ps2_key_pause, joy_pause, joy_mode;
+wire ps2_key_reset, ps2_key_pause, joy_pause;
 wire [2:0] border;
-wire magic_beeper;
+wire magic_reboot, magic_beeper;
 wire up_en;
 wire clkwait;
 wire [2:0] rampage128;
@@ -119,11 +105,31 @@ assign bus.wr = ~n_wr;
 assign bus.ioreq = ~(~n_m1 | n_iorqge | n_iorqge_delayed);
 
 
+/* RESET */
+reg rst_n0 = 0;
+reg [2:0] rst_n0_cnt = 0;
+always @(posedge clk28) begin
+    if (rst_n == 1'b0) begin
+        if (! (&rst_n0_cnt))
+            rst_n0_cnt <= rst_n0_cnt + 1'b1;
+    end
+    else begin
+        rst_n0_cnt <= 0;
+    end
+    rst_n0 <= (&rst_n0_cnt)? 1'b0 : 1'b1;
+end
+
+reg usrrst_n = 0;
+always @(posedge clk28) begin
+    usrrst_n <= (&rst_n0_cnt || ps2_key_reset || magic_reboot)? 1'b0 : 1'b1;
+end
+
 /* PAUSE */
 always @(posedge clk28) begin
     if (n_int == 1'b0 && bus.rfsh)
         pause <= ps2_key_pause || joy_pause;
 end
+
 
 /* SCREEN CONTROLLER */
 wire blink;
@@ -191,8 +197,7 @@ rgb rgb0(
 
 /* PS/2 KEYBOARD */
 wire [4:0] ps2_kd;
-wire ps2_key_magic, ps2_key_reset;
-wire usrrst_n = ~ps2_key_reset;
+wire ps2_key_magic;
 wire ps2_joy_up, ps2_joy_down, ps2_joy_left, ps2_joy_right, ps2_joy_fire;
 `ifndef REV_C
 ps2 #(.CLK_FREQ(28_000_000)) ps2_0(
@@ -219,7 +224,7 @@ assign {ps2_joy_up, ps2_joy_down, ps2_joy_left, ps2_joy_right, ps2_joy_fire} = 0
 
 
 /* JOYSTICK / GAMEPAD */
-wire joy_up, joy_down, joy_left, joy_right, joy_start, joy_b1_turbo, joy_b2_turbo, joy_b3_turbo;
+wire joy_up, joy_down, joy_left, joy_right, joy_b1_turbo, joy_b2_turbo, joy_b3_turbo, joy_mode;
 joysega joysega0(
     .rst_n(rst_n0),
     .clk28(clk28),
@@ -243,12 +248,12 @@ joysega joysega0(
     .joy_b1_turbo(joy_b1_turbo),
     .joy_b2_turbo(joy_b2_turbo),
     .joy_b3_turbo(joy_b3_turbo),
-    .joy_start(joy_start),
+    .joy_start(),
     .joy_mode(joy_mode),
     .pause(joy_pause)
 );
 
-wire [7:0] kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, ps2_joy_fire | joy_b1_turbo,
+wire [7:0] kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, ps2_joy_fire | joy_b1_turbo, 
     ps2_joy_up | joy_up, ps2_joy_down | joy_down, ps2_joy_left | joy_left, ps2_joy_right | joy_right};
 
 
@@ -258,7 +263,7 @@ wire n_rstcpu0;
 assign n_rstcpu = n_rstcpu0? 1'bz : 1'b0;
 assign n_clkcpu = ~clkcpu;
 cpucontrol cpucontrol0(
-    .rst_n(rst_n0 & usrrst_n),
+    .rst_n(usrrst_n),
     .clk28(clk28),
     .clk14(clk14),
     .clk7(clk7),
@@ -287,15 +292,15 @@ cpucontrol cpucontrol0(
 
 /* MAGIC */
 wire magic_mode, magic_map;
-wire magic_active_next;
 wire n_nmi0;
 reg n_nmi0_prev;
 always @(posedge clk28)    // precharge to 1 - this is required because of weak n_nmi pullup ...
     n_nmi0_prev <= n_nmi0; // ... which may cause multiple nmi triggering in Z80 in 14MHz mode
 assign n_nmi = n_nmi0? (n_nmi0_prev? 1'bz : 1'b1) : 1'b0;
-wire extlock, joy_sinclair, rom_plus3, rom_alt48;
+wire divmmc_en, joy_sinclair, rom_plus3, rom_alt48;
+wire magic_button = n_magic == 0 || joy_mode || ps2_key_magic;
 magic magic0(
-    .rst_n(rst_n0 & usrrst_n),
+    .rst_n(usrrst_n),
     .clk28(clk28),
 
     .bus(bus),
@@ -303,21 +308,22 @@ magic magic0(
     .n_int_next(n_int_next),
     .n_nmi(n_nmi0),
 
-    .magic_button(n_magic == 0 || joy_mode || ps2_key_magic),
+    .magic_button(magic_button),
 
     .magic_mode(magic_mode),
     .magic_map(magic_map),
-    .magic_active_next(magic_active_next),
 
-    .extlock(extlock),
+    .magic_reboot(magic_reboot),
     .magic_beeper(magic_beeper),
     .timings(timings),
     .turbo(turbo),
+    .ram_mode(ram_mode),
     .joy_sinclair(joy_sinclair),
     .rom_plus3(rom_plus3),
     .rom_alt48(rom_alt48),
     .ay_abc(ay_abc),
-    .ay_mono(ay_mono)
+    .ay_mono(ay_mono),
+    .divmmc_en(divmmc_en)
 );
 
 
@@ -334,16 +340,16 @@ wire port_dffd_d4;
 wire plus3_mtr0;
 assign plus3_mtr = plus3_mtr0? 1'bz : 1'b0;
 ports ports0 (
-    .rst_n(rst_n0 & usrrst_n),
+    .rst_n(usrrst_n),
     .clk28(clk28),
 
     .bus(bus),
     .d_out(ports_dout),
     .d_out_active(ports_dout_active),
 
-    .en_128k(1'b1),
+    .en_128k(ram_mode == RAM_512 || ram_mode == RAM_128),
     .en_plus3(rom_plus3),
-    .en_profi(!extlock),
+    .en_profi(ram_mode == RAM_512),
     .en_kempston(!joy_sinclair),
     .en_sinclair(joy_sinclair),
 
@@ -353,7 +359,7 @@ ports ports0 (
     .attr_next(attr_next),
     .kd(kd & ps2_kd),
     .kempston_data(kempston_data),
-    .magic_active_next(magic_active_next),
+    .magic_button(magic_button),
     .tape_in(tape_in),
 
     .tape_out(tape_out),
@@ -375,7 +381,7 @@ ports ports0 (
 
 /* AY */
 ay ay0(
-    .rst_n(rst_n0 & usrrst_n),
+    .rst_n(usrrst_n),
     .clk28(clk28),
     .bus(bus),
     .ck35(ck35 && !pause),
@@ -388,10 +394,10 @@ ay ay0(
 /* COVOX & SOUNDRIVE */
 wire [7:0] soundrive_l0, soundrive_l1, soundrive_r0, soundrive_r1;
 soundrive soundrive0(
-    .rst_n(rst_n0 & usrrst_n),
+    .rst_n(usrrst_n),
     .clk28(clk28),
-    .en_covox(!extlock),
-    .en_soundrive(!extlock),
+    .en_covox(1'b1),
+    .en_soundrive(1'b1),
 
     .bus(bus),
 
@@ -407,9 +413,9 @@ mixer mixer0(
     .rst_n(rst_n0),
     .clk28(clk28),
 
-    .beeper(beeper),
+    .beeper(beeper ^ magic_beeper),
     .tape_out(tape_out),
-    .tape_in(tape_in ^ sd_cs ^ magic_beeper),
+    .tape_in(tape_in ^ sd_cs),
     .sd_l0(soundrive_l0),
     .sd_l1(soundrive_l1),
     .sd_r0(soundrive_r0),
@@ -425,11 +431,11 @@ wire div_map, div_ram, div_ramwr_mask, div_dout_active;
 wire [7:0] div_dout;
 wire [3:0] div_page;
 divmmc divmmc0(
-    .rst_n(rst_n0 & usrrst_n),
+    .rst_n(usrrst_n),
     .clk28(clk28),
     .ck14(ck14),
     .ck7(ck7),
-    .en(!extlock),
+    .en(divmmc_en),
     .en_hooks(~sd_cd),
 
     .bus(bus),
@@ -440,7 +446,7 @@ divmmc divmmc0(
     .sd_mosi(sd_mosi),
     .sd_sck(sd_sck),
     .sd_cs(sd_cs),
-
+    
     .rammap(port_dffd_d4 | port_1ffd[0]),
     .magic_mode(magic_mode),
     .magic_map(magic_map),
@@ -459,9 +465,9 @@ wire [7:0] up_dout;
 wire up_write_req;
 wire [5:0] up_write_addr;
 ulaplus ulaplus0(
-    .rst_n(rst_n & usrrst_n),
+    .rst_n(usrrst_n),
     .clk28(clk28),
-    .en(!extlock),
+    .en(1'b1),
 
     .bus(bus),
     .d_out(up_dout),
@@ -483,8 +489,8 @@ assign n_romcs = (romreq && bus.mreq)? 1'b0 : 1'b1;
 assign n_vrd = ((ramreq && bus.rd) || screen_fetch)? 1'b0 : 1'b1;
 assign n_vwr = (ramreq_wr && bus.wr && !screen_fetch)? 1'b0 : 1'b1;
 
-// reserve 128K RAM for DivMMC if sd card is insterted
-wire [1:0] rampage_ext0 = {~sd_cd? 1'b0 : rampage_ext[1], rampage_ext[0]};
+// reserve 128K RAM for DivMMC
+wire [1:0] rampage_ext0 = {divmmc_en? 1'b0 : rampage_ext[1], rampage_ext[0]};
 
 wire [18:13] ram_a =
     magic_map & bus.a[15] & bus.a[14]? {2'b00, 3'b111, bus.a[13]} :
