@@ -147,8 +147,8 @@ always @(posedge clk or negedge rst_n) begin
                 `PS2_KP_6:      joy_right <= is_press;
                 `PS2_KP_0:      joy_fire <= is_press;
                 `PS2_KP_ENTER:  joy_fire <= is_press;
-                `PS2_L_ALT:     begin joy_fire <= is_press; key2_alt <= is_press; end
-                `PS2_R_ALT:     begin joy_fire <= is_press; key2_alt <= is_press; end
+                `PS2_L_ALT:     begin joy_fire <= is_press && !key2_l_ctrl; key2_alt <= is_press; end
+                `PS2_R_ALT:     begin joy_fire <= is_press && !key2_l_ctrl; key2_alt <= is_press; end
             endcase
             is_press <= rxbyte != 8'hF0;
             is_ext <= rxbyte == 8'hE0 || (rxbyte == 8'hF0 && is_ext);
