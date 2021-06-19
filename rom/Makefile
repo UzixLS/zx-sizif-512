@@ -12,6 +12,6 @@ all:
 		zxdiag.rom zxdiag.rom zxdiag.rom zxdiag.rom zxdiag.rom zxdiag.rom zxdiag.rom zxdiag.rom \
 		>sizif-512-020.rom
 	cat sizif-512-020.rom \
-		DiagROM.v50 DiagROM.v50 DiagROM.v50 DiagROM.v50 DiagROM.v50 DiagROM.v50 DiagROM.v50 DiagROM.v50 \
+		DiagROM.v54 DiagROM.v54 DiagROM.v54 DiagROM.v54 DiagROM.v54 DiagROM.v54 DiagROM.v54 DiagROM.v54 \
 		S128_ZX81_ED2_ROM.bin S128_ZX81_ED2_ROM.bin S128_ZX81_ED2_ROM.bin S128_ZX81_ED2_ROM.bin S128_ZX81_ED2_ROM.bin S128_ZX81_ED2_ROM.bin S128_ZX81_ED2_ROM.bin S128_ZX81_ED2_ROM.bin \
 		>sizif-512-040.rom
