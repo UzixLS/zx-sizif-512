@@ -32,7 +32,10 @@ With extension board ([link](https://github.com/UzixLS/zx-sizif-512-ext)) more f
 ### Demonstration
 Running Pentagon 128 and Spectrum 128 demos: [link](https://www.youtube.com/watch?v=_RoLKcfJSTY)  
 Playing music from SD: [link](https://www.youtube.com/watch?v=TmikKD3yqOU)  
-Some photos: [link](https://cloud.err200.net/index.php/s/73TR85tYZkMm8Ax?path=%2Fsizif-512)
+Some random photos: [link](https://cloud.err200.net/index.php/s/73TR85tYZkMm8Ax?path=%2Fsizif-512)
+
+Review by Martin's 8-bit blog (in czech): [link](https://www.8bity.cz/2020/zx-spectrum-clone-with-cpld-ulaplus-sizif-512/#)  
+Review by The Retro Shack youtube channel: [link](https://www.youtube.com/watch?v=l5IgQTgq_bg)
 
 ### Magic button
 Sizif have some configurable things which you may change at any moment and that's doesn't require reboot.
@@ -103,7 +106,7 @@ It's not a bug, it's a feature ;)
     * added zxbus connector for in-case addons
     * added support for +3DOS floppy controller
     * added support for Sega 3/6-button gamepad
-    * added PS/2 (TODO: check)
+    * added PS/2
     * added Bluetooth tape input (via M18 module)
     * added alternative microSD card socket footprint
     * fixed compatibility with some keyboards
