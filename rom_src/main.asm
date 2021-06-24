@@ -34,10 +34,10 @@ startup_handler:
     ld ix, #5800    ; draw 4 rygb boxes on left top corner to indicate boot
     ld (ix+0), #D2  ; r
     ld (ix+1), #F6  ; y
-    ld (ix+2), #E4  ; g
-    ld (ix+3), #C9  ; b
     call init_config
     call init_cpld
+    ld (ix+2), #E4  ; g
+    ld (ix+3), #C9  ; b
     ld hl, 0
     jp exit_with_jp
 
