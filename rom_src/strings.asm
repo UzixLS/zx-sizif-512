@@ -22,7 +22,7 @@ str_exit_no_reboot_end:
 str_on: DB " ON",0
 str_on_end:
 
-str_off: DB "OFF",0
+str_off: DB "      OFF",0
 str_off_end:
 
 str_timings: DB "Timings",0
@@ -82,9 +82,6 @@ str_rom48_alt_end:
 str_plus3: DB "+3",0
 str_plus3_end:
 
-str_featurelock: DB "Features",0
-str_featurelock_end:
-
 str_divmmc: DB "DivMMC",0
 str_divmmc_end:
 
@@ -103,3 +100,17 @@ str_ram_256_end:
 str_ram_512: DB "512K",0
 str_ram_512_end:
 
+str_ulaplus: DB "ULA+",0
+str_ulaplus_end
+
+str_dac: DB "DAC",0
+str_dac_end
+
+str_dac_covox: DB "    Covox",0
+str_dac_covox_end
+
+str_dac_sd: DB "SounDrive",0
+str_dac_sd_end
+
+str_dac_covoxsd: DB " Covox+SD",0
+str_dac_covoxsd_end

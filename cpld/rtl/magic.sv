@@ -23,7 +23,10 @@ module magic(
     output reg rom_alt48,
     output reg ay_abc,
     output reg ay_mono,
-    output reg divmmc_en
+    output reg divmmc_en,
+    output reg ulaplus_en,
+    output reg covox_en,
+    output reg sd_en
 );
 
 reg magic_unmap_next;
@@ -79,6 +82,9 @@ always @(posedge clk28 or negedge rst_n) begin
         rom_alt48 <= 0;
         joy_sinclair <= 0;
         divmmc_en <= 1'b1;
+        ulaplus_en <= 1'b1;
+        covox_en <= 1'b1;
+        sd_en <= 1'b1;
     end
     else if (config_cs && bus.wr) case (bus.a[15:8])
         8'h00: magic_reboot <= bus.d[0];
@@ -91,6 +97,8 @@ always @(posedge clk28 or negedge rst_n) begin
         8'h07: joy_sinclair <= bus.d[0];
         8'h08: ram_mode <= rammode_t'(bus.d[1:0]);
         8'h09: divmmc_en <= bus.d[0];
+        8'h0a: ulaplus_en <= bus.d[0];
+        8'h0b: {sd_en, covox_en} <= bus.d[1:0];
     endcase
 end
 

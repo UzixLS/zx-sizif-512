@@ -83,7 +83,7 @@ reg pause = 0;
 wire ps2_key_reset, ps2_key_pause, joy_pause;
 wire [2:0] border;
 wire magic_reboot, magic_beeper;
-wire up_en;
+wire up_active;
 wire clkwait;
 wire [2:0] rampage128;
 wire div_wait;
@@ -149,7 +149,7 @@ screen screen0(
 
     .timings(timings),
     .border(screen_border),
-    .up_en(up_en),
+    .up_en(up_active),
 
     .r(r0),
     .g(g0),
@@ -185,7 +185,7 @@ screen screen0(
 rgb rgb0(
     .clk28(clk28),
     .clk14(clk14),
-    .up_en(up_en),
+    .up_en(up_active),
     .r_i(r0),
     .g_i(g0),
     .b_i(b0),
@@ -278,7 +278,7 @@ cpucontrol cpucontrol0(
     .turbo(turbo),
     .timings(timings),
     .pause(pause),
-    .ext_wait_cycle(div_wait || up_en),
+    .ext_wait_cycle(div_wait || up_active),
 
     .n_rstcpu(n_rstcpu0),
     .clkcpu(clkcpu),
@@ -297,7 +297,7 @@ reg n_nmi0_prev;
 always @(posedge clk28)    // precharge to 1 - this is required because of weak n_nmi pullup ...
     n_nmi0_prev <= n_nmi0; // ... which may cause multiple nmi triggering in Z80 in 14MHz mode
 assign n_nmi = n_nmi0? (n_nmi0_prev? 1'bz : 1'b1) : 1'b0;
-wire divmmc_en, joy_sinclair, rom_plus3, rom_alt48;
+wire divmmc_en, joy_sinclair, rom_plus3, rom_alt48, up_en, covox_en, sd_en;
 wire magic_button = n_magic == 0 || joy_mode || ps2_key_magic;
 magic magic0(
     .rst_n(usrrst_n),
@@ -323,7 +323,10 @@ magic magic0(
     .rom_alt48(rom_alt48),
     .ay_abc(ay_abc),
     .ay_mono(ay_mono),
-    .divmmc_en(divmmc_en)
+    .divmmc_en(divmmc_en),
+    .ulaplus_en(up_en),
+    .covox_en(covox_en),
+    .sd_en(sd_en)
 );
 
 
@@ -396,8 +399,8 @@ wire [7:0] soundrive_l0, soundrive_l1, soundrive_r0, soundrive_r1;
 soundrive soundrive0(
     .rst_n(usrrst_n),
     .clk28(clk28),
-    .en_covox(1'b1),
-    .en_soundrive(1'b1),
+    .en_covox(covox_en),
+    .en_soundrive(sd_en),
 
     .bus(bus),
 
@@ -467,13 +470,13 @@ wire [5:0] up_write_addr;
 ulaplus ulaplus0(
     .rst_n(usrrst_n),
     .clk28(clk28),
-    .en(1'b1),
+    .en(up_en),
 
     .bus(bus),
     .d_out(up_dout),
     .d_out_active(up_dout_active),
 
-    .active(up_en),
+    .active(up_active),
     .write_req(up_write_req),
     .write_addr(up_write_addr)
 );

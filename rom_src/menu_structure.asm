@@ -9,11 +9,13 @@ menu:
     MENU_T str_timings     menu_timings_value_cb     menu_timins_cb
     MENU_T str_cpu         menu_clock_value_cb       menu_clock_cb
     MENU_T str_panning     menu_panning_value_cb     menu_panning_cb
+    MENU_T str_dac         menu_dac_value_cb         menu_dac_cb
     MENU_T str_joystick    menu_joystick_value_cb    menu_joystick_cb
     MENU_T str_ram         menu_ram_value_cb         menu_ram_cb
     MENU_T str_rom48       menu_rom48_value_cb       menu_rom48_cb
     MENU_T str_plus3       menu_plus3_value_cb       menu_plus3_cb
     MENU_T str_divmmc      menu_divmmc_value_cb      menu_divmmc_cb
+    MENU_T str_ulaplus     menu_ulaplus_value_cb     menu_ulaplus_cb
     MENU_T str_exit        menu_exit_value_cb        menu_exit_cb
     MENU_T 0
 MENU_ITEMS EQU ($-menu)/MENU_T-1
@@ -97,6 +99,24 @@ menu_divmmc_value_cb:
 .values_table:
     DW str_off_end-2
     DW str_on_end-2
+
+menu_ulaplus_value_cb:
+    ld ix, .values_table
+    ld a, (cfg.ulaplus)
+    jp menu_value_get
+.values_table:
+    DW str_off_end-2
+    DW str_on_end-2
+
+menu_dac_value_cb:
+    ld ix, .values_table
+    ld a, (cfg.dac)
+    jp menu_value_get
+.values_table:
+    DW str_off_end-2
+    DW str_dac_covox_end-2
+    DW str_dac_sd_end-2
+    DW str_dac_covoxsd_end-2
 
 menu_exit_value_cb:
     ld ix, .values_table
@@ -185,6 +205,24 @@ menu_divmmc_cb:
     call menu_handle_press
     ld (cfg.divmmc), a
     ld bc, #09ff
+    out (c), a
+    ret
+
+menu_ulaplus_cb:
+    ld a, (cfg.ulaplus)
+    ld c, 1
+    call menu_handle_press
+    ld (cfg.ulaplus), a
+    ld bc, #0aff
+    out (c), a
+    ret
+
+menu_dac_cb:
+    ld a, (cfg.dac)
+    ld c, 3
+    call menu_handle_press
+    ld (cfg.dac), a
+    ld bc, #0bff
     out (c), a
     ret
 
