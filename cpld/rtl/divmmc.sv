@@ -20,25 +20,25 @@ module divmmc(
     input magic_mode,
     input magic_map,
 
-    output reg [3:0] div_page,
-    output div_map,
-    output div_ram,
-    output div_ramwr_mask,
-    output div_wait
+    output reg [3:0] page,
+    output map,
+    output ram,
+    output ramwr_mask,
+    output cpuwait
 );
 
-reg div_automap, div_automap_next;
+reg automap, automap_next;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
-        div_automap_next <= 0;
-        div_automap <= 0;
+        automap_next <= 0;
+        automap <= 0;
     end
-    else if (bus.m1 && bus.mreq && magic_map == 0) begin
+    else if (bus.m1 && bus.mreq && !magic_map) begin
         if (!en_hooks || !en || rammap) begin
-            div_automap_next <= 0;
+            automap_next <= 0;
         end
         else if (bus.a[15:3] == 13'h3FF) begin // exit vectors 1FF8-1FFF
-            div_automap_next <= 0;
+            automap_next <= 0;
         end
         else if (
                 bus.a == 16'h0000 || // power-on/reset/rst0/software restart
@@ -48,37 +48,37 @@ always @(posedge clk28 or negedge rst_n) begin
                 bus.a == 16'h04C6 || // tape save routine
                 bus.a == 16'h0562    // tape load and verify routine
                 ) begin
-            div_automap_next <= 1'b1;
+            automap_next <= 1'b1;
         end
         else if (bus.a[15:8] == 8'h3D) begin // tr-dos mapping area
-            div_automap_next <= 1'b1;
-            div_automap <= 1'b1;
+            automap_next <= 1'b1;
+            automap <= 1'b1;
         end
     end
     else if (!bus.m1) begin
-        div_automap <= div_automap_next;
+        automap <= automap_next;
     end
 end
 
 reg spi_rd;
-reg div_conmem, div_mapram;
+reg conmem, mapram;
 wire port_e3_cs = en && bus.ioreq && bus.a[7:0] == 8'hE3;
 wire port_e7_cs = en && bus.ioreq && bus.a[7:0] == 8'hE7;
 wire port_eb_cs = en && bus.ioreq && bus.a[7:0] == 8'hEB;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         spi_rd <= 0;
-        div_page <= 0;
-        div_mapram <= 0;
-        div_conmem <= 0;
+        page <= 0;
+        mapram <= 0;
+        conmem <= 0;
         sd_cs <= 1'b1;
     end
     else begin
         spi_rd <= port_eb_cs && bus.rd;
         if (port_e3_cs && bus.wr) begin
-            div_page <= bus.d[3:0];
-            div_mapram <= bus.d[6] | div_mapram;
-            div_conmem <= bus.d[7];
+            page <= bus.d[3:0];
+            mapram <= bus.d[6] | mapram;
+            conmem <= bus.d[7];
         end
         if (port_e7_cs && bus.wr) begin
             sd_cs <= bus.d[0];
@@ -88,7 +88,7 @@ end
 
 reg [3:0] spi_cnt;
 wire spi_cnt_en = ~spi_cnt[3] | spi_cnt[2] | spi_cnt[1] | spi_cnt[0];
-assign div_wait = ~spi_cnt[3];
+assign cpuwait = ~spi_cnt[3];
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         spi_cnt <= 0;
@@ -125,12 +125,15 @@ always @(posedge clk28) begin
 end
 
 
-assign div_map = div_automap | div_conmem;
-assign div_ram = (div_conmem == 1 && bus.a[13] == 1) ||
-    (div_automap == 1 && bus.a[13] == 1) ||
-    (div_conmem == 0 && div_automap == 1 && div_mapram == 1);
-assign div_ramwr_mask = bus.a[15] == 0 && bus.a[14] == 0 &&
-    (bus.a[13] == 0 || div_page == 4'b0011) && div_conmem == 0 && div_automap == 1 && div_mapram == 1;
+assign map = automap | conmem;
+assign ram =
+    (automap && bus.a[13]) ||
+    (conmem && bus.a[13]) ||
+    (!conmem && automap && mapram);
+assign ramwr_mask =
+    !bus.a[15] && !bus.a[14] &&
+    (!bus.a[13] || page == 4'b0011) &&
+    !conmem && automap && mapram;
 
 assign d_out_active = spi_rd;
 assign d_out = spi_reg;

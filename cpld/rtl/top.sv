@@ -451,11 +451,11 @@ divmmc divmmc0(
     .magic_mode(magic_mode),
     .magic_map(magic_map),
 
-    .div_page(div_page),
-    .div_map(div_map),
-    .div_ram(div_ram),
-    .div_ramwr_mask(div_ramwr_mask),
-    .div_wait(div_wait)
+    .page(div_page),
+    .map(div_map),
+    .ram(div_ram),
+    .ramwr_mask(div_ramwr_mask),
+    .cpuwait(div_wait)
 );
 
 
@@ -490,7 +490,7 @@ assign n_vrd = ((ramreq && bus.rd) || screen_fetch)? 1'b0 : 1'b1;
 assign n_vwr = (ramreq_wr && bus.wr && !screen_fetch)? 1'b0 : 1'b1;
 
 // reserve 128K RAM for DivMMC
-wire [1:0] rampage_ext0 = {divmmc_en? 1'b0 : rampage_ext[1], rampage_ext[0]};
+wire [1:0] rampage_ext0 = {divmmc_en? 1'b1 : ~rampage_ext[1], ~rampage_ext[0]};
 
 wire [18:13] ram_a =
     magic_map & bus.a[15] & bus.a[14]? {2'b00, 3'b111, bus.a[13]} :
@@ -498,11 +498,11 @@ wire [18:13] ram_a =
     div_map & ~bus.a[14] & ~bus.a[15] & bus.a[13]? {2'b01, div_page} :
     div_map & ~bus.a[14] & ~bus.a[15]? {2'b01, 4'b0011} :
     port_dffd_d3 & bus.a[15]? {2'b11, bus.a[14], bus.a[15], bus.a[14], bus.a[13]} :
-    port_dffd_d3 & bus.a[14]? {~rampage_ext0[1:0], rampage128, bus.a[13]} :
+    port_dffd_d3 & bus.a[14]? {rampage_ext0, rampage128, bus.a[13]} :
     (port_1ffd[2] == 1'b0 && port_1ffd[0] == 1'b1)? {2'b11, port_1ffd[1], bus.a[15], bus.a[14], bus.a[13]} :
     (port_1ffd == 3'b101)? {2'b11, ~(bus.a[15] & bus.a[14]), bus.a[15], bus.a[14]} :
     (port_1ffd == 3'b111)? {2'b11, ~(bus.a[15] & bus.a[14]), (bus.a[15] | bus.a[14]), bus.a[14]} :
-    bus.a[15] & bus.a[14]? {~rampage_ext0[1:0], rampage128, bus.a[13]} :
+    bus.a[15] & bus.a[14]? {rampage_ext0, rampage128, bus.a[13]} :
     {2'b11, bus.a[14], bus.a[15], bus.a[14], bus.a[13]} ;
 
 assign ra[17:14] =

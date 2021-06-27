@@ -75,9 +75,9 @@ localparam V_SYNC_PENT    = 8;
 localparam V_TBORDER_PENT = 64;
 localparam V_TOTAL_PENT   = V_AREA + V_BBORDER_PENT + V_SYNC_PENT + V_TBORDER_PENT;
 
-reg [`CLOG2(`MAX(V_TOTAL_S128, V_TOTAL_PENT))-1:0] vc;
-reg [`CLOG2(`MAX(H_TOTAL_S128, H_TOTAL_PENT))+1:0] hc0;
-wire [`CLOG2(`MAX(H_TOTAL_S128, H_TOTAL_PENT))-1:0] hc = hc0[$bits(hc0)-1:2];
+reg  [$clog2(`MAX(V_TOTAL_PENT, `MAX(V_TOTAL_S128, V_TOTAL_S48)))-1:0] vc;
+reg  [$clog2(`MAX(H_TOTAL_PENT, `MAX(H_TOTAL_S128, H_TOTAL_S48)))+1:0] hc0;
+wire [$clog2(`MAX(H_TOTAL_PENT, `MAX(H_TOTAL_S128, H_TOTAL_S48)))-1:0] hc = hc0[$bits(hc0)-1:2];
 
 assign vc_out = vc;
 assign hc_out = hc;
