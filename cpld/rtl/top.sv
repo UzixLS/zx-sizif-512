@@ -383,6 +383,7 @@ ports ports0 (
 
 
 /* AY */
+wire ay_dout_active;
 ay ay0(
     .rst_n(usrrst_n),
     .clk28(clk28),
@@ -390,7 +391,8 @@ ay ay0(
     .ck35(ck35 && !pause),
     .ay_clk(ay_clk),
     .ay_bc1(ay_bc1),
-    .ay_bdir(ay_bdir)
+    .ay_bdir(ay_bdir),
+    .d_out_active(ay_dout_active)
 );
 
 
@@ -535,6 +537,7 @@ assign xd[7:0] =
     (ramreq && bus.rd)? vd :
     up_dout_active? up_dout :
     div_dout_active? div_dout :
+    ay_dout_active? {8{1'bz}} :
     ports_dout_active? ports_dout :
     xd_precharge? 8'hFF :
     {8{1'bz}} ;

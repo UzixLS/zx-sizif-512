@@ -8,7 +8,8 @@ module ay(
 
     output reg ay_clk,
     output reg ay_bc1,
-    output reg ay_bdir
+    output reg ay_bdir,
+    output d_out_active
 );
 
 //              bdir bc1 description
@@ -31,6 +32,7 @@ always @(posedge clk28 or negedge rst_n) begin
     end
 end
 
+assign d_out_active = !ay_bdir && ay_bc1;
 
 
 endmodule
