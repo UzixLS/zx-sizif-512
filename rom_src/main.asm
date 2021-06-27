@@ -31,6 +31,7 @@ app_begin:
 
 
 startup_handler:
+    ld sp, Stack_top
     ld ix, #5800    ; draw 4 rygb boxes on left top corner to indicate boot
     ld (ix+0), #D2  ; r
     ld (ix+1), #F6  ; y
