@@ -106,12 +106,13 @@ init_config:
     jr nz, .init_default       ; ...
     jr .restore                ; ...
 .init_default:
-    ld bc, CFG_T               ; cfg_saved = cfg_default
+    ld bc, CFG_T+CFGEXT_T      ; cfg_saved = cfg_default
     ld de, cfg_saved           ; ...
     ld hl, CFG_DEFAULT         ; ...
     ldir                       ; ...
+    call detect_ext_board      ; read ext board jumpres if any
 .restore:
-    ld bc, CFG_T               ; cfg = cfg_saved
+    ld bc, CFG_T+CFGEXT_T      ; cfg = cfg_saved
     ld de, cfg                 ; ...
     ld hl, cfg_saved           ; ...
     ldir                       ; ...
@@ -123,10 +124,10 @@ init_config:
     ret
 
 save_config:
-    ld bc, CFG_T     ; cfg_saved = cfg
-    ld de, cfg_saved ; ...
-    ld hl, cfg       ; ... 
-    ldir             ; ...
+    ld bc, CFG_T+CFGEXT_T ; cfg_saved = cfg
+    ld de, cfg_saved      ; ...
+    ld hl, cfg            ; ... 
+    ldir                  ; ...
     ret
 
 
@@ -154,6 +155,56 @@ init_cpld:
     ld c, #ff          ; 
     ld hl, cfg+CFG_T-1 ; HL = &cfg[registers count-1]
     otdr               ; do { b--; out(bc, *hl); hl--; } while(b)
+.do_load_ext:          ; same for extension board
+    ld d, CFGEXT_T     ; ...
+    ld b, #e1          ; ...
+    ld c, #ff          ; ...
+    ld hl, cfgext      ; ...
+.do_load_ext_loop:     ; ...
+    ld a, (hl)         ; ...
+    out (c), a         ; ...
+    inc hl             ; ...
+    inc b              ; ...
+    dec d              ; ...
+    jr nz, .do_load_ext_loop ; ...
+    ret
+
+
+; OUT -  A = 1 if ext board present, 0 otherwise
+; OUT -  F - garbage
+; OUT - BC - garbage
+detect_ext_board:
+    ld b, #e0       ; read port #e0ff
+    ld c, #ff       ; ...
+    in a, (c)       ; ...
+    ld b, a         ; if (result & 0xF0 != 0) - return
+    and #f0         ; ...
+    jr z, .detected ; ...
+.not_detected:
+    xor a
+    ld (var_ext_presence), a
+    ret
+.detected
+    ld a, 1
+    ld (var_ext_presence), a
+    xor a
+    bit 0, b     ; check TSFM jumper
+    jr z, .cfg_tsfm
+    ld a, 1
+.cfg_tsfm:
+    ld (cfgext_saved.tsfm), a
+    xor a
+    bit 1, b     ; check SAA jumper
+    jr z, .cfg_saa
+    ld a, 1
+.cfg_saa:
+    ld (cfgext_saved.saa), a
+    xor a
+    bit 2, b     ; check GS jumper
+    jr z, .cfg_gs
+    ld a, 1
+.cfg_gs:
+    ld (cfgext_saved.gs), a
     ret
 
 
@@ -419,9 +470,13 @@ var_input_key_last: DB 0
 var_input_key_hold_timer: DB 0
 var_menu_current_item: DB 0
 var_menu_animate_cnt: DB 0
+var_menu: MENU_T
+var_ext_presence: DB 0
 
 cfg CFG_T
+cfgext CFGEXT_T
 cfg_saved CFG_T
+cfgext_saved CFGEXT_T
 cfg_initialized: DB #B1, #5B, #00, #B5
 
     ORG #FFBE

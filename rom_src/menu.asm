@@ -1,16 +1,29 @@
 menu_init:
-    ld b, MENU_Y
+    ld bc, MENU_T            ; if (ext board present) var_menu = menuext; else var_menu = menu;
+    ld de, var_menu          ; ...
+    ld hl, menu              ; ...
+    ld a, (var_ext_presence) ; ...
+    or a                     ; ...
+    jr z, .set_menu          ; ...
+    ld hl, menuext           ; ...
+.set_menu:                   ; ...
+    ldir                     ; ...
+
+    ld ix, var_menu
+    ld b, (ix+MENU_T.y_row)
     ld c, MENU_X
-    ld d, MENU_HEIGHT
+    ld d, (ix+MENU_T.height)
     ld e, MENU_WIDTH
     call draw_box
 
+    ld ix, var_menu
     ld hl, str_sizif
-    ld b, MENU_Y*8
+    ld b, (ix+MENU_T.y_pixel)
     ld c, MENU_X
     call print_string
 
-    ld b, MENU_Y*8
+    ld ix, var_menu
+    ld b, (ix+MENU_T.y_pixel)
     ld c, MENU_X+MENU_WIDTH-6
     ld e, 0
     call draw_logo
@@ -49,7 +62,8 @@ menu_animate_logo:
     ld a, 4                       ; ...
     sub e                         ; ...
     ld e, a                       ; ...
-    ld b, MENU_Y*8                ; draw logo
+    ld ix, var_menu               ;
+    ld b, (ix+MENU_T.y_pixel)     ; draw logo
     ld c, MENU_X+MENU_WIDTH-6     ; ...
     call draw_logo                ; ...
 .return:
@@ -60,7 +74,9 @@ menu_animate_logo:
 ; OUT - BC - garbage
 ; OUT - DE - garbage
 ; OUT - HL - garbage
+; OUT - IX - garbage
 menu_handle_updown:
+    ld ix, var_menu
     call input_key_get              ; A = current_pressed_key
 .down:                              ;
     bit 2, a                        ; down?
@@ -68,11 +84,10 @@ menu_handle_updown:
     ld a, (var_menu_current_item)   ; 
     ld d, MENU_BODY_ATTR            ; fill selected item with background color
     call menu_draw_selected_item    ; ...
-    cp a, MENU_ITEMS-1              ; if (current_item == max) current_item = 0
-    jr nz, .down_increment          ; ...
-    ld a, 255                       ; ...
-.down_increment                     ; ...
     inc a                           ; current_item++
+    cp a, (ix+MENU_T.items)         ; if (current_item == max) current_item = 0
+    jr nz, .return_save             ; ...
+    ld a, 0                         ; ...
     jr .return_save                 ;
 .up:                                ;
     bit 3, a                        ; up?
@@ -82,7 +97,7 @@ menu_handle_updown:
     call menu_draw_selected_item    ; ...
     or a                            ; if (current_item == 0) current_item = max
     jr nz, .up_decrement            ; ...
-    ld a, MENU_ITEMS                ; ...
+    ld a, (ix+MENU_T.items)
 .up_decrement                       ; ...
     dec a                           ; current_item--
 .return_save:                       ; 
@@ -104,17 +119,20 @@ menu_handle_action_left_right:
     ld d, a
     and #13                         ; action/left/right?
     jr z, .return
-    ld a, d
+    ld ix, var_menu                 ; IX = &menu
+    ld c, (ix+MENU_T.addr+0)        ; IX = &menu_entry
+    ld b, (ix+MENU_T.addr+1)        ; ...
+    ld ixl, c                       ; ...
+    ld ixh, b                       ; ...
     ld a, (var_menu_current_item)   ; A = selected item index
     sla a                           ; A*8 (one menu entry - 8 bytes)
     sla a                           ; ...
     sla a                           ; ...
-    ld ix, menu                     ; IX = &menu
-    ld c, a                         ; IX = menu[index]
+    ld c, a                         ; IX = &menu_entry[index].callback
     ld b, 0                         ; ...
     add ix, bc                      ; ...
-    ld l, (ix+4)                    ; HL = menu[index].callback
-    ld h, (ix+5)                    ; ...
+    ld l, (ix+MENUENTRY_T.callback+0) ; HL = menu_entry[index].callback
+    ld h, (ix+MENUENTRY_T.callback+1) ; ...
     ld a, h                         ; if (HL == 0) - exit
     or l                            ; ...
     jr z, .return                   ; ...
@@ -132,9 +150,12 @@ menu_handle_action_left_right:
 ; OUT - BC - garbage
 ; OUT -  E - garbage
 ; OUT - HL - garbage
+; OUT - IX - garbage
 menu_draw_selected_item:
     push af
-    ld b, MENU_Y+1
+    ld ix, var_menu
+    ld b, (ix+MENU_T.y_row)
+    inc b
     add b
     ld b, a
     ld c, MENU_X
@@ -145,10 +166,14 @@ menu_draw_selected_item:
 
 
 menu_draw_menu:
-    ld b, MENU_Y*8+8
+    ld ix, var_menu
+    ld a, (ix+MENU_T.y_pixel)
+    add a, 8
+    ld b, a
     ld c, MENU_X+1
     ld e, MENU_WIDTH
-    ld hl, menu
+    ld l, (ix+MENU_T.addr+0)
+    ld h, (ix+MENU_T.addr+1)
     call draw_menu
     ret
 

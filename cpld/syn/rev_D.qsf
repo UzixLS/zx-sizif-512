@@ -93,6 +93,8 @@ set_location_assignment PIN_14 -to kd[3]
 set_location_assignment PIN_15 -to kd[2]
 set_location_assignment PIN_16 -to kd[1]
 set_location_assignment PIN_18 -to kd[0]
+set_location_assignment PIN_22 -to bus0
+set_location_assignment PIN_23 -to bus1
 set_location_assignment PIN_24 -to n_romcs
 set_location_assignment PIN_27 -to ra[17]
 set_location_assignment PIN_28 -to ra[16]

@@ -106,11 +106,20 @@ str_ulaplus_end
 str_dac: DB "DAC",0
 str_dac_end
 
-str_dac_covox: DB "    Covox",0
+str_dac_covox: DB "   Covox",0
 str_dac_covox_end
 
-str_dac_sd: DB "SounDrive",0
+str_dac_sd: DB "      SD",0
 str_dac_sd_end
 
-str_dac_covoxsd: DB " Covox+SD",0
+str_dac_covoxsd: DB "Covox+SD",0
 str_dac_covoxsd_end
+
+str_tsfm: DB "TSFM+MIDI",0
+str_tsfm_end
+
+str_saa: DB "SAA1099",0
+str_saa_end
+
+str_gs: DB "GS",0
+str_gs_end

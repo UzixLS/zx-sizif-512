@@ -3,10 +3,7 @@ MENU_LEAVE_DELAY        EQU 2  ; 20ms
 MENU_HOLDCHECK_DELAY    EQU 7
 
 MENU_WIDTH              EQU 20
-MENU_HEIGHT             EQU MENU_ITEMS+2
-
 MENU_X                  EQU (32-MENU_WIDTH)/2
-MENU_Y                  EQU (24-MENU_HEIGHT)/2
 
 MENU_HEADER_ATTR        EQU #47
 MENU_BODY_ATTR          EQU #78
@@ -32,4 +29,11 @@ ulaplus  DB 1
 dac      DB 3
     ENDS
 
+    STRUCT CFGEXT_T
+tsfm     DB 1
+saa      DB 1
+gs       DB 1
+    ENDS
+
 CFG_DEFAULT CFG_T
+CFGEXT_DEFAULT CFGEXT_T

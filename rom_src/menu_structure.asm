@@ -1,24 +1,54 @@
     STRUCT MENU_T
+addr DW
+items DB
+height DB
+y_row DB
+y_pixel DB
+    ENDS
+
+    STRUCT MENUENTRY_T
 text_addr DW
 value_cb_addr DW
 callback DW
 reserved DW
     ENDS
 
-menu:
-    MENU_T str_timings     menu_timings_value_cb     menu_timins_cb
-    MENU_T str_cpu         menu_clock_value_cb       menu_clock_cb
-    MENU_T str_panning     menu_panning_value_cb     menu_panning_cb
-    MENU_T str_dac         menu_dac_value_cb         menu_dac_cb
-    MENU_T str_joystick    menu_joystick_value_cb    menu_joystick_cb
-    MENU_T str_ram         menu_ram_value_cb         menu_ram_cb
-    MENU_T str_rom48       menu_rom48_value_cb       menu_rom48_cb
-    MENU_T str_plus3       menu_plus3_value_cb       menu_plus3_cb
-    MENU_T str_divmmc      menu_divmmc_value_cb      menu_divmmc_cb
-    MENU_T str_ulaplus     menu_ulaplus_value_cb     menu_ulaplus_cb
-    MENU_T str_exit        menu_exit_value_cb        menu_exit_cb
-    MENU_T 0
-MENU_ITEMS EQU ($-menu)/MENU_T-1
+    MACRO MENUDESCR label_addr, items
+        MENU_T (label_addr) (items) (items+2) ((24-(items+2))/2) (((24-(items+2))/2)*8)
+    ENDM
+
+.menu:
+    MENUENTRY_T str_timings     menu_timings_value_cb     menu_timins_cb
+    MENUENTRY_T str_cpu         menu_clock_value_cb       menu_clock_cb
+    MENUENTRY_T str_panning     menu_panning_value_cb     menu_panning_cb
+    MENUENTRY_T str_joystick    menu_joystick_value_cb    menu_joystick_cb
+    MENUENTRY_T str_ram         menu_ram_value_cb         menu_ram_cb
+    MENUENTRY_T str_rom48       menu_rom48_value_cb       menu_rom48_cb
+    MENUENTRY_T str_plus3       menu_plus3_value_cb       menu_plus3_cb
+    MENUENTRY_T str_divmmc      menu_divmmc_value_cb      menu_divmmc_cb
+    MENUENTRY_T str_ulaplus     menu_ulaplus_value_cb     menu_ulaplus_cb
+    MENUENTRY_T str_dac         menu_dac_value_cb         menu_dac_cb
+    MENUENTRY_T str_exit        menu_exit_value_cb        menu_exit_cb
+    MENUENTRY_T 0
+!menu: MENUDESCR .menu, ($-.menu)/MENUENTRY_T-1
+
+.menuext:
+    MENUENTRY_T str_timings     menu_timings_value_cb     menu_timins_cb
+    MENUENTRY_T str_cpu         menu_clock_value_cb       menu_clock_cb
+    MENUENTRY_T str_panning     menu_panning_value_cb     menu_panning_cb
+    MENUENTRY_T str_joystick    menu_joystick_value_cb    menu_joystick_cb
+    MENUENTRY_T str_ram         menu_ram_value_cb         menu_ram_cb
+    MENUENTRY_T str_rom48       menu_rom48_value_cb       menu_rom48_cb
+    MENUENTRY_T str_plus3       menu_plus3_value_cb       menu_plus3_cb
+    MENUENTRY_T str_divmmc      menu_divmmc_value_cb      menu_divmmc_cb
+    MENUENTRY_T str_ulaplus     menu_ulaplus_value_cb     menu_ulaplus_cb
+    MENUENTRY_T str_dac         menu_dac_value_cb         menu_dac_cb
+    MENUENTRY_T str_tsfm        menu_tsfm_value_cb        menu_tsfm_cb
+    MENUENTRY_T str_saa         menu_saa_value_cb         menu_saa_cb
+    MENUENTRY_T str_gs          menu_gs_value_cb          menu_gs_cb
+    MENUENTRY_T str_exit        menu_exit_value_cb        menu_exit_cb
+    MENUENTRY_T 0
+!menuext: MENUDESCR .menuext, ($-.menuext)/MENUENTRY_T-1
 
 
 menu_timings_value_cb:
@@ -117,6 +147,31 @@ menu_dac_value_cb:
     DW str_dac_covox_end-2
     DW str_dac_sd_end-2
     DW str_dac_covoxsd_end-2
+
+menu_tsfm_value_cb:
+    ld ix, .values_table
+    ld a, (cfgext.tsfm)
+    jp menu_value_get
+.values_table:
+    DW str_off_end-2
+    DW str_on_end-2
+
+menu_saa_value_cb:
+    ld ix, .values_table
+    ld a, (cfgext.saa)
+    jp menu_value_get
+.values_table:
+    DW str_off_end-2
+    DW str_on_end-2
+
+menu_gs_value_cb:
+    ld ix, .values_table
+    ld a, (cfgext.gs)
+    jp menu_value_get
+.values_table:
+    DW str_off_end-2
+    DW str_on_end-2
+
 
 menu_exit_value_cb:
     ld ix, .values_table
@@ -223,6 +278,33 @@ menu_dac_cb:
     call menu_handle_press
     ld (cfg.dac), a
     ld bc, #0bff
+    out (c), a
+    ret
+
+menu_tsfm_cb:
+    ld a, (cfgext.tsfm)
+    ld c, 1
+    call menu_handle_press
+    ld (cfgext.tsfm), a
+    ld bc, #e1ff
+    out (c), a
+    ret
+
+menu_saa_cb:
+    ld a, (cfgext.saa)
+    ld c, 1
+    call menu_handle_press
+    ld (cfgext.saa), a
+    ld bc, #e2ff
+    out (c), a
+    ret
+
+menu_gs_cb:
+    ld a, (cfgext.gs)
+    ld c, 1
+    call menu_handle_press
+    ld (cfgext.gs), a
+    ld bc, #e3ff
     out (c), a
     ret
 

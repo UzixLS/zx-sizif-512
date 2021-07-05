@@ -55,9 +55,13 @@ var_input_key_last: DB 0
 var_input_key_hold_timer: DB 0
 var_menu_current_item: DB 0
 var_menu_animate_cnt: DB 0
+var_menu: MENU_T
+var_ext_presence: DB 1
 
 cfg CFG_T
+cfgext CFGEXT_T
 cfg_saved CFG_T
+cfgext_saved CFGEXT_T
 cfg_initialized: DB #B1, #5B, #00, #B5
 
 

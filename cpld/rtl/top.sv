@@ -58,11 +58,6 @@ module zx_ula (
     input n_joy_b2,
     output joy_sel,
 
-`ifndef REV_C
-    input ps2_clk,
-    input ps2_dat,
-`endif
-
     input sd_cd,
     input sd_miso,
     output sd_mosi,
@@ -71,7 +66,15 @@ module zx_ula (
 
     output plus3_drd,
     output plus3_dwr,
-    output plus3_mtr
+    output plus3_mtr,
+
+`ifndef REV_C
+    input ps2_clk,
+    input ps2_dat,
+
+    output bus0,
+    input bus1
+`endif
 );
 
 
@@ -299,6 +302,9 @@ always @(posedge clk28)    // precharge to 1 - this is required because of weak 
 assign n_nmi = n_nmi0? (n_nmi0_prev? 1'bz : 1'b1) : 1'b0;
 wire divmmc_en, joy_sinclair, rom_plus3, rom_alt48, up_en, covox_en, sd_en;
 wire magic_button = n_magic == 0 || joy_mode || ps2_key_magic;
+`ifndef REV_C
+    assign bus0 = magic_mode;
+`endif
 magic magic0(
     .rst_n(usrrst_n),
     .clk28(clk28),
