@@ -18,11 +18,10 @@ module magic(
     output timings_t timings,
     output turbo_t turbo,
     output rammode_t ram_mode,
+    output panning_t panning,
     output reg joy_sinclair,
     output reg rom_plus3,
     output reg rom_alt48,
-    output reg ay_abc,
-    output reg ay_mono,
     output reg divmmc_en,
     output reg ulaplus_en,
     output reg covox_en,
@@ -75,9 +74,8 @@ always @(posedge clk28 or negedge rst_n) begin
         magic_beeper <= 0;
         timings <= TIMINGS_PENT;
         turbo <= TURBO_NONE;
-        ay_abc <= 1'b1;
-        ay_mono <= 0;
         ram_mode <= RAM_512;
+        panning <= PANNING_ABC;
         rom_plus3 <= 1'b1;
         rom_alt48 <= 0;
         joy_sinclair <= 0;
@@ -91,7 +89,7 @@ always @(posedge clk28 or negedge rst_n) begin
         8'h01: magic_beeper <= bus.d[0];
         8'h02: timings <= timings_t'(bus.d[1:0]);
         8'h03: turbo <= turbo_t'(bus.d[1:0]);
-        8'h04: {ay_mono, ay_abc} <= {bus.d[1], ~bus.d[0]};
+        8'h04: panning <= panning_t'(bus.d[1:0]);
         8'h05: rom_plus3 <= bus.d[0];
         8'h06: rom_alt48 <= bus.d[0];
         8'h07: joy_sinclair <= bus.d[0];

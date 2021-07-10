@@ -71,12 +71,25 @@ menu_clock_value_cb:
 
 menu_panning_value_cb:
     ld ix, .values_table
+    ld a, (var_ext_presence) ; if (ext_board && tsfm) - use ABC instead of ACB panning
+    or a                     ; ...
+    jr z, .no_tsfm           ; ...
+    ld a, (cfgext.tsfm)      ; ...
+    or a                     ; ...
+    jr z, .no_tsfm           ; ...
+    ld a, (cfg.panning)
+    cp a, 2                  ; if (panning == acb) panning = abc
+    jr c, .get               ; ...
+    dec a                    ; ...
+.get
+    jp menu_value_get
+.no_tsfm:
     ld a, (cfg.panning)
     jp menu_value_get
 .values_table:
+    DW str_panning_mono_end-2
     DW str_panning_abc_end-2
     DW str_panning_acb_end-2
-    DW str_panning_mono_end-2
 
 menu_joystick_value_cb:
     ld ix, .values_table
@@ -210,8 +223,19 @@ menu_clock_cb:
     ret
 
 menu_panning_cb:
+    ld a, (var_ext_presence) ; if (ext_board && tsfm) - do not allow to set ACB panning
+    or a                     ; ...
+    jr z, .no_tsfm           ; ...
+    ld a, (cfgext.tsfm)      ; ...
+    or a                     ; ...
+    jr z, .no_tsfm           ; ...
+    ld a, (cfg.panning)      ; ...
+    ld c, 1                  ; ...
+    jr .load
+.no_tsfm:
     ld a, (cfg.panning)
     ld c, 2
+.load:
     call menu_handle_press
     ld (cfg.panning), a
     ld bc, #04ff
@@ -335,8 +359,8 @@ menu_handle_press:
     jr nz, .decrement
     ret
 .increment:
-    cp c                    ; if (value == max) value = 0
-    jr z, .increment_roll   ; ...
+    cp c                    ; if (value >= max) value = 0
+    jr nc, .increment_roll  ; ...
     inc a                   ; else value++
     ret
 .increment_roll:

@@ -301,6 +301,9 @@ always @(posedge clk28)    // precharge to 1 - this is required because of weak 
     n_nmi0_prev <= n_nmi0; // ... which may cause multiple nmi triggering in Z80 in 14MHz mode
 assign n_nmi = n_nmi0? (n_nmi0_prev? 1'bz : 1'b1) : 1'b0;
 wire divmmc_en, joy_sinclair, rom_plus3, rom_alt48, up_en, covox_en, sd_en;
+panning_t panning;
+assign ay_mono = panning == PANNING_MONO;
+assign ay_abc = panning == PANNING_ABC;
 wire magic_button = n_magic == 0 || joy_mode || ps2_key_magic;
 `ifndef REV_C
     assign bus0 = magic_mode;
@@ -327,8 +330,7 @@ magic magic0(
     .joy_sinclair(joy_sinclair),
     .rom_plus3(rom_plus3),
     .rom_alt48(rom_alt48),
-    .ay_abc(ay_abc),
-    .ay_mono(ay_mono),
+    .panning(panning),
     .divmmc_en(divmmc_en),
     .ulaplus_en(up_en),
     .covox_en(covox_en),
