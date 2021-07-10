@@ -66,9 +66,10 @@ module zx_ula (
 
     output plus3_drd,
     output plus3_dwr,
-    output plus3_mtr,
+    output plus3_mtr
 
 `ifndef REV_C
+    ,
     input ps2_clk,
     input ps2_dat,
 
