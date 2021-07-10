@@ -39,7 +39,7 @@ Review by The Retro Shack youtube channel: [link](https://www.youtube.com/watch?
 
 ### Magic button
 Sizif have some configurable things which you may change at any moment and that's doesn't require reboot.
-To do this there just hold Magic button for a second.
+To do this just hold Magic button for a second.
 
 [![photo](doc/sizif-menu.gif)](doc/sizif-menu.gif?raw=true)
 
