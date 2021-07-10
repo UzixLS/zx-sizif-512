@@ -128,7 +128,7 @@ input_read:
 ; OUT - BC - garbage
 input_beep:
     or a
-    jr z, .return
+    ret z
     IFDEF TEST_BUILD
         ld a, #10            ; blink border
         out (#fe), a         ; ...
@@ -142,7 +142,6 @@ input_beep:
     ld a, 1                  ; blink border back
     ld bc, #01ff             ; ...
     out (c), a               ; ...
-.return:
     ret
 
 

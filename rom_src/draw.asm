@@ -125,7 +125,7 @@ print_char:
 print_string:
     ld a, (hl)              ; A = *string
     or a                    ; if (A == 0) - exit
-    jr z, .return           ; ...
+    ret z                   ; ...
     push bc
     push hl
     call print_char
@@ -134,7 +134,6 @@ print_string:
     inc hl                  ; string++
     inc c                   ; column++
     jr print_string
-.return:
     ret
 
 
@@ -151,7 +150,7 @@ print_string:
 print_string_rev:
     ld a, (hl)              ; A = *string
     or a                    ; if (A == 0) - exit
-    jr z, .return           ; ...
+    ret z                   ; ...
     push bc
     push hl
     call print_char
@@ -160,7 +159,6 @@ print_string_rev:
     dec hl                  ; string--
     dec c                   ; column--
     jr print_string_rev
-.return:
     ret
 
 
@@ -284,7 +282,7 @@ draw_menu:
     ld h, (ix+MENUENTRY_T.text_addr+1) ; ...
     ld a, h              ; if (HL == 0) - exit
     or l                 ; ...
-    jr z, .return        ; ...
+    ret z                ; ...
     push de
     push bc
     push ix
@@ -338,12 +336,11 @@ draw_menu_item_line:
 .loop:
     ld a, e                      ; if (columns == 0) - exit
     or a                         ; ...
-    jr z, .return                ; ...
+    ret z                        ; ...
     ld (hl), d                   ; write attribute
     inc hl                       ; column++
     dec e                        ; columns--
     jr .loop
-.return:
     ret
 
 
