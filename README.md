@@ -39,29 +39,13 @@ Review by The Retro Shack youtube channel: [link](https://www.youtube.com/watch?
 
 ### Magic button
 Sizif have some configurable things which you may change at any moment and that's doesn't require reboot.
-To do this there is a Magic button: just hold it and press key on keyboard:
-| Key | Function |
-| - | - |
-| 1 | Switch to Pentagon timings (by default) |
-| 2 | Switch to Spectrum 128K timings |
-| 3 | Switch to Spectrum 48K timings |
-| 4 | Switch to 3.5 MHz (normal) mode (by default) |
-| 5 | Switch to 7 MHz (turbo) mode |
-| 6 | Switch to 14 MHz (turbo) mode |
-| 7 | Switch to ABC stereo (by default) |
-| 8 | Switch to ACB stereo |
-| 9 | Switch to mono |
-| Q | Use default 48K BASIC |
-| W | Use alternative 48K BASIC (OpenSE) |
-| E | Use default 128K ROM |
-| R | Use +3e-divmmc ROM |
-| U | Use joystick in kempston mode (default) |
-| I | Use joystick in sinclair mode |
-| O | Enable all additional features: DivMMC, 512K RAM, Kempston, Covox (by default) |
-| P | Disable all additional features |
-| Space | Jump to #0 address (useful for ROM switching) |
+To do this there just hold Magic button for a second.
 
-If you press Magic button and didn't change something, standard NMI handler 'll be called on button release.
+[![photo](doc/sizif-menu.gif)](doc/sizif-menu.gif?raw=true)
+
+To navigate menu you can use up-down keys, to change value use enter or left-right keys. Kempston, Sinclair, Cursor and QAOP supported.
+
+If you press Magic button for a short time, the standard NMI handler 'll be called.
 
 ### Sega gamepad buttons
 Sega gamepad support will be available starting from PCB rev.D (or Rev.C with slight modifications).
@@ -78,15 +62,29 @@ Sega gamepad support will be available starting from PCB rev.D (or Rev.C with sl
 | Y | Turbo Button 1 | Turbo 0 |
 | Z | Turbo Button 2 | Turbo M |
 | Start | Pause | Pause |
-| Mode | Magic/NMI | Magic/NMI |
+| Mode | Magic button | Magic button |
+
+### PS/2 keyboard buttons
+| Button | Function |
+| - | - |
+| F5 | Magic button |
+| F11 | Leave pause |
+| F12 | Enter pause |
+| Ctrl+Alt+Del | Reboot |
+| Ctrl+Alt+Backspace | Reboot |
+| Numpad 8, 2/5, 4, 6 | Joystick's up-down-left-right |
+| Numpad 0/Enter | Joystick's fire |
+| Alt | Joystick's fire |
 
 ### RAM
 Sizif contains 512K RAM. There are two cases how to access it:
 1. DivMMC enabled (SD card insert) - 128K available via 7FFDh port, 128K via DFFDh (Profi standart, most compatible with old 128K software) and 128K reserved for DivMMC.
 2. No SD card present - 128K available via 7FFDh and 384K via DFFDh. Please note: ULAplus and Magic button shares one page of memory with DFFD port. If you run 512K-software, it's good idea not to use ULAplus and Magic.
 
-### Strange lines on border and creaky sounds on SD card access
-It's not a bug, it's a feature ;)
+### SD card
+Sizif have preinstalled esxDOS firmware, which provides ability to load TAP, TRD, SCL, Z80 files and save snapshots. To use this you should format SD cart to FAT32 or FAT16 and unpack latest esxDOS release ([link](http://www.esxdos.org/index.html)) to card. Also it's recommended to install Long Filename Browser ([link](https://spectrumcomputing.co.uk/forums/viewtopic.php?t=2553)) to card.
+
+You may observe strange lines on border and creaky sounds on SD card access. It's not a bug, it's a feature ;)
 
 ### Tested addons
 * AYX-32 - OK
@@ -114,7 +112,6 @@ It's not a bug, it's a feature ;)
 
 ### Roadmap
 Firmware:
-* add OSD for Magic button
 * improve 48K/128K timings for 100% compatibility
 
 ### Acknowledgments
