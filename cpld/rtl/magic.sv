@@ -30,6 +30,10 @@ module magic(
 
 reg magic_unmap_next;
 reg magic_map_next;
+reg opcode_check_next;
+reg opcode_match;
+reg opcode_is_reading;
+
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         n_nmi <= 1'b1;
@@ -37,6 +41,9 @@ always @(posedge clk28 or negedge rst_n) begin
         magic_map <= 1'b1;
         magic_map_next <= 0;
         magic_unmap_next <= 0;
+        opcode_check_next <= 1'b1;
+        opcode_match <= 0;
+        opcode_is_reading <= 0;
     end
     else begin
         if (magic_button == 1'b1 && n_int == 1'b1 && n_int_next == 1'b0) begin
@@ -45,7 +52,21 @@ always @(posedge clk28 or negedge rst_n) begin
             magic_mode <= 1'b1;
         end
 
-        if (magic_map && bus.mreq && bus.rd && bus.a == 16'hf000 && !magic_map_next) begin
+        if (opcode_check_next) begin
+            // Check first fetched opcode from magic rom is 0xEB
+            // Otherwise assume there is no magic rom
+            if (bus.mreq && bus.m1 && bus.rd) begin
+                opcode_is_reading <= 1'b1;
+                opcode_match <= bus.d == 8'hEB;
+            end
+            else if (opcode_is_reading) begin
+                opcode_is_reading <= 1'b0;
+                opcode_check_next <= 1'b0;
+                magic_mode <= magic_mode && opcode_match;
+                magic_map <= magic_map && opcode_match;
+            end
+        end
+        else if (magic_map && bus.mreq && bus.rd && bus.a == 16'hf000 && !magic_map_next) begin
             magic_unmap_next <= 1'b1;
             magic_mode <= 1'b0;
         end
@@ -61,6 +82,7 @@ always @(posedge clk28 or negedge rst_n) begin
             n_nmi <= 1'b1;
             magic_map <= 1'b1;
             magic_map_next <= 1'b0;
+            opcode_check_next <= bus.a == 16'h0066;
         end
     end
 end
@@ -76,7 +98,7 @@ always @(posedge clk28 or negedge rst_n) begin
         turbo <= TURBO_NONE;
         ram_mode <= RAM_512;
         panning <= PANNING_ABC;
-        rom_plus3 <= 1'b1;
+        rom_plus3 <= 0;
         rom_alt48 <= 0;
         joy_sinclair <= 0;
         divmmc_en <= 1'b1;

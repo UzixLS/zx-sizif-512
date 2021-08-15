@@ -60,7 +60,12 @@ Loop:
 	nop            // this instruction skipped normally
 	jp #3D00
 
-	ORG #C000      // divmmc #0000 handle vector (divmmc page)
+
+	ORG #8000      // magic rom #0000
+MagicROM_Start:
+	//ex de, hl      // EB opcode used by CPLD to determine magic ROM presence
+
+	ORG #C000      // divmmc rom #0000
 DivROM_Start:
 	nop            // this instruction skipped normally
 	ld bc, #00C3   // JP#0000 opcode
@@ -70,5 +75,6 @@ DivROM_Start:
 	jp #1FFF       // go to #DFFD (divmmc page)
 	ORG #DFFF      // divmmc #1FFF exit vector (divmmc page)
 	nop            // last instruction executed in this page
+
 
 	SAVEBIN "rom.bin",0,65536
