@@ -94,6 +94,7 @@ You may observe strange lines on border and creaky sounds on SD card access. It'
 * Multiface 128 1.00 by Steve Smith - OK (if SD card isn't insert)
 * Noname +3DOS floppy controller - OK (since rev.D)
 * DivIDE 5.7d - OK (if SD card isn't insert)
+* DMA 2.02 by ShamaZX - OK
 
 ### Changelog & current status
 * Rev.A - first release. Please note the [errata](pcb/rev.A/ERRATA.ru.txt) (in russian).
