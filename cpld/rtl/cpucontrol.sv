@@ -95,7 +95,7 @@ end
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         n_rstcpu <= 0;
-    else if (vc[0])
+    else if (vc[8])
         n_rstcpu <= 1'b1;
 end
 

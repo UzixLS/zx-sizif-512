@@ -148,7 +148,7 @@ wire [8:0] vc, hc;
 wire [4:0] blink_cnt;
 wire clk14, clk7, clk35, ck14, ck7, ck35;
 screen screen0(
-    .rst_n(rst_n0),
+    .rst_n(usrrst_n),
     .clk28(clk28),
 
     .timings(timings),
@@ -230,7 +230,7 @@ assign {ps2_joy_up, ps2_joy_down, ps2_joy_left, ps2_joy_right, ps2_joy_fire} = 0
 /* JOYSTICK / GAMEPAD */
 wire joy_up, joy_down, joy_left, joy_right, joy_b1_turbo, joy_b2_turbo, joy_b3_turbo, joy_mode;
 joysega joysega0(
-    .rst_n(rst_n0),
+    .rst_n(usrrst_n),
     .clk28(clk28),
 
     .vc(vc),
@@ -310,7 +310,7 @@ wire magic_button = n_magic == 0 || joy_mode || ps2_key_magic;
     assign bus0 = magic_mode;
 `endif
 magic magic0(
-    .rst_n(usrrst_n),
+    .rst_n(n_rstcpu0),
     .clk28(clk28),
 
     .bus(bus),
@@ -352,7 +352,7 @@ wire port_dffd_d4;
 wire plus3_mtr0;
 assign plus3_mtr = plus3_mtr0? 1'bz : 1'b0;
 ports ports0 (
-    .rst_n(usrrst_n),
+    .rst_n(n_rstcpu0),
     .clk28(clk28),
 
     .bus(bus),
@@ -372,6 +372,7 @@ ports ports0 (
     .kd(kd & ps2_kd),
     .kempston_data(kempston_data),
     .magic_button(magic_button),
+    .magic_map(magic_map),
     .tape_in(tape_in),
 
     .tape_out(tape_out),
@@ -424,7 +425,7 @@ soundrive soundrive0(
 
 /* SOUND MIXER */
 mixer mixer0(
-    .rst_n(rst_n0),
+    .rst_n(usrrst_n),
     .clk28(clk28),
 
     .beeper(beeper ^ magic_beeper),
@@ -445,7 +446,7 @@ wire div_map, div_ram, div_ramwr_mask, div_dout_active;
 wire [7:0] div_dout;
 wire [3:0] div_page;
 divmmc divmmc0(
-    .rst_n(usrrst_n),
+    .rst_n(n_rstcpu0),
     .clk28(clk28),
     .ck14(ck14),
     .ck7(ck7),
@@ -479,7 +480,7 @@ wire [7:0] up_dout;
 wire up_write_req;
 wire [5:0] up_write_addr;
 ulaplus ulaplus0(
-    .rst_n(usrrst_n),
+    .rst_n(n_rstcpu0),
     .clk28(clk28),
     .en(up_en),
 

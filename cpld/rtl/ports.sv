@@ -19,6 +19,7 @@ module ports(
     input [4:0] kd,
     input [7:0] kempston_data,
     input magic_button,
+    input magic_map,
     input tape_in,
 
     output reg tape_out,
@@ -45,7 +46,7 @@ always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         port_ff_rd <= 0;
     else
-        port_ff_rd <= bus.rd && bus.ioreq && (timings != TIMINGS_PENT || bus.a[7:0] == 8'hFF) && screen_loading;
+        port_ff_rd <= bus.rd && bus.ioreq && (timings != TIMINGS_PENT || bus.a[7:0] == 8'hFF) && screen_loading && !magic_map;
 end
 
 
