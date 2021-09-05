@@ -129,8 +129,10 @@ always @(posedge clk28) begin
 end
 
 /* PAUSE */
-always @(posedge clk28) begin
-    if (n_int == 1'b0 && bus.rfsh)
+always @(posedge clk28 or negedge usrrst_n) begin
+    if (!usrrst_n)
+        pause <= 0;
+    else if (n_int_next == 1'b0 && bus.rfsh)
         pause <= ps2_key_pause || joy_pause;
 end
 
@@ -209,6 +211,7 @@ ps2 #(.CLK_FREQ(28_000_000)) ps2_0(
     .clk(clk28),
     .ps2_clk_in(ps2_clk),
     .ps2_dat_in(ps2_dat),
+    .rst_key_pause(~usrrst_n),
     .zxkb_addr(bus.a[15:8]),
     .zxkb_data(ps2_kd),
     .key_magic(ps2_key_magic),
