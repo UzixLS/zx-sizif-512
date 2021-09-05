@@ -41,6 +41,7 @@ startup_handler:
     ld (ix+1), #F6  ; y
     call init_config
     call init_cpld
+    call mute_saa1099  ; saa1099 does not have reset pin
     ld (ix+2), #E4  ; g
     ld (ix+3), #C9  ; b
     ld hl, 0
@@ -281,6 +282,15 @@ get_im2_handler:
     ret
 
 
+mute_saa1099:
+    ld bc, #ffff       ; select saa register
+    ld a, #1c          ; ...
+    out (c), a         ; ...
+    ld b, #fe          ; mute
+    xor a              ; ...
+    out (c), a         ; ...
+    ret
+
 save:
 .mute_gs:
     ld a, (var_ext_presence) ; if (no_ext_pcb || gs_is_disabled) - skip gs
@@ -292,12 +302,7 @@ save:
     ld a, #fa                ; send command Out zero_to_zero
     out (#bb), a             ; ...
 .mute_saa1099:
-    ld bc, #ffff       ; select saa register
-    ld a, #1c          ; ...
-    out (c), a         ; ...
-    ld b, #fe          ; mute
-    xor a              ; ...
-    out (c), a         ; ...
+    call mute_saa1099
 .save_ay:
     ld hl, var_save_ay ; select first AY chip in TurboSound
     ld a, #ff          ; ...
