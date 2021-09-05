@@ -35,7 +35,8 @@ Playing music from SD: [link](https://www.youtube.com/watch?v=TmikKD3yqOU)
 Some random photos: [link](https://cloud.err200.net/index.php/s/73TR85tYZkMm8Ax?path=%2Fsizif-512)
 
 Review by Martin's 8-bit blog (in czech): [link](https://www.8bity.cz/2020/zx-spectrum-clone-with-cpld-ulaplus-sizif-512/#)  
-Review by The Retro Shack youtube channel: [link](https://www.youtube.com/watch?v=l5IgQTgq_bg)
+Review by The Retro Shack youtube channel: [link](https://www.youtube.com/watch?v=l5IgQTgq_bg)  
+Building from scratch experience in Terence Ang's blog: [part1](https://www.terenceang.com/2021/08/28/building-a-zx-spectrum-clone-in-2021-begining/) [part2](https://www.terenceang.com/2021/08/29/building-a-zx-spectrum-clone-in-2021-sourcing-for-parts/) [part3](https://www.terenceang.com/2021/08/31/building-a-zx-spectrum-clone-in-2021-populating-the-board/)
 
 ### Magic button
 Sizif have some configurable things which you may change at any moment and that's doesn't require reboot.
