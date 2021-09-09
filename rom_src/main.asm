@@ -60,12 +60,15 @@ nmi_handler:
     ld (var_magic_enter_cnt), a
     ld (var_magic_leave_cnt), a
 .loop:
-    call check_magic_delay
-    call check_magic_hold   ; A == 1 if we are entering menu, A == 2 if we are leaving to...
-    bit 0, a                ; ...default nmi handler, A == 0 otherwise
-    jp nz, main             ; ...
-    bit 1, a                ; ...
-    jr z, .loop             ; ...
+    call check_entering_pause ; A[1] == 1 if pause button is pressed
+    bit 1, a                  ; ...
+    jp nz, enter_pause        ; ...
+    call delay_10ms           ; 
+    call check_entering_menu  ; A == 1 if we are entering menu, A == 2 if we are leaving to...
+    bit 0, a                  ; ...default nmi handler, A == 0 otherwise
+    jp nz, enter_menu         ; ...
+    bit 1, a                  ; ...
+    jr z, .loop               ; ...
 .leave:
     xor a                ; disable border
     ld bc, #01ff         ; ...
@@ -216,13 +219,20 @@ detect_ext_board:
     ret
 
 
+; OUT - A bit 1 if we are entering pause, 0 otherwise
+check_entering_pause:
+    ld a, #ff                   ; read pause key state in bit 1 of #FFFF port
+    in a, (#ff)                 ; ...
+    ret
+
+
 ; OUT -  A = 1 if we are entering menu, A = 2 if we are leaving menu, A = 0 otherwise
 ; OUT -  F - garbage
-check_magic_hold: 
-    ld a, #ff                   ; read magic key state in bit 7 of #FE port
-    in a, (#fe)                 ; ...
-    bit 7, a                    ; check key is hold
-    jr z, .is_hold              ; yes?
+check_entering_menu: 
+    ld a, #ff                   ; read magic key state in bit 0 of #FFFF port
+    in a, (#ff)                 ; ...
+    bit 0, a                    ; check key is hold
+    jr nz, .is_hold             ; yes?
 .not_hold:
     ld a, (var_magic_leave_cnt) ; leave_counter++
     inc a                       ; ...
@@ -246,15 +256,15 @@ check_magic_hold:
 
 ; OUT - AF - garbage
 ; OUT - BC - garbage
-check_magic_delay:
-    ld c, MENU_HOLDCHECK_DELAY
+delay_10ms:
+    ld c, 7
     ld a, (cfg.clock)
     or a
     jr z, .loop
-    ld c, MENU_HOLDCHECK_DELAY*2
+    ld c, 7*2
     dec a
     jr z, .loop
-    ld c, MENU_HOLDCHECK_DELAY*4
+    ld c, 7*4
 .loop:
     ld a, c
 .loop_outer:
@@ -394,6 +404,16 @@ restore:
     ret
 
 
+enter_pause:
+    ld a, 1
+    ld (var_pause_flag), a
+    jr main  
+
+enter_menu:
+    xor a
+    ld (var_pause_flag), a
+    jr main
+
 ; Main program
 main:
     push de
@@ -411,23 +431,38 @@ main:
     ld (var_input_key), a
     ld (var_input_key_last), a
     ld (var_input_key_hold_timer), a
+    ld (var_pause_is_released), a
     ld (var_menu_current_item), a
     ld (var_menu_animate_cnt), a
 
     call save
-    call menu_init
+    ld a, (var_pause_flag)
+    or a
+    jr z, .menu_init
 
-.loop:
+.pause_init:
+    call pause_init
+.pause_loop:
+    ei
+    halt
+    call pause_process
+    ld a, (var_exit_flag)
+    or a
+    jr z, .pause_loop
+    jr .wait_for_keys_release
+
+.menu_init:
+    call menu_init
+.menu_loop:
     ei
     halt
     call input_process          ; B = 32 if exit key pressed
     bit 5, b
     jr nz, .wait_for_keys_release
-
     call menu_process
     ld a, (var_exit_flag)
     or a
-    jr z, .loop
+    jr z, .menu_loop
 
 .wait_for_keys_release:
     ei
@@ -435,6 +470,10 @@ main:
     call input_process           ; B = 0 if no keys pressed
     xor a
     or b
+    jr nz, .wait_for_keys_release
+    ld a, #ff                    ; read magic/pause keys state
+    in a, (#ff)                  ; ...
+    and #03                      ; ...
     jr nz, .wait_for_keys_release
 
 .leave:
@@ -470,6 +509,7 @@ main:
     include config.asm
     include draw.asm
     include input.asm
+    include pause.asm
     include menu.asm
     include menu_structure.asm
     include font.asm
@@ -498,6 +538,8 @@ var_exit_reboot: DB 0
 var_input_key: DB 0
 var_input_key_last: DB 0
 var_input_key_hold_timer: DB 0
+var_pause_flag: DB 0
+var_pause_is_released: DB 0
 var_menu_current_item: DB 0
 var_menu_animate_cnt: DB 0
 var_menu: MENU_T

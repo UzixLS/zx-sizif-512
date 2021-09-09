@@ -331,7 +331,7 @@ draw_menu:
 ; OUT -  B - garbage
 ; OUT -  E - garbage
 ; OUT - HL - garbage
-draw_menu_item_line:
+draw_attribute_line:
     call coords_to_attribute_address ; HL = attribute address
 .loop:
     ld a, e                      ; if (columns == 0) - exit

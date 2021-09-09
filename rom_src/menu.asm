@@ -160,7 +160,7 @@ menu_draw_selected_item:
     ld b, a
     ld c, MENU_X
     ld e, MENU_WIDTH
-    call draw_menu_item_line
+    call draw_attribute_line
     pop af
     ret
 

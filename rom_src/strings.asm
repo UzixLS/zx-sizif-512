@@ -10,6 +10,9 @@ str_sizif: DB "SIZIF-512",0
 str_sizif_end:
     ENDIF
 
+str_pause DB " PAUSE ",0
+str_pause_end:
+
 str_exit: DB "Exit",0
 str_exit_end:
 

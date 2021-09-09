@@ -26,7 +26,6 @@ module joysega(
     output reg joy_z,
     output reg joy_start,
     output reg joy_mode,
-    output reg pause,
     output wire joy_b1_turbo,
     output wire joy_b2_turbo,
     output wire joy_b3_turbo
@@ -54,7 +53,6 @@ always @(posedge clk28 or negedge rst_n) begin
         joy_x <= 0;
         joy_y <= 0;
         joy_z <= 0;
-        pause <= 0;
     end
     else begin
         joy_sel <= (joy_rd_state[0] && joy_rd_ena)? 1'b1 : 1'b0;
@@ -63,8 +61,6 @@ always @(posedge clk28 or negedge rst_n) begin
                 if (n_joy_left == 0 && n_joy_right == 0) begin
                     joy_md <= 1'b1;
                     joy_b3 <= ~n_joy_b1;
-                    if (joy_start == 1'b0 && n_joy_b2 == 1'b0)
-                        pause <= ~pause;
                     joy_start <= ~n_joy_b2;
                 end
                 else begin

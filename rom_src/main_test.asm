@@ -31,8 +31,9 @@ app_begin:
     call menu_process
     ld a, #01
     out #fe, a
-    jr .loop
-
+    ld a, (var_exit_flag)
+    or a
+    jr z, .loop
 
 save_variables:
     ret
@@ -42,6 +43,7 @@ includes:
     include config.asm
     include draw.asm
     include input.asm
+    include pause.asm
     include menu.asm
     include menu_structure.asm
     include font.asm

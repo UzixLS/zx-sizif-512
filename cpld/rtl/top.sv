@@ -83,8 +83,7 @@ module zx_ula (
 timings_t timings;
 turbo_t turbo;
 rammode_t ram_mode;
-reg pause = 0;
-wire ps2_key_reset, ps2_key_pause, joy_pause;
+wire ps2_key_reset, ps2_key_pause, joy_start;
 wire [2:0] border;
 wire magic_reboot, magic_beeper;
 wire up_active;
@@ -128,18 +127,10 @@ always @(posedge clk28) begin
     usrrst_n <= (&rst_n0_cnt || ps2_key_reset || magic_reboot)? 1'b0 : 1'b1;
 end
 
-/* PAUSE */
-always @(posedge clk28 or negedge usrrst_n) begin
-    if (!usrrst_n)
-        pause <= 0;
-    else if (n_int_next == 1'b0 && bus.rfsh)
-        pause <= ps2_key_pause || joy_pause;
-end
-
 
 /* SCREEN CONTROLLER */
 wire blink;
-wire [2:0] screen_border = {border[2] ^ ~sd_cs, border[1] ^ magic_beeper, border[0] ^ (pause & blink)};
+wire [2:0] screen_border = {border[2] ^ ~sd_cs, border[1] ^ magic_beeper, border[0]};
 wire [2:0] r0, g0;
 wire [1:0] b0;
 wire screen_fetch, screen_fetch_up, screen_loading;
@@ -211,7 +202,6 @@ ps2 #(.CLK_FREQ(28_000_000)) ps2_0(
     .clk(clk28),
     .ps2_clk_in(ps2_clk),
     .ps2_dat_in(ps2_dat),
-    .rst_key_pause(~usrrst_n),
     .zxkb_addr(bus.a[15:8]),
     .zxkb_data(ps2_kd),
     .key_magic(ps2_key_magic),
@@ -255,9 +245,8 @@ joysega joysega0(
     .joy_b1_turbo(joy_b1_turbo),
     .joy_b2_turbo(joy_b2_turbo),
     .joy_b3_turbo(joy_b3_turbo),
-    .joy_start(),
-    .joy_mode(joy_mode),
-    .pause(joy_pause)
+    .joy_start(joy_start),
+    .joy_mode(joy_mode)
 );
 
 wire [7:0] kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, ps2_joy_fire | joy_b1_turbo, 
@@ -284,7 +273,6 @@ cpucontrol cpucontrol0(
     .screen_loading(screen_loading),
     .turbo(turbo),
     .timings(timings),
-    .pause(pause),
     .ext_wait_cycle(div_wait || up_active),
 
     .n_rstcpu(n_rstcpu0),
@@ -298,6 +286,8 @@ cpucontrol cpucontrol0(
 
 
 /* MAGIC */
+wire [7:0] magic_dout;
+wire magic_dout_active;
 wire magic_mode, magic_map;
 wire n_nmi0;
 reg n_nmi0_prev;
@@ -308,7 +298,6 @@ wire divmmc_en, joy_sinclair, rom_plus3, rom_alt48, up_en, covox_en, sd_en;
 panning_t panning;
 assign ay_mono = panning == PANNING_MONO;
 assign ay_abc = panning == PANNING_ABC;
-wire magic_button = n_magic == 0 || joy_mode || ps2_key_magic;
 `ifndef REV_C
     assign bus0 = magic_mode;
 `endif
@@ -317,11 +306,15 @@ magic magic0(
     .clk28(clk28),
 
     .bus(bus),
+    .d_out(magic_dout),
+    .d_out_active(magic_dout_active),
+
     .n_int(n_int),
     .n_int_next(n_int_next),
     .n_nmi(n_nmi0),
 
-    .magic_button(magic_button),
+    .magic_button(~n_magic || joy_mode || ps2_key_magic),
+    .pause_button(ps2_key_pause || joy_start),
 
     .magic_mode(magic_mode),
     .magic_map(magic_map),
@@ -374,7 +367,6 @@ ports ports0 (
     .attr_next(attr_next),
     .kd(kd & ps2_kd),
     .kempston_data(kempston_data),
-    .magic_button(magic_button),
     .magic_map(magic_map),
     .tape_in(tape_in),
 
@@ -401,7 +393,7 @@ ay ay0(
     .rst_n(usrrst_n),
     .clk28(clk28),
     .bus(bus),
-    .ck35(ck35 && !pause),
+    .ck35(ck35),
     .ay_clk(ay_clk),
     .ay_bc1(ay_bc1),
     .ay_bdir(ay_bdir),
@@ -548,6 +540,7 @@ always @(posedge clk28)
 
 assign xd[7:0] =
     (ramreq && bus.rd)? vd :
+    magic_dout_active? magic_dout :
     up_dout_active? up_dout :
     div_dout_active? div_dout :
     ay_dout_active? {8{1'bz}} :

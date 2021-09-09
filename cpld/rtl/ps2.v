@@ -11,8 +11,6 @@ module ps2#(
     output ps2_clk_out,
     output ps2_dat_out,
 
-    input rst_key_pause,
-
     input [7:0] zxkb_addr,
     output reg [4:0] zxkb_data,
     output reg key_magic,
@@ -138,8 +136,7 @@ always @(posedge clk or negedge rst_n) begin
                 `PS2_PGDN:      key2_pgdn <= is_press;
 
                 `PS2_F5:        key_magic <= is_press;
-                `PS2_F11:       key_pause <= 1'b0;
-                `PS2_F12:       key_pause <= 1'b1;
+                `PS2_F12:       key_pause <= is_press;
                 `PS2_DELETE:    key2_del <= is_press;
 
                 `PS2_KP_8:      joy_up <= is_press;
@@ -158,9 +155,6 @@ always @(posedge clk or negedge rst_n) begin
         else if (rxerr) begin
             is_press <= 1'b1;
             is_ext <= 0;
-        end
-        else if (rst_key_pause) begin
-            key_pause <= 1'b0;
         end
     end
 end

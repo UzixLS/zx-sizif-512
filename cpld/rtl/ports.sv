@@ -18,7 +18,6 @@ module ports(
     input [7:0] attr_next,
     input [4:0] kd,
     input [7:0] kempston_data,
-    input magic_button,
     input magic_map,
     input tape_in,
 
@@ -61,7 +60,7 @@ always @(posedge clk28 or negedge rst_n) begin
 end
 
 reg [4:0] kd0;
-wire [7:0] port_fe_data = {~magic_button, tape_in, 1'b1, kd0};
+wire [7:0] port_fe_data = {1'b1, tape_in, 1'b1, kd0};
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         beeper <= 0;

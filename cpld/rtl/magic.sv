@@ -4,11 +4,15 @@ module magic(
     input clk28,
 
     cpu_bus bus,
+    output [7:0] d_out,
+    output d_out_active,
+
     input n_int,
     input n_int_next,
     output reg n_nmi,
 
     input magic_button,
+    input pause_button,
 
     output reg magic_mode,
     output reg magic_map,
@@ -46,7 +50,7 @@ always @(posedge clk28 or negedge rst_n) begin
         opcode_is_reading <= 0;
     end
     else begin
-        if (magic_button == 1'b1 && n_int == 1'b1 && n_int_next == 1'b0) begin
+        if ((magic_button || pause_button) && n_int == 1'b1 && n_int_next == 1'b0) begin
             if (!magic_mode)
                 n_nmi <= 1'b0;
             magic_mode <= 1'b1;
@@ -121,6 +125,20 @@ always @(posedge clk28 or negedge rst_n) begin
         8'h0b: {sd_en, covox_en} <= bus.d[1:0];
     endcase
 end
+
+reg config_rd;
+wire [7:0] config_data = {6'b111111, pause_button, magic_button};
+always @(posedge clk28 or negedge rst_n) begin
+    if (!rst_n)
+        config_rd <= 0;
+    else
+        config_rd <= config_cs && bus.rd && bus.a[15:8] == 8'hFF;
+end
+
+
+/* BUS CONTROLLER */
+assign d_out_active = config_rd;
+assign d_out = config_data;
 
 
 endmodule

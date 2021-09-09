@@ -14,7 +14,6 @@ module cpucontrol(
     input screen_loading,
     input turbo_t turbo,
     input timings_t timings,
-    input pause,
     input ext_wait_cycle,
 
     output reg n_rstcpu,
@@ -54,7 +53,7 @@ end
 
 reg clkcpu_prev;
 assign clkcpu_ck = clkcpu && ! clkcpu_prev;
-assign clkwait = pause || contention || (|turbo_wait);
+assign clkwait = contention || (|turbo_wait);
 always @(negedge clk28) begin
     clkcpu_prev <= clkcpu;
     clkcpu <= clkwait? clkcpu : (turbo == TURBO_14)? clk14 : (turbo == TURBO_7)? clk7 : clk35;
