@@ -94,6 +94,10 @@ end
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         n_rstcpu <= 0;
+`ifdef TESTBENCH
+    else if (hc[4])
+        n_rstcpu <= 1'b1;
+`endif
     else if (vc[8])
         n_rstcpu <= 1'b1;
 end

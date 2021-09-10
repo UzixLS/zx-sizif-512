@@ -1,4 +1,4 @@
-`timescale 100ps/10ps 
+`timescale 1ns/100ps
 module testbench_zx_ula();
 
 reg rst_n;
@@ -8,6 +8,7 @@ reg clk28;
 
 /* CPU */
 wire clkcpu;
+wire n_rstcpu;
 wire [15:0] a_cpu, a_cpu_cpu;
 wire [7:0] d_cpu_o, d_cpu_i;
 wire n_rd, n_rd_cpu;
@@ -21,7 +22,7 @@ wire n_int;
 wire n_nmi, n_nmi0;
 
 T80na cpu1(
-    .RESET_n(rst_n),
+    .RESET_n(n_rstcpu),
     .CLK_n(clkcpu),
     .WAIT_n(n_wait_cpu),
     .INT_n(n_int),
@@ -70,6 +71,7 @@ zx_ula zx_ula1(
     .rst_n(rst_n),
     .clk28(clk28),
     .clkcpu(clkcpu),
+    .n_rstcpu(n_rstcpu),
     .vd(vd),
     .va(va),
     .ra(ra),
@@ -155,39 +157,39 @@ assign d_cpu_i =
 // assign a_cpu = a_cpu_cpu;
 
 /* CPU SIGNALS (Z84C0020 timings) */
-//assign #400 n_rd = n_rd_cpu; //TdCf(RDf)
-//assign #400 n_wr = n_wr_cpu; //TdCf(WRf)
-//assign #400 n_iorq = n_iorq_cpu; //TdCr(IORQf)
-//assign #400 n_mreq = n_mreq_cpu; //TdCf(MREQf)
-//assign #450 n_m1 = n_m1_cpu; //TdCr(M1f)
-//assign #600 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
-//assign #570 a_cpu = a_cpu_cpu; //TdCr(A)
+//assign #40 n_rd = n_rd_cpu; //TdCf(RDf)
+//assign #40 n_wr = n_wr_cpu; //TdCf(WRf)
+//assign #40 n_iorq = n_iorq_cpu; //TdCr(IORQf)
+//assign #40 n_mreq = n_mreq_cpu; //TdCf(MREQf)
+//assign #45 n_m1 = n_m1_cpu; //TdCr(M1f)
+//assign #60 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
+//assign #57 a_cpu = a_cpu_cpu; //TdCr(A)
 
 /* CPU SIGNALS (Z84C0008 timings) */
-assign #700 n_rd = n_rd_cpu; //TdCf(RDf)
-assign #600 n_wr = n_wr_cpu; //TdCf(WRf)
-assign #550 n_iorq = n_iorq_cpu; //TdCr(IORQf)
-assign #600 n_mreq = n_mreq_cpu; //TdCf(MREQf)
-assign #700 n_m1 = n_m1_cpu; //TdCr(M1f)
-assign #950 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
-assign #800 a_cpu = a_cpu_cpu; //TdCr(A)
+assign #70 n_rd = n_rd_cpu; //TdCf(RDf)
+assign #60 n_wr = n_wr_cpu; //TdCf(WRf)
+assign #55 n_iorq = n_iorq_cpu; //TdCr(IORQf)
+assign #60 n_mreq = n_mreq_cpu; //TdCf(MREQf)
+assign #70 n_m1 = n_m1_cpu; //TdCr(M1f)
+assign #95 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
+assign #80 a_cpu = a_cpu_cpu; //TdCr(A)
 
 /* CPU SIGNALS (Z84C0004 timings) */
-// assign #850 n_rd = n_rd_cpu; //TdCf(RDf)
-// assign #800 n_wr = n_wr_cpu; //TdCf(WRf)
-// assign #750 n_iorq = n_iorq_cpu; //TdCr(IORQf)
-// assign #850 n_mreq = n_mreq_cpu; //TdCf(MREQf)
-// assign #1000 n_m1 = n_m1_cpu; //TdCr(M1f)
-// assign #1300 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
-// assign #1100 a_cpu = a_cpu_cpu; //TdCr(A)
+// assign #85 n_rd = n_rd_cpu; //TdCf(RDf)
+// assign #80 n_wr = n_wr_cpu; //TdCf(WRf)
+// assign #75 n_iorq = n_iorq_cpu; //TdCr(IORQf)
+// assign #85 n_mreq = n_mreq_cpu; //TdCf(MREQf)
+// assign #100 n_m1 = n_m1_cpu; //TdCr(M1f)
+// assign #130 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
+// assign #110 a_cpu = a_cpu_cpu; //TdCr(A)
 
 
 /* SIMULATION SIGNALS */
 initial begin
     n_magic = 1;
-    #500000
-    n_magic = 0;
-    #500000
+    #50000
+    // n_magic = 0;
+    #50000
     n_magic = 1;
 end
 
@@ -195,19 +197,19 @@ end
 /* CLOCKS & RESET */
 initial begin
     rst_n = 0;
-    #3000 rst_n = 1;
+    #300 rst_n = 1;
 end
 
 always begin
     clk28 = 0;
-    #178 clk28 = 1;
-    #179;
+    #17.8 clk28 = 1;
+    #17.9;
 end
 
 always begin
     clk32 = 0;
-    #156 clk32 = 1;
-    #156;
+    #15.6 clk32 = 1;
+    #15.6;
 end
 
 
@@ -215,8 +217,8 @@ end
 initial begin
     $dumpfile("testbench_zx_ula.vcd");
     $dumpvars;
-    #5000000 $finish;
-    // #200000000 $finish;
+    #500_000 $finish;
+    // #21_000_000 $finish;
 end
 
 
