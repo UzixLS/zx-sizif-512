@@ -6,7 +6,7 @@ bank03=ESXMMC.BIN ESXMMC.BIN  # 0x0C000
 bank04=dvmen3e0.rom           # 0x10000
 bank05=dvmen3e1.rom           # 0x14000
 bank06=dvmen3e2.rom           # 0x18000
-bank07=opense.rom             # 0x1C000
+bank07=lg18alt.rom            # 0x1C000
 # A17 (JP3)
 bank08=zxdiag.rom             # 0x20000
 bank09=zxdiag.rom             # 0x24000
