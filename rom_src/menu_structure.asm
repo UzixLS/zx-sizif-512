@@ -142,6 +142,7 @@ menu_divmmc_value_cb:
 .values_table:
     DW str_off_end-2
     DW str_on_end-2
+    DW str_divmmc_noos_end-2
 
 menu_ulaplus_value_cb:
     ld ix, .values_table
@@ -280,7 +281,7 @@ menu_plus3_cb:
 
 menu_divmmc_cb:
     ld a, (cfg.divmmc)
-    ld c, 1
+    ld c, 2
     call menu_handle_press
     ld (cfg.divmmc), a
     ld bc, #09ff

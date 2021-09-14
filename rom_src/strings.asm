@@ -22,7 +22,7 @@ str_exit_reboot_end:
 str_exit_no_reboot: DB "             ",0
 str_exit_no_reboot_end:
 
-str_on: DB " ON",0
+str_on: DB "   ON",0
 str_on_end:
 
 str_off: DB "      OFF",0
@@ -87,6 +87,9 @@ str_plus3_end:
 
 str_divmmc: DB "DivMMC",0
 str_divmmc_end:
+
+str_divmmc_noos: DB "NO OS",0
+str_divmmc_noos_end:
 
 str_ram: DB "RAM",0
 str_ram_end:

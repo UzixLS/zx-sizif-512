@@ -28,7 +28,7 @@ plus3    DB 0
 rom48    DB 0
 joystick DB 0
 ram      DB 0
-divmmc   DB 1
+divmmc   DB 0
 ulaplus  DB 1
 dac      DB 3
     ENDS

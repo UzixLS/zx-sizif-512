@@ -118,6 +118,7 @@ init_config:
     ld de, cfg_saved           ; ...
     ld hl, CFG_DEFAULT         ; ...
     ldir                       ; ...
+    call detect_sd_card        ; enable divmmc if sd card is detected
     call detect_ext_board      ; read ext board jumpres if any
 .restore:
     ld bc, CFG_T+CFGEXT_T      ; cfg = cfg_saved
@@ -178,6 +179,21 @@ init_cpld:
     inc b              ; ...
     dec d              ; ...
     jr nz, .do_load_ext_loop ; ...
+    ret
+
+
+detect_sd_card:
+    ld a, #ff                   ; read sd_cd state in bit 2 of #FFFF port
+    in a, (#ff)                 ; ...
+    bit 2, a                    ; check sd_cd == 0 (card is insert)
+    jr z, .is_insert            ; yes?
+.no_card:
+    ; divmmc is already disabled in CFG_DEFAULT;
+    ; no further actions required
+    ret
+.is_insert:
+    ld a, 1                     ; divmmc = ON
+    ld (cfg_saved.divmmc), a    ; ...
     ret
 
 

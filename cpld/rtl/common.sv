@@ -3,6 +3,7 @@ package common;
     typedef enum { TURBO_NONE, TURBO_7, TURBO_14 } turbo_t;
     typedef enum { RAM_512, RAM_48, RAM_128 } rammode_t;
     typedef enum { PANNING_MONO, PANNING_ABC, PANNING_ACB } panning_t;
+    typedef enum { DIVMMC_OFF, DIVMMC_ON, DIVMMC_NOOS } divmmc_t;
 endpackage
 
 

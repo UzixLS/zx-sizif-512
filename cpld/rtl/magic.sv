@@ -13,6 +13,7 @@ module magic(
 
     input magic_button,
     input pause_button,
+    input sd_cd,
 
     output reg magic_mode,
     output reg magic_map,
@@ -26,7 +27,7 @@ module magic(
     output reg joy_sinclair,
     output reg rom_plus3,
     output reg rom_alt48,
-    output reg divmmc_en,
+    output divmmc_t divmmc_en,
     output reg ulaplus_en,
     output reg covox_en,
     output reg sd_en
@@ -105,7 +106,7 @@ always @(posedge clk28 or negedge rst_n) begin
         rom_plus3 <= 0;
         rom_alt48 <= 0;
         joy_sinclair <= 0;
-        divmmc_en <= 1'b1;
+        divmmc_en <= DIVMMC_NOOS;
         ulaplus_en <= 1'b1;
         covox_en <= 1'b1;
         sd_en <= 1'b1;
@@ -120,14 +121,14 @@ always @(posedge clk28 or negedge rst_n) begin
         8'h06: rom_alt48 <= bus.d[0];
         8'h07: joy_sinclair <= bus.d[0];
         8'h08: ram_mode <= rammode_t'(bus.d[1:0]);
-        8'h09: divmmc_en <= bus.d[0];
+        8'h09: divmmc_en <= divmmc_t'(bus.d[1:0]);
         8'h0a: ulaplus_en <= bus.d[0];
         8'h0b: {sd_en, covox_en} <= bus.d[1:0];
     endcase
 end
 
 reg config_rd;
-wire [7:0] config_data = {6'b111111, pause_button, magic_button};
+wire [7:0] config_data = {5'b11111, sd_cd, pause_button, magic_button};
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         config_rd <= 0;
