@@ -1,6 +1,6 @@
 module rgb (
     input clk28,
-    input clk14,
+    input strobe,
 
     input up_en,
 
@@ -19,19 +19,19 @@ function [1:0] color_2to2; input [1:0] in;
     case (in)
         2'b00: color_2to2 = 2'b00; // 0mV
         2'b01: color_2to2 = 2'b10; // 343mV
-        2'b10: color_2to2 = clk14? 2'b10 : 2'bz1;
+        2'b10: color_2to2 = strobe? 2'b10 : 2'bz1;
         2'b11: color_2to2 = 2'b11; // 675mV
     endcase
 endfunction
 function [1:0] color_3to2; input [2:0] in;
     case (in)
         3'b000: color_3to2 = 2'b00; // 0mV
-        3'b001: color_3to2 = clk14? 2'b00 : 2'b10;
+        3'b001: color_3to2 = strobe? 2'b00 : 2'b10;
         3'b010: color_3to2 = 2'bz1; // 237mV
         3'b011: color_3to2 = 2'b10; // 343mV
-        3'b100: color_3to2 = clk14? 2'b10 : 2'bz1;
+        3'b100: color_3to2 = strobe? 2'b10 : 2'bz1;
         3'b101: color_3to2 = 2'b1z; // 505mV
-        3'b110: color_3to2 = clk14? 2'bz1 : 2'b1z;
+        3'b110: color_3to2 = strobe? 2'bz1 : 2'b1z;
         3'b111: color_3to2 = 2'b11; // 675mV
     endcase
 endfunction
@@ -42,20 +42,20 @@ endfunction
 function [1:0] color_2to2; input [1:0] in;
     case (in)
         2'b00: color_2to2 = 2'b00;
-        2'b01: color_2to2 = clk14? 2'b10 : 2'b0z;
-        2'b10: color_2to2 = clk14? 2'b1z : 2'bz0;
+        2'b01: color_2to2 = strobe? 2'b10 : 2'b0z;
+        2'b10: color_2to2 = strobe? 2'b1z : 2'bz0;
         2'b11: color_2to2 = 2'b11;
     endcase
 endfunction
 function [1:0] color_3to2; input [2:0] in;
     case (in)
         3'b000: color_3to2 = 2'b00;
-        3'b001: color_3to2 = clk14? 2'bz1 : 2'bzz;
-        3'b010: color_3to2 = clk14? 2'b1z : 2'b00;
-        3'b011: color_3to2 = clk14? 2'b11 : 2'b00;
-        3'b100: color_3to2 = clk14? 2'b10 : 2'bzz;
+        3'b001: color_3to2 = strobe? 2'bz1 : 2'bzz;
+        3'b010: color_3to2 = strobe? 2'b1z : 2'b00;
+        3'b011: color_3to2 = strobe? 2'b11 : 2'b00;
+        3'b100: color_3to2 = strobe? 2'b10 : 2'bzz;
         3'b101: color_3to2 = 2'b10;
-        3'b110: color_3to2 = clk14? 2'b11 : 2'b10;
+        3'b110: color_3to2 = strobe? 2'b11 : 2'b10;
         3'b111: color_3to2 = 2'b11;
     endcase
 endfunction

@@ -24,6 +24,7 @@ module screen(
 
     output loading,
     output blink,
+    output reg even_line,
     output reg [7:0] attr_next,
 
     output [8:0] hc_out,
@@ -161,6 +162,16 @@ always @(posedge clk28 or negedge rst_n) begin
         blink_cnt <= 0;
     else if (hc0_reset && vc_reset)
         blink_cnt <= blink_cnt + 1'b1;
+end
+
+reg hsync0_delayed;
+always @(posedge clk28)
+    hsync0_delayed <= hsync0;
+always @(posedge clk28 or negedge rst_n) begin
+    if (!rst_n)
+        even_line <= 0;
+    else if (hsync0 && !hsync0_delayed)
+        even_line <= ~even_line;
 end
 
 

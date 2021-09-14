@@ -139,6 +139,7 @@ wire [5:0] screen_up_addr;
 wire [7:0] attr_next;
 wire [8:0] vc, hc;
 wire [4:0] blink_cnt;
+wire even_line;
 wire clk14, clk7, clk35, ck14, ck7, ck35;
 screen screen0(
     .rst_n(usrrst_n),
@@ -163,6 +164,7 @@ screen screen0(
     .fetch_data(vd),
 
     .loading(screen_loading),
+    .even_line(even_line),
     .blink(blink),
     .attr_next(attr_next),
 
@@ -181,7 +183,7 @@ screen screen0(
 /* RGB OUTPUT */
 rgb rgb0(
     .clk28(clk28),
-    .clk14(clk14),
+    .strobe(clk14 ^ even_line),
     .up_en(up_active),
     .r_i(r0),
     .g_i(g0),
