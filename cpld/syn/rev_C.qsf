@@ -237,6 +237,7 @@ set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/magic.sv
 set_global_assignment -name VERILOG_FILE ../rtl/joysega.v
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/divmmc.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/cpucontrol.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/memcontrol.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/common.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/ay.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/top.sv

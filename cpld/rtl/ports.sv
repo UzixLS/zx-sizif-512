@@ -27,8 +27,7 @@ module ports(
     output reg [2:0] rampage128,
     output reg [2:0] rampage_ext,
     output reg [2:0] port_1ffd,
-    output reg port_dffd_d3,
-    output reg port_dffd_d4,
+    output reg [4:0] port_dffd,
 
     output reg plus3_drd,
     output reg plus3_dwr,
@@ -96,7 +95,7 @@ always @(posedge clk28 or negedge rst_n) begin
         rompage128 <= 0;
         lock_7ffd <= 0;
     end
-    else if (port_7ffd_cs && bus.wr && (lock_7ffd == 0 || port_dffd_d4 == 1'b1)) begin
+    else if (port_7ffd_cs && bus.wr && (lock_7ffd == 0 || port_dffd[4] == 1'b1)) begin
         rampage128 <= bus.d[2:0];
         screenpage <= bus.d[3];
         rompage128 <= bus.d[4];
@@ -110,13 +109,11 @@ wire port_dffd_cs = en_profi && bus.ioreq && bus.a == 16'hDFFD;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         rampage_ext <= 0;
-        port_dffd_d3 <= 0;
-        port_dffd_d4 <= 0;
+        port_dffd <= 0;
     end
     else if (port_dffd_cs && bus.wr) begin
         rampage_ext <= bus.d[2:0];
-        port_dffd_d3 <= bus.d[3];
-        port_dffd_d4 <= bus.d[4];
+        port_dffd <= bus.d[4:0];
     end
 end
 

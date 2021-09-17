@@ -351,8 +351,7 @@ wire screenpage;
 wire rompage128;
 wire [2:0] rampage_ext;
 wire [2:0] port_1ffd;
-wire port_dffd_d3;
-wire port_dffd_d4;
+wire [4:0] port_dffd;
 wire plus3_mtr0;
 assign plus3_mtr = plus3_mtr0? 1'bz : 1'b0;
 ports ports0 (
@@ -384,8 +383,7 @@ ports ports0 (
     .rampage128(rampage128),
     .rampage_ext(rampage_ext),
     .port_1ffd(port_1ffd),
-    .port_dffd_d3(port_dffd_d3),
-    .port_dffd_d4(port_dffd_d4),
+    .port_dffd(port_dffd),
 
     .plus3_drd(plus3_drd),
     .plus3_dwr(plus3_dwr),
@@ -463,7 +461,7 @@ divmmc divmmc0(
     .sd_sck(sd_sck),
     .sd_cs(sd_cs),
     
-    .rammap(port_dffd_d4 | port_1ffd[0]),
+    .rammap(port_dffd[4] | port_1ffd[0]),
     .magic_mode(magic_mode),
     .magic_map(magic_map),
 
@@ -496,67 +494,49 @@ ulaplus ulaplus0(
 
 
 /* MEMORY CONTROLLER */
-wire romreq =  bus.mreq && !bus.rfsh &&  bus.a[14] == 0 && bus.a[15] == 0 &&
-        (magic_map || (!div_ram && div_map) || (!div_ram && !port_dffd_d4 && !port_1ffd[0]));
-wire ramreq = (bus.mreq && !bus.rfsh && !romreq) || up_write_req;
-wire ramreq_wr = ramreq && bus.wr && div_ramwr_mask == 0;
+memcontrol memcontrol0(
+    .clk28(clk28),
+    .bus(bus),
+    .xd(xd),
+    .ra(ra),
+    .n_romcs(n_romcs),
+    .va(va),
+    .vd(vd),
+    .n_vrd(n_vrd),
+    .n_vwr(n_vwr),
 
-assign n_romcs = (romreq && bus.mreq)? 1'b0 : 1'b1;
-assign n_vrd = ((ramreq && bus.rd) || screen_fetch)? 1'b0 : 1'b1;
-assign n_vwr = (ramreq_wr && bus.wr && !screen_fetch)? 1'b0 : 1'b1;
+    .screenpage(screenpage),
+    .screen_fetch(screen_fetch),
+    .screen_fetch_up(screen_fetch_up),
+    .snow(snow),
+    .screen_addr(screen_addr),
+    .screen_up_addr(screen_up_addr),
+    .up_write_req(up_write_req),
+    .up_write_addr(up_write_addr),
+    .magic_map(magic_map),
+    .rampage128(rampage128),
+    .rompage128(rompage128),
+    .port_1ffd(port_1ffd),
+    .port_dffd(port_dffd),
+    .rom_plus3(rom_plus3),
+    .rom_alt48(rom_alt48),
+    .rampage_ext(rampage_ext),
+    .divmmc_en(divmmc_en != DIVMMC_OFF),
+    .div_ram(div_ram),
+    .div_map(div_map),
+    .div_ramwr_mask(div_ramwr_mask),
+    .div_page(div_page),
 
-// reserve 128K RAM for DivMMC
-wire [1:0] rampage_ext0 = {divmmc_en? 1'b1 : ~rampage_ext[1], ~rampage_ext[0]};
-
-wire [18:13] ram_a =
-    magic_map & bus.a[15] & bus.a[14]? {2'b00, 3'b111, bus.a[13]} :
-    magic_map? {3'b111, screenpage, bus.a[14:13]} :
-    div_map & ~bus.a[14] & ~bus.a[15] & bus.a[13]? {2'b01, div_page} :
-    div_map & ~bus.a[14] & ~bus.a[15]? {2'b01, 4'b0011} :
-    port_dffd_d3 & bus.a[15]? {2'b11, bus.a[14], bus.a[15], bus.a[14], bus.a[13]} :
-    port_dffd_d3 & bus.a[14]? {rampage_ext0, rampage128, bus.a[13]} :
-    (port_1ffd[2] == 1'b0 && port_1ffd[0] == 1'b1)? {2'b11, port_1ffd[1], bus.a[15], bus.a[14], bus.a[13]} :
-    (port_1ffd == 3'b101)? {2'b11, ~(bus.a[15] & bus.a[14]), bus.a[15], bus.a[14]} :
-    (port_1ffd == 3'b111)? {2'b11, ~(bus.a[15] & bus.a[14]), (bus.a[15] | bus.a[14]), bus.a[14]} :
-    bus.a[15] & bus.a[14]? {rampage_ext0, rampage128, bus.a[13]} :
-    {2'b11, bus.a[14], bus.a[15], bus.a[14], bus.a[13]} ;
-
-assign ra[17:14] =
-    magic_map? 3'd2 :
-    div_map? 3'd3 :
-    (rom_plus3 && port_1ffd[2] == 1'b0 && rompage128 == 1'b0)? 3'd4 :
-    (rom_plus3 && port_1ffd[2] == 1'b0 && rompage128 == 1'b1)? 3'd5 :
-    (rom_plus3 && port_1ffd[2] == 1'b1 && rompage128 == 1'b0)? 3'd6 :
-    (rompage128 == 1'b1 && rom_alt48 == 1'b1)? 3'd7 :
-    (rompage128 == 1'b1)? 3'd1 :
-    3'd0;
-
-assign va[18:0] =
-    screen_fetch && screen_fetch_up? {2'b00, 3'b111, 8'b11111111, screen_up_addr} :
-    screen_fetch && snow? {3'b111, screenpage, screen_addr[14:8], bus.a[7:0]} :
-    screen_fetch? {3'b111, screenpage, screen_addr} :
-    up_write_req? {2'b00, 3'b111, 8'b11111111, up_write_addr} :
-    {ram_a[18:13], bus.a[12:0]};
-
-// this is required because of weak xd pullup causing garbage reads from nonexisting ports
-reg [1:0] xd_precharge0;
-wire xd_precharge = clk28 && xd_precharge0[1] && !xd_precharge0[0];
-always @(posedge clk28)
-    xd_precharge0 <= {bus.iorq && (bus.rd || bus.m1), xd_precharge0[1]};
-
-assign xd[7:0] =
-    (ramreq && bus.rd)? vd :
-    magic_dout_active? magic_dout :
-    up_dout_active? up_dout :
-    div_dout_active? div_dout :
-    ay_dout_active? {8{1'bz}} :
-    ports_dout_active? ports_dout :
-    xd_precharge? 8'hFF :
-    {8{1'bz}} ;
-
-assign vd[7:0] =
-    n_vrd == 0? {8{1'bz}} :
-    xd;
+    .magic_dout_active(magic_dout_active),
+    .magic_dout(magic_dout),
+    .up_dout_active(up_dout_active),
+    .up_dout(up_dout),
+    .div_dout_active(div_dout_active),
+    .div_dout(div_dout),
+    .ay_dout_active(ay_dout_active),
+    .ports_dout_active(ports_dout_active),
+    .ports_dout(ports_dout)
+);
 
 
 endmodule
