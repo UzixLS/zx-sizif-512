@@ -22,12 +22,13 @@ module divmmc(
 
     output reg [3:0] page,
     output map,
+    output reg automap,
     output ram,
     output ramwr_mask,
     output cpuwait
 );
 
-reg automap, automap_next;
+reg automap_next;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         automap_next <= 0;

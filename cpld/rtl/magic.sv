@@ -14,6 +14,7 @@ module magic(
     input magic_button,
     input pause_button,
     input sd_cd,
+    input div_automap,
 
     output reg magic_mode,
     output reg magic_map,
@@ -128,7 +129,7 @@ always @(posedge clk28 or negedge rst_n) begin
 end
 
 reg config_rd;
-wire [7:0] config_data = {5'b11111, sd_cd, pause_button, magic_button};
+wire [7:0] config_data = {4'b0000, div_automap, sd_cd, pause_button, magic_button};
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         config_rd <= 0;
