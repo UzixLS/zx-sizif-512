@@ -13,9 +13,7 @@ module ports(
     output d_out_active,
 
     input timings_t timings,
-    input clkcpu_ck,
-    input screen_loading,
-    input [7:0] attr_next,
+    input [7:0] port_ff_data,
     input [4:0] kd,
     input [7:0] kempston_data,
     input magic_map,
@@ -39,13 +37,12 @@ module ports(
 
 
 /* PORT #FF */
-wire [7:0] port_ff_data = attr_next;
 reg port_ff_rd;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         port_ff_rd <= 0;
     else
-        port_ff_rd <= bus.rd && bus.ioreq && (timings != TIMINGS_PENT || bus.a[7:0] == 8'hFF) && screen_loading && !magic_map;
+        port_ff_rd <= bus.rd && bus.ioreq && (timings != TIMINGS_PENT || bus.a[7:0] == 8'hFF) && !magic_map && !en_plus3;
 end
 
 
@@ -67,7 +64,7 @@ always @(posedge clk28 or negedge rst_n) begin
         tape_out <= 0;
         border <= 0;
     end
-    else if (port_fe_cs && bus.wr && clkcpu_ck) begin // clkcpu_ck to synchronize border
+    else if (port_fe_cs && bus.wr) begin
         beeper <= bus.d[4];
         tape_out <= bus.d[3];
         border <= bus.d[2:0];

@@ -1,4 +1,3 @@
-`include "util.vh"
 import common::*;
 module screen(
     input rst_n,
@@ -22,10 +21,10 @@ module screen(
     output [5:0] up_addr,
     input [7:0] fetch_data,
 
-    output loading,
+    output contention,
     output blink,
     output reg even_line,
-    output reg [7:0] attr_next,
+    output [7:0] port_ff_data,
 
     output [8:0] hc_out,
     output [8:0] vc_out,
@@ -41,24 +40,24 @@ module screen(
 /* SCREEN CONTROLLER */
 localparam H_AREA         = 256;
 localparam V_AREA         = 192;
-localparam SCREEN_DELAY   = 8;
+localparam SCREEN_DELAY   = 13;
 
-localparam H_LBORDER_S48  = 48 - SCREEN_DELAY;
-localparam H_RBORDER_S48  = 48 + SCREEN_DELAY;
-localparam H_BLANK1_S48   = 17;
+localparam H_LBORDER_S48  = 54 - SCREEN_DELAY;
+localparam H_RBORDER_S48  = 53 + SCREEN_DELAY;
+localparam H_BLANK1_S48   = 12;
 localparam H_SYNC_S48     = 33;
-localparam H_BLANK2_S48   = 46;
+localparam H_BLANK2_S48   = 40;
 localparam H_TOTAL_S48    = H_AREA + H_RBORDER_S48 + H_BLANK1_S48 + H_SYNC_S48 + H_BLANK2_S48 + H_LBORDER_S48;
 localparam V_BBORDER_S48  = 56;
 localparam V_SYNC_S48     = 8;
 localparam V_TBORDER_S48  = 56;
 localparam V_TOTAL_S48    = V_AREA + V_BBORDER_S48 + V_SYNC_S48 + V_TBORDER_S48;
 
-localparam H_LBORDER_S128 = 48 - SCREEN_DELAY;
-localparam H_RBORDER_S128 = 48 + SCREEN_DELAY;
-localparam H_BLANK1_S128  = 25;
+localparam H_LBORDER_S128 = 58 - SCREEN_DELAY;
+localparam H_RBORDER_S128 = 57 + SCREEN_DELAY;
+localparam H_BLANK1_S128  = 12;
 localparam H_SYNC_S128    = 33;
-localparam H_BLANK2_S128  = 46;
+localparam H_BLANK2_S128  = 40;
 localparam H_TOTAL_S128   = H_AREA + H_RBORDER_S128 + H_BLANK1_S128 + H_SYNC_S128 + H_BLANK2_S128 + H_LBORDER_S128;
 localparam V_BBORDER_S128 = 55;
 localparam V_SYNC_S128    = 8;
@@ -76,9 +75,9 @@ localparam V_SYNC_PENT    = 8;
 localparam V_TBORDER_PENT = 64;
 localparam V_TOTAL_PENT   = V_AREA + V_BBORDER_PENT + V_SYNC_PENT + V_TBORDER_PENT;
 
-reg  [$clog2(`MAX(V_TOTAL_PENT, `MAX(V_TOTAL_S128, V_TOTAL_S48)))-1:0] vc;
-reg  [$clog2(`MAX(H_TOTAL_PENT, `MAX(H_TOTAL_S128, H_TOTAL_S48)))+1:0] hc0;
-wire [$clog2(`MAX(H_TOTAL_PENT, `MAX(H_TOTAL_S128, H_TOTAL_S48)))-1:0] hc = hc0[$bits(hc0)-1:2];
+reg  [8:0] vc;
+reg  [10:0] hc0;
+wire [8:0] hc = hc0[10:2];
 
 assign vc_out = vc;
 assign hc_out = hc;
@@ -155,7 +154,6 @@ always @(posedge clk28 or negedge rst_n) begin
     end
 end
 
-
 assign blink = blink_cnt[$bits(blink_cnt)-1];
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
@@ -175,9 +173,37 @@ always @(posedge clk28 or negedge rst_n) begin
 end
 
 
-wire [7:0] attr_border = {2'b00, border[2:0], 3'b000};
+wire screen_show = (vc < V_AREA) && (hc0 >= (SCREEN_DELAY<<2) - 1) && (hc0 < ((H_AREA + SCREEN_DELAY)<<2) - 1);
+wire screen_update = hc0[4:0] == 5'b10011;
+wire border_update = (hc0[4:0] == 5'b10011) || (timings == TIMINGS_PENT && ck7);
+wire bitmap_shift = hc0[1:0] == 2'b11;
+wire next_addr = hc0[4:0] == 5'b10001;
 
-reg [7:0] bitmap, attr, bitmap_next;
+reg [7:0] vaddr;
+reg [7:3] haddr;
+always @(posedge clk28 or negedge rst_n) begin
+    if (!rst_n) begin
+        vaddr <= 0;
+        haddr <= 0;
+    end
+    else if (next_addr) begin
+        vaddr <= vc[7:0];
+        haddr <= hc[7:3];
+    end
+end
+
+reg loading;
+always @(posedge clk28 or negedge rst_n) begin
+    if (!rst_n)
+        loading <= 0;
+    else
+        loading <= (vc < V_AREA) && (hc0 > 15) && (hc0 < (H_AREA<<2) + 17);
+end
+
+
+wire [7:0] attr_border = {2'b00, border[2:0], border[2:0]};
+
+reg [7:0] bitmap, attr, bitmap_next, attr_next;
 reg [7:0] up_ink, up_paper, up_ink_next, up_paper_next;
 
 reg [1:0] fetch_step;
@@ -188,18 +214,11 @@ wire fetch_up_paper = fetch && fetch_step == 2'd3;
 assign fetch_up = fetch_up_ink | fetch_up_paper;
 
 assign addr = fetch_bitmap?
-    { 2'b10, vc[7:6], vc[2:0], vc[5:3], hc[7:3] } :
-    { 5'b10110, vc[7:3], hc[7:3] };
+    { 2'b10, vaddr[7:6], vaddr[2:0], vaddr[5:3], haddr[7:3] } :
+    { 5'b10110, vaddr[7:3], haddr[7:3] };
 assign up_addr = fetch_up_ink?
     { attr_next[7:6], 1'b0, attr_next[2:0] } :
     { attr_next[7:6], 1'b1, attr_next[5:3] } ;
-
-assign loading = (vc < V_AREA) && (hc < H_AREA || hc0_reset);
-wire screen_show = (vc < V_AREA) && (hc0 >= (SCREEN_DELAY<<2) - 2) && (hc0 < ((H_AREA + SCREEN_DELAY)<<2) - 2);
-wire screen_update = vc < V_AREA && hc <= H_AREA && hc != 0 && hc0[4:0] == 5'b11110;
-wire border_update = !screen_show && ((timings == TIMINGS_PENT && ck7) || hc0[4:0] == 5'b11110);
-wire bitmap_shift = hc0[1:0] == 2'b10;
-
 
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
@@ -216,15 +235,15 @@ always @(posedge clk28 or negedge rst_n) begin
     end
     else begin
         if (ck14) begin
-            fetch <= (loading || up_en) && fetch_allow;
             if (fetch && fetch_step[0] && !up_en)
                 fetch_step <= 0; // skip fetching ulaplus ink and paper
             else if (!loading && up_en)
                 fetch_step <= 2'd3; // always fetch ulaplus paper in border area
-            else if (hc0_reset || hc0[4:0] == 5'b11111)
+            else if (next_addr)
                 fetch_step <= 0;
             else if (fetch)
                 fetch_step <= fetch_step + 1'b1;
+            fetch <= (loading || up_en) && fetch_allow;
 
             if (fetch_attr)
                 attr_next <= fetch_data;
@@ -232,16 +251,18 @@ always @(posedge clk28 or negedge rst_n) begin
                 attr_next <= attr_border;
             if (fetch_bitmap)
                 bitmap_next <= fetch_data;
+            else if (!loading)
+                bitmap_next <= 0;
             if (fetch_up_ink)
                 up_ink_next <= fetch_data;
             if (fetch_up_paper)
                 up_paper_next <= fetch_data;
         end
 
-        if (border_update)
-            attr <= attr_border;
-        else if (screen_update)
+        if (screen_show && screen_update)
             attr <= attr_next;
+        else if (!screen_show && border_update)
+            attr <= attr_border;
 
         if (screen_update)
             bitmap <= bitmap_next;
@@ -250,10 +271,18 @@ always @(posedge clk28 or negedge rst_n) begin
 
         if (screen_update)
             up_ink <= up_ink_next;
-        if (screen_update || (!screen_show && !loading))
+        if (screen_update)
             up_paper <= up_paper_next;
     end
 end
+
+
+assign port_ff_data = 
+    (loading && ((timings == TIMINGS_PENT) || hc[3:1] == 3'h6 || hc[3:1] == 3'h0))? attr_next :
+    (loading && (hc[3] && hc[1]))? bitmap_next :
+    8'hFF;
+
+assign contention = (vc < V_AREA) && (hc < H_AREA) && (hc[2] || hc[3]);
 
 
 /* RGBS generation */

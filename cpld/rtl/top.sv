@@ -129,17 +129,17 @@ end
 
 
 /* SCREEN CONTROLLER */
-wire blink;
+wire up_write_req;
 wire [2:0] screen_border = {border[2] ^ ~sd_cs, border[1] ^ magic_beeper, border[0]};
 wire [2:0] r0, g0;
 wire [1:0] b0;
-wire screen_fetch, screen_fetch_up, screen_loading;
+wire screen_fetch, screen_fetch_up, screen_contention;
 wire [14:0] screen_addr;
 wire [5:0] screen_up_addr;
-wire [7:0] attr_next;
+wire [7:0] port_ff_data;
 wire [8:0] vc, hc;
 wire [4:0] blink_cnt;
-wire even_line;
+wire blink, even_line;
 wire clk14, clk7, clk35, ck14, ck7, ck35;
 screen screen0(
     .rst_n(usrrst_n),
@@ -156,17 +156,17 @@ screen screen0(
     .vsync(vsync),
     .hsync(hsync),
 
-    .fetch_allow((!bus.iorq && !bus.mreq) || bus.rfsh || clkwait),
+    .fetch_allow((!up_write_req && !bus.mreq) || bus.rfsh || clkwait),
     .fetch(screen_fetch),
     .fetch_up(screen_fetch_up),
     .addr(screen_addr),
     .up_addr(screen_up_addr),
     .fetch_data(vd),
 
-    .loading(screen_loading),
-    .even_line(even_line),
+    .contention(screen_contention),
     .blink(blink),
-    .attr_next(attr_next),
+    .even_line(even_line),
+    .port_ff_data(port_ff_data),
 
     .vc_out(vc),
     .hc_out(hc),
@@ -266,13 +266,15 @@ cpucontrol cpucontrol0(
     .clk14(clk14),
     .clk7(clk7),
     .clk35(clk35),
+    .ck14(ck14),
+    .ck7(ck7),
 
     .bus(bus),
 
     .vc(vc),
     .hc(hc),
     .rampage128(rampage128),
-    .screen_loading(screen_loading),
+    .screen_contention(screen_contention),
     .turbo(turbo),
     .timings(timings),
     .ext_wait_cycle(div_wait || up_active),
@@ -368,9 +370,7 @@ ports ports0 (
     .en_sinclair(joy_sinclair),
 
     .timings(timings),
-    .clkcpu_ck(clkcpu_ck),
-    .screen_loading(screen_loading),
-    .attr_next(attr_next),
+    .port_ff_data(port_ff_data),
     .kd(kd & ps2_kd),
     .kempston_data(kempston_data),
     .magic_map(magic_map),
@@ -479,7 +479,6 @@ divmmc divmmc0(
 /* ULAPLUS */
 wire up_dout_active;
 wire [7:0] up_dout;
-wire up_write_req;
 wire [5:0] up_write_addr;
 ulaplus ulaplus0(
     .rst_n(n_rstcpu0),
