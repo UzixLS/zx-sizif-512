@@ -721,10 +721,10 @@ font_latin_small_letter_g:
     DG --###---
 
 font_latin_small_letter_h:
+    DG --------
     DG -#------
     DG -#------
     DG -####---
-    DG -#---#--
     DG -#---#--
     DG -#---#--
     DG -#---#--
