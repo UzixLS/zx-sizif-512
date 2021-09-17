@@ -21,13 +21,11 @@ module magic(
 
     output reg magic_reboot,
     output reg magic_beeper,
-    output timings_t timings,
+    output machine_t machine,
     output turbo_t turbo,
-    output rammode_t ram_mode,
     output panning_t panning,
-    output reg joy_sinclair,
-    output reg rom_plus3,
     output reg rom_alt48,
+    output reg joy_sinclair,
     output divmmc_t divmmc_en,
     output reg ulaplus_en,
     output reg covox_en,
@@ -100,11 +98,9 @@ always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         magic_reboot <= 0;
         magic_beeper <= 0;
-        timings <= TIMINGS_PENT;
+        machine <= MACHINE_PENT;
         turbo <= TURBO_NONE;
-        ram_mode <= RAM_512;
         panning <= PANNING_ABC;
-        rom_plus3 <= 0;
         rom_alt48 <= 0;
         joy_sinclair <= 0;
         divmmc_en <= DIVMMC_NOOS;
@@ -115,13 +111,11 @@ always @(posedge clk28 or negedge rst_n) begin
     else if (config_cs && bus.wr) case (bus.a[15:8])
         8'h00: magic_reboot <= bus.d[0];
         8'h01: magic_beeper <= bus.d[0];
-        8'h02: timings <= timings_t'(bus.d[1:0]);
+        8'h02: machine <= machine_t'(bus.d[2:0]);
         8'h03: turbo <= turbo_t'(bus.d[1:0]);
         8'h04: panning <= panning_t'(bus.d[1:0]);
-        8'h05: rom_plus3 <= bus.d[0];
         8'h06: rom_alt48 <= bus.d[0];
         8'h07: joy_sinclair <= bus.d[0];
-        8'h08: ram_mode <= rammode_t'(bus.d[1:0]);
         8'h09: divmmc_en <= divmmc_t'(bus.d[1:0]);
         8'h0a: ulaplus_en <= bus.d[0];
         8'h0b: {sd_en, covox_en} <= bus.d[1:0];

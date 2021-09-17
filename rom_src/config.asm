@@ -21,13 +21,13 @@ PAUSE_TEXT_ATTR         EQU #C7
     STRUCT CFG_T
 _reserv0 DB 0
 _reserv1 DB 0
-timings  DB 0
+machine  DB 3
 clock    DB 0
 panning  DB 1
-plus3    DB 0
+_reserv3 DB 0
 rom48    DB 0
 joystick DB 0
-ram      DB 0
+_reserv2 DB 0
 divmmc   DB 0
 ulaplus  DB 1
 dac      DB 3

@@ -13,9 +13,8 @@ module cpucontrol(
     input [8:0] vc,
     input [8:0] hc,
     input screen_contention,
-    input en_plus3,
     input [2:0] rampage128,
-    input timings_t timings,
+    input machine_t machine,
     input turbo_t turbo,
     input ext_wait_cycle,
 
@@ -36,13 +35,13 @@ always @(posedge clkcpu)
     mreq_delayed <= bus.mreq;
 always @(posedge clkcpu)
     iorq_delayed <= iorq_contended;
-wire contention_mem_page = en_plus3? rampage128[2] : rampage128[0];
+wire contention_mem_page = (machine == MACHINE_S3)? rampage128[2] : rampage128[0];
 wire contention_mem_addr = bus.a[14] & (~bus.a[15] | (bus.a[15] & contention_mem_page));
 wire contention_mem = iorq_delayed == 1'b0 && mreq_delayed == 1'b0 && contention_mem_addr;
 wire contention_io = iorq_delayed == 1'b0 && iorq_contended;
 wire contention0 = screen_contention && (contention_mem || contention_io);
-wire contention = clkcpu && contention0 && turbo == TURBO_NONE && (timings == TIMINGS_S48 || timings == TIMINGS_S128);
-assign snow = bus.a[14] && ~bus.a[15] && bus.rfsh && (timings == TIMINGS_S48 || timings == TIMINGS_S128);
+wire contention = clkcpu && contention0 && turbo == TURBO_NONE && (machine == MACHINE_S48 || machine == MACHINE_S128 || machine == MACHINE_S3);
+assign snow = bus.a[14] && ~bus.a[15] && bus.rfsh && (machine == MACHINE_S48 || machine == MACHINE_S128);
 
 
 /* CLOCK */
@@ -80,12 +79,13 @@ localparam INT_H_S128      = 4;
 localparam INT_V_PENT      = 239;
 localparam INT_H_PENT      = 322;
 wire int_begin =
-    (timings == TIMINGS_PENT)?
-        vc == INT_V_PENT && hc == INT_H_PENT :
-    (timings == TIMINGS_S128)?
+    (machine == MACHINE_S48)?
+        vc == INT_V_S48 && hc == INT_H_S48 :
+    (machine == MACHINE_S128 || machine == MACHINE_S3)?
         vc == INT_V_S128 && hc == INT_H_S128 :
-    // 48K
-        vc == INT_V_S48 && hc == INT_H_S48 ;
+    // Pentagon
+        vc == INT_V_PENT && hc == INT_H_PENT ;
+        
 reg [4:0] int_cnt;
 assign n_int_next = (|int_cnt)? 1'b0 : 1'b1;
 always @(posedge clk28 or negedge rst_n) begin

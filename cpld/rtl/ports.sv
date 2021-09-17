@@ -2,9 +2,6 @@ import common::*;
 module ports(
     input rst_n,
     input clk28,
-    input en_128k,
-    input en_plus3,
-    input en_profi,
     input en_kempston,
     input en_sinclair,
 
@@ -12,7 +9,7 @@ module ports(
     output [7:0] d_out,
     output d_out_active,
 
-    input timings_t timings,
+    input machine_t machine,
     input [7:0] port_ff_data,
     input [4:0] kd,
     input [7:0] kempston_data,
@@ -41,7 +38,8 @@ always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         port_ff_rd <= 0;
     else
-        port_ff_rd <= bus.rd && bus.ioreq && (timings != TIMINGS_PENT || bus.a[7:0] == 8'hFF) && !magic_map && !en_plus3;
+        port_ff_rd <= bus.rd && bus.ioreq && !magic_map && (machine != MACHINE_S3) &&
+            (machine != MACHINE_PENT || bus.a[7:0] == 8'hFF);
 end
 
 
@@ -86,7 +84,9 @@ end
 
 
 /* PORT #7FFD */
-wire port_7ffd_cs = en_128k && bus.ioreq && bus.a[1] == 0 && bus.a[15] == 0 && (bus.a[14] == 1'b1 || !en_plus3);
+wire port_7ffd_cs = bus.ioreq && bus.a[1] == 0 && bus.a[15] == 0 &&
+                    (bus.a[14] == 1'b1 || (!magic_map && machine != MACHINE_S3)) &&
+                    (machine != MACHINE_S48);
 reg lock_7ffd;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
@@ -105,7 +105,7 @@ end
 
 
 /* PORT #DFFD */
-wire port_dffd_cs = en_profi && bus.ioreq && bus.a == 16'hDFFD;
+wire port_dffd_cs = bus.ioreq && bus.a == 16'hDFFD && machine == MACHINE_PENT;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         rampage_ext <= 0;
@@ -119,7 +119,7 @@ end
 
 
 /* PORT #1FFD */
-wire port_1ffd_cs = en_plus3 && bus.ioreq && bus.a == 16'h1FFD;
+wire port_1ffd_cs = bus.ioreq && bus.a == 16'h1FFD && machine == MACHINE_S3;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         port_1ffd <= 0;
@@ -133,7 +133,7 @@ end
 
 
 /* PORTS #2FFD & #3FFD (+3DOS) */
-wire port_2ffd_3ffd_cs = en_plus3 && bus.ioreq && (bus.a == 16'h2FFD || bus.a == 16'h3FFD);
+wire port_2ffd_3ffd_cs = bus.ioreq && (bus.a == 16'h2FFD || bus.a == 16'h3FFD) && (machine == MACHINE_S3);
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         plus3_dwr <= 1'b1;

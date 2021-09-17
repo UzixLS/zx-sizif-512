@@ -80,9 +80,8 @@ module zx_ula (
 
 
 /* SHARED DEFINITIONS */
-timings_t timings;
+machine_t machine;
 turbo_t turbo;
-rammode_t ram_mode;
 wire ps2_key_reset, ps2_key_pause, joy_start;
 wire [2:0] border;
 wire magic_reboot, magic_beeper;
@@ -145,7 +144,7 @@ screen screen0(
     .rst_n(usrrst_n),
     .clk28(clk28),
 
-    .timings(timings),
+    .machine(machine),
     .border(screen_border),
     .up_en(up_active),
 
@@ -274,9 +273,9 @@ cpucontrol cpucontrol0(
     .vc(vc),
     .hc(hc),
     .rampage128(rampage128),
+    .machine(machine),
     .screen_contention(screen_contention),
     .turbo(turbo),
-    .timings(timings),
     .ext_wait_cycle(div_wait || up_active),
 
     .n_rstcpu(n_rstcpu0),
@@ -290,16 +289,17 @@ cpucontrol cpucontrol0(
 
 
 /* MAGIC */
-wire [7:0] magic_dout;
-wire magic_dout_active;
-wire magic_mode, magic_map;
 wire n_nmi0;
 reg n_nmi0_prev;
 always @(posedge clk28)    // precharge to 1 - this is required because of weak n_nmi pullup ...
     n_nmi0_prev <= n_nmi0; // ... which may cause multiple nmi triggering in Z80 in 14MHz mode
 assign n_nmi = n_nmi0? (n_nmi0_prev? 1'bz : 1'b1) : 1'b0;
+
 wire div_automap;
-wire joy_sinclair, rom_plus3, rom_alt48, up_en, covox_en, sd_en;
+wire [7:0] magic_dout;
+wire magic_dout_active;
+wire magic_mode, magic_map;
+wire joy_sinclair, rom_alt48, up_en, covox_en, sd_en;
 panning_t panning;
 assign ay_mono = panning == PANNING_MONO;
 assign ay_abc = panning == PANNING_ABC;
@@ -329,11 +329,9 @@ magic magic0(
 
     .magic_reboot(magic_reboot),
     .magic_beeper(magic_beeper),
-    .timings(timings),
+    .machine(machine),
     .turbo(turbo),
-    .ram_mode(ram_mode),
     .joy_sinclair(joy_sinclair),
-    .rom_plus3(rom_plus3),
     .rom_alt48(rom_alt48),
     .panning(panning),
     .divmmc_en(divmmc_en),
@@ -362,13 +360,10 @@ ports ports0 (
     .d_out(ports_dout),
     .d_out_active(ports_dout_active),
 
-    .en_128k(ram_mode == RAM_512 || ram_mode == RAM_128),
-    .en_plus3(rom_plus3),
-    .en_profi(ram_mode == RAM_512),
     .en_kempston(!joy_sinclair),
     .en_sinclair(joy_sinclair),
 
-    .timings(timings),
+    .machine(machine),
     .port_ff_data(port_ff_data),
     .kd(kd & ps2_kd),
     .kempston_data(kempston_data),
@@ -518,7 +513,7 @@ memcontrol memcontrol0(
     .rompage128(rompage128),
     .port_1ffd(port_1ffd),
     .port_dffd(port_dffd),
-    .rom_plus3(rom_plus3),
+    .rom_plus3((machine == MACHINE_S3),
     .rom_alt48(rom_alt48),
     .rampage_ext(rampage_ext),
     .divmmc_en(divmmc_en != DIVMMC_OFF),

@@ -18,13 +18,11 @@ reserved DW
     ENDM
 
 .menu:
-    MENUENTRY_T str_timings     menu_timings_value_cb     menu_timins_cb
+    MENUENTRY_T str_machine     menu_machine_value_cb     menu_machine_cb
     MENUENTRY_T str_cpu         menu_clock_value_cb       menu_clock_cb
     MENUENTRY_T str_panning     menu_panning_value_cb     menu_panning_cb
     MENUENTRY_T str_joystick    menu_joystick_value_cb    menu_joystick_cb
-    MENUENTRY_T str_ram         menu_ram_value_cb         menu_ram_cb
     MENUENTRY_T str_rom48       menu_rom48_value_cb       menu_rom48_cb
-    MENUENTRY_T str_plus3       menu_plus3_value_cb       menu_plus3_cb
     MENUENTRY_T str_divmmc      menu_divmmc_value_cb      menu_divmmc_cb
     MENUENTRY_T str_ulaplus     menu_ulaplus_value_cb     menu_ulaplus_cb
     MENUENTRY_T str_dac         menu_dac_value_cb         menu_dac_cb
@@ -33,13 +31,11 @@ reserved DW
 !menu: MENUDESCR .menu, ($-.menu)/MENUENTRY_T-1
 
 .menuext:
-    MENUENTRY_T str_timings     menu_timings_value_cb     menu_timins_cb
+    MENUENTRY_T str_machine     menu_machine_value_cb     menu_machine_cb
     MENUENTRY_T str_cpu         menu_clock_value_cb       menu_clock_cb
     MENUENTRY_T str_panning     menu_panning_value_cb     menu_panning_cb
     MENUENTRY_T str_joystick    menu_joystick_value_cb    menu_joystick_cb
-    MENUENTRY_T str_ram         menu_ram_value_cb         menu_ram_cb
     MENUENTRY_T str_rom48       menu_rom48_value_cb       menu_rom48_cb
-    MENUENTRY_T str_plus3       menu_plus3_value_cb       menu_plus3_cb
     MENUENTRY_T str_divmmc      menu_divmmc_value_cb      menu_divmmc_cb
     MENUENTRY_T str_ulaplus     menu_ulaplus_value_cb     menu_ulaplus_cb
     MENUENTRY_T str_dac         menu_dac_value_cb         menu_dac_cb
@@ -51,14 +47,15 @@ reserved DW
 !menuext: MENUDESCR .menuext, ($-.menuext)/MENUENTRY_T-1
 
 
-menu_timings_value_cb:
+menu_machine_value_cb:
     ld ix, .values_table
-    ld a, (cfg.timings)
+    ld a, (cfg.machine)
     jp menu_value_get
 .values_table:
-    DW str_timings_pentagon_end-2
-    DW str_timings_48_end-2
-    DW str_timings_128_end-2
+    DW str_machine_48_end-2
+    DW str_machine_128_end-2
+    DW str_machine_3e_end-2
+    DW str_machine_pentagon_end-2
 
 menu_clock_value_cb:
     ld ix, .values_table
@@ -99,26 +96,6 @@ menu_joystick_value_cb:
     DW str_joystick_kempston_end-2
     DW str_joystick_sinclair_end-2
 
-menu_ram_value_cb:
-    ld ix, .values_table
-    ld a, (cfg.ram)
-    or a
-    jr nz, .less_than_512K
-    ld a, (cfg.divmmc)           ; 256K with divmmc
-    or a                         ; ...
-    jr z, .is_512K               ; ...
-    ld a, 3                      ; ...   
-    jp menu_value_get
-.is_512K:
-    xor a
-.less_than_512K:
-    jp menu_value_get
-.values_table:
-    DW str_ram_512_end-2
-    DW str_ram_48_end-2
-    DW str_ram_128_end-2
-    DW str_ram_256_end-2
-
 menu_rom48_value_cb:
     ld ix, .values_table
     ld a, (cfg.rom48)
@@ -126,14 +103,6 @@ menu_rom48_value_cb:
 .values_table:
     DW str_rom48_default_end-2
     DW str_rom48_alt_end-2
-
-menu_plus3_value_cb:
-    ld ix, .values_table
-    ld a, (cfg.plus3)
-    jp menu_value_get
-.values_table:
-    DW str_off_end-2
-    DW str_on_end-2
 
 menu_divmmc_value_cb:
     ld ix, .values_table
@@ -205,11 +174,11 @@ menu_value_get:
     ret
 
 
-menu_timins_cb:
-    ld a, (cfg.timings)
-    ld c, 2
+menu_machine_cb:
+    ld a, (cfg.machine)
+    ld c, 3
     call menu_handle_press
-    ld (cfg.timings), a
+    ld (cfg.machine), a
     ld bc, #02ff
     out (c), a
     ret
@@ -252,30 +221,12 @@ menu_joystick_cb:
     out (c), a
     ret
 
-menu_ram_cb:
-    ld a, (cfg.ram)
-    ld c, 2
-    call menu_handle_press
-    ld (cfg.ram), a
-    ld bc, #08ff
-    out (c), a
-    ret
-
 menu_rom48_cb:
     ld a, (cfg.rom48)
     ld c, 1
     call menu_handle_press
     ld (cfg.rom48), a
     ld bc, #06ff
-    out (c), a
-    ret
-
-menu_plus3_cb:
-    ld a, (cfg.plus3)
-    ld c, 1
-    call menu_handle_press
-    ld (cfg.plus3), a
-    ld bc, #05ff
     out (c), a
     ret
 

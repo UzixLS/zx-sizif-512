@@ -28,17 +28,20 @@ str_on_end:
 str_off: DB "      OFF",0
 str_off_end:
 
-str_timings: DB "Timings",0
-str_timings_end:
+str_machine: DB "Machine",0
+str_machine_end:
 
-str_timings_pentagon: DB "Pentagon",0
-str_timings_pentagon_end:
+str_machine_48: DB "      48",0
+str_machine_48_end:
 
-str_timings_128: DB "     128",0
-str_timings_128_end:
+str_machine_128: DB "     128",0
+str_machine_128_end:
 
-str_timings_48: DB "      48",0
-str_timings_48_end:
+str_machine_3e: DB "     +3e",0
+str_machine_3e_end:
+
+str_machine_pentagon: DB "Pentagon",0
+str_machine_pentagon_end:
 
 str_cpu: DB "CPU freq",0
 str_cpu_end:
@@ -90,21 +93,6 @@ str_divmmc_end:
 
 str_divmmc_noos: DB "NO OS",0
 str_divmmc_noos_end:
-
-str_ram: DB "RAM",0
-str_ram_end:
-
-str_ram_48: DB " 48K",0
-str_ram_48_end:
-
-str_ram_128: DB "128K",0
-str_ram_128_end:
-
-str_ram_256: DB "256K",0
-str_ram_256_end:
-
-str_ram_512: DB "512K",0
-str_ram_512_end:
 
 str_ulaplus: DB "ULA+",0
 str_ulaplus_end

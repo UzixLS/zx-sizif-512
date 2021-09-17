@@ -3,7 +3,7 @@ module screen(
     input rst_n,
     input clk28,
 
-    input timings_t timings,
+    input machine_t machine,
     input [2:0] border,
     input up_en,
 
@@ -90,49 +90,49 @@ assign ck7 = hc0[0] & hc0[1];
 assign ck35 = hc0[0] & hc0[1] & hc0[2];
 
 wire hc0_reset =
-    (timings == TIMINGS_PENT)?
-        hc0 == (H_TOTAL_PENT<<2) - 1'b1 :
-    (timings == TIMINGS_S128)?
+    (machine == MACHINE_S48)?
+        hc0 == (H_TOTAL_S48<<2) - 1'b1 :
+    (machine == MACHINE_S128 || machine == MACHINE_S3)?
         hc0 == (H_TOTAL_S128<<2) - 1'b1 :
-    // 48K
-        hc0 == (H_TOTAL_S48<<2) - 1'b1 ;
+    // Pentagon
+        hc0 == (H_TOTAL_PENT<<2) - 1'b1 ;
 wire vc_reset =
-    (timings == TIMINGS_PENT)?
-        vc == V_TOTAL_PENT - 1'b1 :
-    (timings == TIMINGS_S128)?
+    (machine == MACHINE_S48)?
+        vc == V_TOTAL_S48 - 1'b1:
+    (machine == MACHINE_S128 || machine == MACHINE_S3)?
         vc == V_TOTAL_S128 - 1'b1 :
-    // 48K
-        vc == V_TOTAL_S48 - 1'b1;
+    // Pentagon
+        vc == V_TOTAL_PENT - 1'b1 ;
 wire hsync0 =
-    (timings == TIMINGS_PENT)?
-        (hc >= (H_AREA + H_RBORDER_PENT + H_BLANK1_PENT)) &&
-            (hc <  (H_AREA + H_RBORDER_PENT + H_BLANK1_PENT + H_SYNC_PENT)) :
-    (timings == TIMINGS_S128)?
+    (machine == MACHINE_S48)?
+        (hc >= (H_AREA + H_RBORDER_S48 + H_BLANK1_S48)) &&
+            (hc <  (H_AREA + H_RBORDER_S48 + H_BLANK1_S48 + H_SYNC_S48)) :
+    (machine == MACHINE_S128 || machine == MACHINE_S3)?
         (hc >= (H_AREA + H_RBORDER_S128 + H_BLANK1_S128)) &&
             (hc <  (H_AREA + H_RBORDER_S128 + H_BLANK1_S128 + H_SYNC_S128)) :
-    // 48K
-        (hc >= (H_AREA + H_RBORDER_S48 + H_BLANK1_S48)) &&
-            (hc <  (H_AREA + H_RBORDER_S48 + H_BLANK1_S48 + H_SYNC_S48)) ;
+    // Pentagon
+        (hc >= (H_AREA + H_RBORDER_PENT + H_BLANK1_PENT)) &&
+            (hc <  (H_AREA + H_RBORDER_PENT + H_BLANK1_PENT + H_SYNC_PENT)) ;
 wire vsync0 =
-    (timings == TIMINGS_PENT)?
-        (vc >= (V_AREA + V_BBORDER_PENT)) && (vc < (V_AREA + V_BBORDER_PENT + V_SYNC_PENT)) :
-    (timings == TIMINGS_S128)?
+    (machine == MACHINE_S48)?
+        (vc >= (V_AREA + V_BBORDER_S48)) && (vc < (V_AREA + V_BBORDER_S48 + V_SYNC_S48)) :
+    (machine == MACHINE_S128 || machine == MACHINE_S3)?
         (vc >= (V_AREA + V_BBORDER_S128)) && (vc < (V_AREA + V_BBORDER_S128 + V_SYNC_S128)) :
-    // 48K
-        (vc >= (V_AREA + V_BBORDER_S48)) && (vc < (V_AREA + V_BBORDER_S48 + V_SYNC_S48)) ;
+    // Pentagon
+        (vc >= (V_AREA + V_BBORDER_PENT)) && (vc < (V_AREA + V_BBORDER_PENT + V_SYNC_PENT)) ;
 wire blank =
-    (timings == TIMINGS_PENT)?
-        ((vc >= (V_AREA + V_BBORDER_PENT)) && (vc < (V_AREA + V_BBORDER_PENT + V_SYNC_PENT))) ||
-            ((hc >= (H_AREA + H_RBORDER_PENT)) &&
-             (hc <  (H_AREA + H_RBORDER_PENT + H_BLANK1_PENT + H_SYNC_PENT + H_BLANK2_PENT))) :
-    (timings == TIMINGS_S128)?
+    (machine == MACHINE_S48)?
+        ((vc >= (V_AREA + V_BBORDER_S48)) && (vc < (V_AREA + V_BBORDER_S48 + V_SYNC_S48))) ||
+            ((hc >= (H_AREA + H_RBORDER_S48)) &&
+             (hc <  (H_AREA + H_RBORDER_S48 + H_BLANK1_S48 + H_SYNC_S48 + H_BLANK2_S48))) :
+    (machine == MACHINE_S128 || machine == MACHINE_S3)?
         ((vc >= (V_AREA + V_BBORDER_S128)) && (vc < (V_AREA + V_BBORDER_S128 + V_SYNC_S128))) ||
             ((hc >= (H_AREA + H_RBORDER_S128)) &&
              (hc <  (H_AREA + H_RBORDER_S128 + H_BLANK1_S128 + H_SYNC_S128 + H_BLANK2_S128))) :
-    // 48K
-        ((vc >= (V_AREA + V_BBORDER_S48)) && (vc < (V_AREA + V_BBORDER_S48 + V_SYNC_S48))) ||
-            ((hc >= (H_AREA + H_RBORDER_S48)) &&
-             (hc <  (H_AREA + H_RBORDER_S48 + H_BLANK1_S48 + H_SYNC_S48 + H_BLANK2_S48))) ;
+    // Pentagon
+        ((vc >= (V_AREA + V_BBORDER_PENT)) && (vc < (V_AREA + V_BBORDER_PENT + V_SYNC_PENT))) ||
+            ((hc >= (H_AREA + H_RBORDER_PENT)) &&
+             (hc <  (H_AREA + H_RBORDER_PENT + H_BLANK1_PENT + H_SYNC_PENT + H_BLANK2_PENT))) ;
 
 
 always @(posedge clk28 or negedge rst_n) begin
@@ -175,7 +175,7 @@ end
 
 wire screen_show = (vc < V_AREA) && (hc0 >= (SCREEN_DELAY<<2) - 1) && (hc0 < ((H_AREA + SCREEN_DELAY)<<2) - 1);
 wire screen_update = hc0[4:0] == 5'b10011;
-wire border_update = (hc0[4:0] == 5'b10011) || (timings == TIMINGS_PENT && ck7);
+wire border_update = (hc0[4:0] == 5'b10011) || (machine == MACHINE_PENT && ck7);
 wire bitmap_shift = hc0[1:0] == 2'b11;
 wire next_addr = hc0[4:0] == 5'b10001;
 
@@ -278,7 +278,7 @@ end
 
 
 assign port_ff_data = 
-    (loading && ((timings == TIMINGS_PENT) || hc[3:1] == 3'h6 || hc[3:1] == 3'h0))? attr_next :
+    (loading && ((machine == MACHINE_PENT) || hc[3:1] == 3'h6 || hc[3:1] == 3'h0))? attr_next :
     (loading && (hc[3] && hc[1]))? bitmap_next :
     8'hFF;
 
