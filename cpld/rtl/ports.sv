@@ -10,6 +10,7 @@ module ports(
     output d_out_active,
 
     input machine_t machine,
+    input port_ff_active,
     input [7:0] port_ff_data,
     input [4:0] kd,
     input [7:0] kempston_data,
@@ -38,8 +39,8 @@ always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         port_ff_rd <= 0;
     else
-        port_ff_rd <= bus.rd && bus.ioreq && !magic_map && (machine != MACHINE_S3) &&
-            (machine != MACHINE_PENT || bus.a[7:0] == 8'hFF);
+        port_ff_rd <= bus.rd && bus.ioreq && !magic_map && port_ff_active &&
+            (machine != MACHINE_S3) && (machine != MACHINE_PENT || bus.a[7:0] == 8'hFF);
 end
 
 

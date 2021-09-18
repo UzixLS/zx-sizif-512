@@ -24,6 +24,7 @@ module screen(
     output contention,
     output blink,
     output reg even_line,
+    output port_ff_active,
     output [7:0] port_ff_data,
 
     output [8:0] hc_out,
@@ -277,9 +278,13 @@ always @(posedge clk28 or negedge rst_n) begin
 end
 
 
+/* ATTRIBUTE PORT */
+wire port_ff_attr = (machine == MACHINE_PENT) || hc[3:1] == 3'h6 || hc[3:1] == 3'h0;
+wire port_ff_bitmap = (hc[3] && hc[1]);
+assign port_ff_active = loading && (port_ff_attr || port_ff_bitmap);
 assign port_ff_data = 
-    (loading && ((machine == MACHINE_PENT) || hc[3:1] == 3'h6 || hc[3:1] == 3'h0))? attr_next :
-    (loading && (hc[3] && hc[1]))? bitmap_next :
+    port_ff_attr? attr_next :
+    port_ff_bitmap? bitmap_next :
     8'hFF;
 
 assign contention = (vc < V_AREA) && (hc < H_AREA) && (hc[2] || hc[3]);

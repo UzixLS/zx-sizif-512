@@ -132,7 +132,7 @@ wire up_write_req;
 wire [2:0] screen_border = {border[2] ^ ~sd_cs, border[1] ^ magic_beeper, border[0]};
 wire [2:0] r0, g0;
 wire [1:0] b0;
-wire screen_fetch, screen_fetch_up, screen_contention;
+wire screen_fetch, screen_fetch_up, screen_contention, port_ff_active;
 wire [14:0] screen_addr;
 wire [5:0] screen_up_addr;
 wire [7:0] port_ff_data;
@@ -165,6 +165,7 @@ screen screen0(
     .contention(screen_contention),
     .blink(blink),
     .even_line(even_line),
+    .port_ff_active(port_ff_active),
     .port_ff_data(port_ff_data),
 
     .vc_out(vc),
@@ -369,6 +370,7 @@ ports ports0 (
     .en_sinclair(joy_sinclair),
 
     .machine(machine),
+    .port_ff_active(port_ff_active),
     .port_ff_data(port_ff_data),
     .kd(kd & ps2_kd),
     .kempston_data(kempston_data),
