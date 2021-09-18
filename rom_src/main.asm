@@ -331,6 +331,12 @@ delay_10ms:
     ld a, (cfg.clock)
     or a
     jr z, .loop
+    ld c, 9
+    dec a
+    jr z, .loop
+    ld c, 11
+    dec a
+    jr z, .loop
     ld c, 7*2
     dec a
     jr z, .loop

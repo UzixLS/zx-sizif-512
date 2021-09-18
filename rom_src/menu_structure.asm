@@ -63,6 +63,8 @@ menu_clock_value_cb:
     jp menu_value_get
 .values_table:
     DW str_cpu_35_end-2
+    DW str_cpu_44_end-2
+    DW str_cpu_52_end-2
     DW str_cpu_7_end-2
     DW str_cpu_14_end-2
 
@@ -186,7 +188,7 @@ menu_machine_cb:
 
 menu_clock_cb:
     ld a, (cfg.clock)
-    ld c, 2
+    ld c, 4
     call menu_handle_press
     ld (cfg.clock), a
     ld bc, #03ff

@@ -118,7 +118,7 @@ always @(posedge clk28 or negedge rst_n) begin
         8'h00: magic_reboot <= bus.d[0];
         8'h01: magic_beeper <= bus.d[0];
         8'h02: machine <= machine_t'(bus.d[2:0]);
-        8'h03: turbo <= turbo_t'(bus.d[1:0]);
+        8'h03: turbo <= turbo_t'(bus.d[2:0]);
         8'h04: panning <= panning_t'(bus.d[1:0]);
         8'h05: {rom_custom_en, rom_custom} <= {bus.d[7], bus.d[1:0]};
         8'h06: {rom_alt48_en, rom_alt48} <= {bus.d[0] | bus.d[1], bus.d[1]};

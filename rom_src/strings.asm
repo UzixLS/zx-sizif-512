@@ -49,6 +49,12 @@ str_cpu_end:
 str_cpu_35: DB "3.5MHz",0
 str_cpu_35_end:
 
+str_cpu_44: DB "4.4MHz",0
+str_cpu_44_end:
+
+str_cpu_52: DB "5.2MHz",0
+str_cpu_52_end:
+
 str_cpu_7: DB "  7MHz",0
 str_cpu_7_end:
 

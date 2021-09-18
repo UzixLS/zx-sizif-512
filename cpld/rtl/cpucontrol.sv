@@ -66,6 +66,10 @@ always @(posedge clk28) begin
         clkcpu <= clk14;
     else if (turbo == TURBO_7 && ck14)
         clkcpu <= clk7;
+    else if (turbo == TURBO_5 && ck14 && hc[1])
+        clkcpu <= clk7;
+    else if (turbo == TURBO_4 && ck14 && hc[1] && hc[2])
+        clkcpu <= clk7;
     else if (ck7)
         clkcpu <= clk35;
 end
