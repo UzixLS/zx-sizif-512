@@ -14,7 +14,7 @@ var_pause_is_released: DB 0
 var_menu_current_item: DB 0
 var_menu_animate_cnt: DB 0
 var_menu: MENU_T
-var_ext_presence: DB 0
+var_ext_presence: DB 1
 
 cfg CFG_T
 cfgext CFGEXT_T

@@ -30,7 +30,7 @@ custom_rom DB 0
 rom48      DB 0
 joystick   DB 0
 _reserv2   DB 0
-divmmc     DB 0
+divmmc     DB 2
 ulaplus    DB 1
 dac        DB 3
     ENDS
