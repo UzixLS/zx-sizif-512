@@ -1,3 +1,32 @@
+`ifdef REV_C
+    `define BANK_PENT_0 4'd0
+    `define BANK_S128_0 4'd0
+    `define BANK_S128_1 4'd1
+    `define BANK_MAGIC  4'd2
+    `define BANK_DIV    4'd3
+    `define BANK_S3_0   4'd4
+    `define BANK_S3_1   4'd5
+    `define BANK_S3_2   4'd6
+    `define BANK_S3_3   4'd1
+    `define BANK_48     4'd1
+    `define BANK_48ALT1 4'd7
+    `define BANK_48ALT2 4'd7
+`else
+    `define BANK_PENT_0 4'd0
+    `define BANK_S128_0 4'd12
+    `define BANK_S128_1 4'd1
+    `define BANK_MAGIC  4'd2
+    `define BANK_DIV    4'd3
+    `define BANK_S3_0   4'd4
+    `define BANK_S3_1   4'd5
+    `define BANK_S3_2   4'd6
+    `define BANK_S3_3   4'd14
+    `define BANK_48     4'd13
+    `define BANK_48ALT1 4'd7
+    `define BANK_48ALT2 4'd15
+`endif
+
+import common::*;
 module memcontrol(
     input clk28,
     cpu_bus bus,
@@ -9,6 +38,7 @@ module memcontrol(
     output n_vrd,
     output n_vwr,
 
+    input machine_t machine,
     input screenpage,
     input screen_fetch,
     input screen_fetch_up,
@@ -22,9 +52,11 @@ module memcontrol(
     input rompage128,
     input [2:0] port_1ffd,
     input [4:0] port_dffd,
-    input rom_plus3,
-    input rom_alt48,
     input [2:0] rampage_ext,
+    input rom_alt48_en,
+    input rom_alt48,
+    input rom_custom_en,
+    input [1:0] rom_custom,
     input divmmc_en,
     input div_ram,
     input div_map,
@@ -68,14 +100,32 @@ wire [18:13] ram_a =
     {2'b11, bus.a[14], bus.a[15], bus.a[14], bus.a[13]} ;
 
 assign ra[17:14] =
-    magic_map? 3'd2 :
-    div_map? 3'd3 :
-    (rom_plus3 && port_1ffd[2] == 1'b0 && rompage128 == 1'b0)? 3'd4 :
-    (rom_plus3 && port_1ffd[2] == 1'b0 && rompage128 == 1'b1)? 3'd5 :
-    (rom_plus3 && port_1ffd[2] == 1'b1 && rompage128 == 1'b0)? 3'd6 :
-    (rompage128 == 1'b1 && rom_alt48 == 1'b1)? 3'd7 :
-    (rompage128 == 1'b1)? 3'd1 :
-    3'd0;
+    magic_map? `BANK_MAGIC :
+    div_map? `BANK_DIV :
+`ifndef REV_C
+    rom_custom_en? {2'b10, rom_custom} :
+`endif
+    (machine == MACHINE_S3)? (
+        (port_1ffd[2] == 1'b0 && rompage128 == 1'b0)? `BANK_S3_0 :
+        (port_1ffd[2] == 1'b0 && rompage128 == 1'b1)? `BANK_S3_1 :
+        (port_1ffd[2] == 1'b1 && rompage128 == 1'b0)? `BANK_S3_2 :
+        (rom_alt48_en && rom_alt48)? `BANK_48ALT2 :
+        (rom_alt48_en)? `BANK_48ALT1 :
+        `BANK_S3_3 ) :
+    (machine == MACHINE_S128)? (
+        (rompage128 == 1'b0)? `BANK_S128_0 :
+        (rom_alt48_en && rom_alt48)? `BANK_48ALT2 :
+        (rom_alt48_en)? `BANK_48ALT1 :
+        `BANK_S128_1 ) :
+    (machine == MACHINE_PENT)? (
+        (rompage128 == 1'b0)? `BANK_PENT_0 :
+        (rom_alt48_en && rom_alt48)? `BANK_48ALT2 :
+        (rom_alt48_en)? `BANK_48ALT1 :
+        `BANK_S128_1 ) :
+    // 48K
+    (rom_alt48_en && rom_alt48)? `BANK_48ALT2 :
+    (rom_alt48_en)? `BANK_48ALT1 :
+    `BANK_48;
 
 assign va[18:0] =
     screen_fetch && screen_fetch_up? {2'b00, 3'b111, 8'b11111111, screen_up_addr} :

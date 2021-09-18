@@ -299,7 +299,9 @@ wire div_automap;
 wire [7:0] magic_dout;
 wire magic_dout_active;
 wire magic_mode, magic_map;
-wire joy_sinclair, rom_alt48, up_en, covox_en, sd_en;
+wire [1:0] rom_custom;
+wire rom_alt48_en, rom_alt48, rom_custom_en;
+wire joy_sinclair, up_en, covox_en, sd_en;
 panning_t panning;
 assign ay_mono = panning == PANNING_MONO;
 assign ay_abc = panning == PANNING_ABC;
@@ -332,7 +334,10 @@ magic magic0(
     .machine(machine),
     .turbo(turbo),
     .joy_sinclair(joy_sinclair),
+    .rom_alt48_en(rom_alt48_en),
     .rom_alt48(rom_alt48),
+    .rom_custom_en(rom_custom_en),
+    .rom_custom(rom_custom),
     .panning(panning),
     .divmmc_en(divmmc_en),
     .ulaplus_en(up_en),
@@ -500,6 +505,7 @@ memcontrol memcontrol0(
     .n_vrd(n_vrd),
     .n_vwr(n_vwr),
 
+    .machine(machine),
     .screenpage(screenpage),
     .screen_fetch(screen_fetch),
     .screen_fetch_up(screen_fetch_up),
@@ -513,9 +519,11 @@ memcontrol memcontrol0(
     .rompage128(rompage128),
     .port_1ffd(port_1ffd),
     .port_dffd(port_dffd),
-    .rom_plus3((machine == MACHINE_S3),
-    .rom_alt48(rom_alt48),
     .rampage_ext(rampage_ext),
+    .rom_alt48_en(rom_alt48_en),
+    .rom_alt48(rom_alt48),
+    .rom_custom_en(rom_custom_en),
+    .rom_custom(rom_custom),
     .divmmc_en(divmmc_en != DIVMMC_OFF),
     .div_ram(div_ram),
     .div_map(div_map),

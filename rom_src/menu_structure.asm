@@ -102,7 +102,8 @@ menu_rom48_value_cb:
     jp menu_value_get
 .values_table:
     DW str_rom48_default_end-2
-    DW str_rom48_alt_end-2
+    DW str_rom48_lg_end-2
+    DW str_rom48_opense_end-2
 
 menu_divmmc_value_cb:
     ld ix, .values_table
@@ -223,7 +224,11 @@ menu_joystick_cb:
 
 menu_rom48_cb:
     ld a, (cfg.rom48)
-    ld c, 1
+    IFDEF REV_C
+        ld c, 1
+    ELSE
+        ld c, 2
+    ENDIF
     call menu_handle_press
     ld (cfg.rom48), a
     ld bc, #06ff

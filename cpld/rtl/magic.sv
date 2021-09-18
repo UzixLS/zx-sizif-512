@@ -24,6 +24,9 @@ module magic(
     output machine_t machine,
     output turbo_t turbo,
     output panning_t panning,
+    output reg rom_custom_en,
+    output reg [1:0] rom_custom,
+    output reg rom_alt48_en,
     output reg rom_alt48,
     output reg joy_sinclair,
     output divmmc_t divmmc_en,
@@ -101,6 +104,9 @@ always @(posedge clk28 or negedge rst_n) begin
         machine <= MACHINE_PENT;
         turbo <= TURBO_NONE;
         panning <= PANNING_ABC;
+        rom_custom_en <= 0;
+        rom_custom <= 0;
+        rom_alt48_en <= 0;
         rom_alt48 <= 0;
         joy_sinclair <= 0;
         divmmc_en <= DIVMMC_NOOS;
@@ -114,7 +120,8 @@ always @(posedge clk28 or negedge rst_n) begin
         8'h02: machine <= machine_t'(bus.d[2:0]);
         8'h03: turbo <= turbo_t'(bus.d[1:0]);
         8'h04: panning <= panning_t'(bus.d[1:0]);
-        8'h06: rom_alt48 <= bus.d[0];
+        8'h05: {rom_custom_en, rom_custom} <= {bus.d[7], bus.d[1:0]};
+        8'h06: {rom_alt48_en, rom_alt48} <= {bus.d[0] | bus.d[1], bus.d[1]};
         8'h07: joy_sinclair <= bus.d[0];
         8'h09: divmmc_en <= divmmc_t'(bus.d[1:0]);
         8'h0a: ulaplus_en <= bus.d[0];

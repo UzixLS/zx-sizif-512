@@ -82,11 +82,11 @@ str_rom48_end:
 str_rom48_default: DB "Default",0
 str_rom48_default_end:
 
-str_rom48_alt: DB "    Alt",0
-str_rom48_alt_end:
+str_rom48_lg: DB "     LG",0
+str_rom48_lg_end:
 
-str_plus3: DB "+3",0
-str_plus3_end:
+str_rom48_opense: DB " OpenSE",0
+str_rom48_opense_end:
 
 str_divmmc: DB "DivMMC",0
 str_divmmc_end:

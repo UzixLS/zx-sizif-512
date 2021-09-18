@@ -1,5 +1,5 @@
 # Each bank = 16Kb
-bank00=128-0.rom              # 0x00000
+bank00=128p-0.rom             # 0x00000
 bank01=128-1.rom              # 0x04000
 bank02=../rom_src/main.bin    # 0x08000
 bank03=ESXMMC.BIN ESXMMC.BIN  # 0x0C000
@@ -8,14 +8,14 @@ bank05=dvmen3e1.rom           # 0x14000
 bank06=dvmen3e2.rom           # 0x18000
 bank07=lg18alt.rom            # 0x1C000
 # A17 (JP3)
-bank08=zxdiag.rom             # 0x20000
-bank09=zxdiag.rom             # 0x24000
-bank10=zxdiag.rom             # 0x28000
-bank11=zxdiag.rom             # 0x2C000
-bank12=zxdiag.rom             # 0x30000
-bank13=zxdiag.rom             # 0x34000
-bank14=zxdiag.rom             # 0x38000
-bank15=zxdiag.rom             # 0x3C000
+bank08=S128_ZX81_ED2_ROM.bin  # 0x20000
+bank09=S128_ZX80_ROM.bin      # 0x24000
+bank10=S128_ZX81_ED2_ROM.bin  # 0x28000
+bank11=S128_ZX80_ROM.bin      # 0x2C000
+bank12=128-0.rom              # 0x30000
+bank13=48.rom                 # 0x34000
+bank14=dvmen3e3.rom           # 0x38000
+bank15=opense.rom             # 0x3C000
 # A18 (JP2)
 bank16=DiagROM.v54            # 0x40000
 bank17=DiagROM.v54            # 0x44000
@@ -26,14 +26,14 @@ bank21=DiagROM.v54            # 0x54000
 bank22=DiagROM.v54            # 0x58000
 bank23=DiagROM.v54            # 0x5C000
 # A17+A18 (JP3+JP2)
-bank24=S128_ZX81_ED2_ROM.bin  # 0x60000
-bank25=S128_ZX81_ED2_ROM.bin  # 0x64000
-bank26=S128_ZX81_ED2_ROM.bin  # 0x68000
-bank27=S128_ZX81_ED2_ROM.bin  # 0x6C000
-bank28=S128_ZX81_ED2_ROM.bin  # 0x70000
-bank29=S128_ZX81_ED2_ROM.bin  # 0x74000
-bank30=S128_ZX81_ED2_ROM.bin  # 0x78000
-bank31=S128_ZX81_ED2_ROM.bin  # 0x7C000
+bank24=zxdiag.rom             # 0x60000
+bank25=zxdiag.rom             # 0x64000
+bank26=zxdiag.rom             # 0x68000
+bank27=zxdiag.rom             # 0x6C000
+bank28=zxdiag.rom             # 0x70000
+bank29=zxdiag.rom             # 0x74000
+bank30=zxdiag.rom             # 0x78000
+bank31=zxdiag.rom             # 0x7C000
 
 
 sizif512-040.rom: ${bank00} ${bank01} ${bank02} ${bank03} ${bank04} ${bank05} ${bank06} ${bank07} \

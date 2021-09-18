@@ -86,7 +86,7 @@ end
 /* PORT #7FFD */
 wire port_7ffd_cs = bus.ioreq && bus.a[1] == 0 && bus.a[15] == 0 &&
                     (bus.a[14] == 1'b1 || (!magic_map && machine != MACHINE_S3)) &&
-                    (machine != MACHINE_S48);
+                    (machine != MACHINE_S48 || magic_map);
 reg lock_7ffd;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
@@ -105,7 +105,7 @@ end
 
 
 /* PORT #DFFD */
-wire port_dffd_cs = bus.ioreq && bus.a == 16'hDFFD && machine == MACHINE_PENT;
+wire port_dffd_cs = bus.ioreq && bus.a == 16'hDFFD && (machine == MACHINE_PENT || magic_map);
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         rampage_ext <= 0;
@@ -119,7 +119,7 @@ end
 
 
 /* PORT #1FFD */
-wire port_1ffd_cs = bus.ioreq && bus.a == 16'h1FFD && machine == MACHINE_S3;
+wire port_1ffd_cs = bus.ioreq && bus.a == 16'h1FFD && (machine == MACHINE_S3 || magic_map);
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         port_1ffd <= 0;

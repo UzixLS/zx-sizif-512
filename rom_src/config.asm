@@ -1,3 +1,5 @@
+POWERON_DELAY           EQU 40 ; *20ms, for ps/2 keyboard initialization
+
 MENU_ENTER_DELAY        EQU 40 ; 400ms
 MENU_LEAVE_DELAY        EQU 2  ; 20ms
 
@@ -19,24 +21,24 @@ PAUSE_BODY_ATTR         EQU #00
 PAUSE_TEXT_ATTR         EQU #C7
 
     STRUCT CFG_T
-_reserv0 DB 0
-_reserv1 DB 0
-machine  DB 3
-clock    DB 0
-panning  DB 1
-_reserv3 DB 0
-rom48    DB 0
-joystick DB 0
-_reserv2 DB 0
-divmmc   DB 0
-ulaplus  DB 1
-dac      DB 3
+_reserv0   DB 0
+_reserv1   DB 0
+machine    DB 3
+clock      DB 0
+panning    DB 1
+custom_rom DB 0
+rom48      DB 0
+joystick   DB 0
+_reserv2   DB 0
+divmmc     DB 0
+ulaplus    DB 1
+dac        DB 3
     ENDS
 
     STRUCT CFGEXT_T
-tsfm     DB 1
-saa      DB 1
-gs       DB 1
+tsfm       DB 1
+saa        DB 1
+gs         DB 1
     ENDS
 
 CFG_DEFAULT CFG_T
