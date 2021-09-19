@@ -305,6 +305,9 @@ always @* begin
         {g[1], r[1], b[0]} = ((g[2] | r[2] | b[1]) & attr[6])? 3'b111 : 3'b000;
         {g[0], r[0]} = 2'b00;
     end
+end
+
+always @(posedge clk28) begin
     csync = ~(vsync0 ^ hsync0);
     vsync = vsync0;
     hsync = hsync0;
