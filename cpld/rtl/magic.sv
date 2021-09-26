@@ -31,6 +31,7 @@ module magic(
     output reg joy_sinclair,
     output divmmc_t divmmc_en,
     output reg ulaplus_en,
+    output reg ay_en,
     output reg covox_en,
     output reg sd_en
 );
@@ -111,6 +112,7 @@ always @(posedge clk28 or negedge rst_n) begin
         joy_sinclair <= 0;
         divmmc_en <= DIVMMC_NOOS;
         ulaplus_en <= 1'b1;
+        ay_en <= 1'b1;
         covox_en <= 1'b1;
         sd_en <= 1'b1;
     end
@@ -123,6 +125,7 @@ always @(posedge clk28 or negedge rst_n) begin
         8'h05: {rom_custom_en, rom_custom} <= {bus.d[7], bus.d[1:0]};
         8'h06: {rom_alt48_en, rom_alt48} <= {bus.d[0] | bus.d[1], bus.d[1]};
         8'h07: joy_sinclair <= bus.d[0];
+        8'h08: ay_en <= bus.d[0];
         8'h09: divmmc_en <= divmmc_t'(bus.d[1:0]);
         8'h0a: ulaplus_en <= bus.d[0];
         8'h0b: {sd_en, covox_en} <= bus.d[1:0];

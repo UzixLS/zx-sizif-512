@@ -2,6 +2,7 @@ import common::*;
 module ay(
     input rst_n,
     input clk28,
+    input en,
 
     cpu_bus bus,
     input ck35,
@@ -27,8 +28,8 @@ always @(posedge clk28 or negedge rst_n) begin
     else begin
         if (ck35)
             ay_clk <= ~ay_clk;
-        ay_bc1  <= bus.a[15] == 1'b1 && bus.a[14] == 1'b1 && bus.a[1] == 0 && bus.ioreq;
-        ay_bdir <= bus.a[15] == 1'b1 && bus.a[1] == 0 && bus.ioreq && bus.wr;
+        ay_bc1  <= en && bus.a[15] == 1'b1 && bus.a[14] == 1'b1 && bus.a[1] == 0 && bus.ioreq;
+        ay_bdir <= en && bus.a[15] == 1'b1 && bus.a[1] == 0 && bus.ioreq && bus.wr;
     end
 end
 

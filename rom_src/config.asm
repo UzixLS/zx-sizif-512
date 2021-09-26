@@ -29,7 +29,7 @@ panning    DB 1
 custom_rom DB 0
 rom48      DB 0
 joystick   DB 0
-_reserv2   DB 0
+ay         DB 1
 divmmc     DB 2
 ulaplus    DB 1
 dac        DB 3

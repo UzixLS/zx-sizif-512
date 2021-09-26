@@ -302,7 +302,7 @@ wire magic_dout_active;
 wire magic_mode, magic_map;
 wire [1:0] rom_custom;
 wire rom_alt48_en, rom_alt48, rom_custom_en;
-wire joy_sinclair, up_en, covox_en, sd_en;
+wire joy_sinclair, up_en, ay_en, covox_en, sd_en;
 panning_t panning;
 assign ay_mono = panning == PANNING_MONO;
 assign ay_abc = panning == PANNING_ABC;
@@ -342,6 +342,7 @@ magic magic0(
     .panning(panning),
     .divmmc_en(divmmc_en),
     .ulaplus_en(up_en),
+    .ay_en(ay_en),
     .covox_en(covox_en),
     .sd_en(sd_en)
 );
@@ -398,6 +399,7 @@ wire ay_dout_active;
 ay ay0(
     .rst_n(usrrst_n),
     .clk28(clk28),
+    .en(ay_en),
     .bus(bus),
     .ck35(ck35),
     .ay_clk(ay_clk),

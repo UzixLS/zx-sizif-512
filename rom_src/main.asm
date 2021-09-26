@@ -50,6 +50,7 @@ startup_handler:
     call init_default_config
     call detect_sd_card
     call detect_ext_board
+    call detect_external_ay
     call check_custom_rom
 .warm_boot:
     call load_config
@@ -254,6 +255,29 @@ detect_ext_board:
     ld a, 1
 .cfg_gs:
     ld (cfgext_saved.gs), a
+    ret
+
+
+; Check if external AY addon connected to zx bus
+; If yes - disable internal AY and TSFM on extension board
+detect_external_ay:
+    ld bc, #08ff    ; disable main AY 
+    xor a           ; ...
+    out (c), a      ; ...
+    ld b, #e1       ; disable extension board's AY 
+    out (c), a      ; ...
+    ld bc, #fffd    ; set AY register = R6
+    ld a, 6         ; ...
+    out (c), a      ; ...
+    ld b, #bf       ; write some value to register
+    out (c), a      ; ...
+    ld b, #ff       ; read back this value
+    in a, (c)       ; ...
+    cp 6                      ; if read and written values are same - disable internal AY
+    ret nz                    ; ...
+    xor a                     ; ...
+    ld (cfg_saved.ay), a      ; ...
+    ld (cfgext_saved.tsfm), a ; ...
     ret
 
 
