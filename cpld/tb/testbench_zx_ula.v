@@ -157,13 +157,22 @@ assign d_cpu_i =
 // assign a_cpu = a_cpu_cpu;
 
 /* CPU SIGNALS (Z84C0020 timings) */
-//assign #40 n_rd = n_rd_cpu; //TdCf(RDf)
-//assign #40 n_wr = n_wr_cpu; //TdCf(WRf)
-//assign #40 n_iorq = n_iorq_cpu; //TdCr(IORQf)
-//assign #40 n_mreq = n_mreq_cpu; //TdCf(MREQf)
-//assign #45 n_m1 = n_m1_cpu; //TdCr(M1f)
-//assign #60 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
-//assign #57 a_cpu = a_cpu_cpu; //TdCr(A)
+// assign #40 n_rd = n_rd_cpu; //TdCf(RDf)
+// assign #40 n_wr = n_wr_cpu; //TdCf(WRf)
+// assign #40 n_iorq = n_iorq_cpu; //TdCr(IORQf)
+// assign #40 n_mreq = n_mreq_cpu; //TdCf(MREQf)
+// assign #45 n_m1 = n_m1_cpu; //TdCr(M1f)
+// assign #60 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
+// assign #57 a_cpu = a_cpu_cpu; //TdCr(A)
+
+/* CPU SIGNALS (Z84C0010 timings) */
+// assign #65 n_rd = n_rd_cpu; //TdCf(RDf)
+// assign #50 n_wr = n_wr_cpu; //TdCf(WRf)
+// assign #50 n_iorq = n_iorq_cpu; //TdCr(IORQf)
+// assign #55 n_mreq = n_mreq_cpu; //TdCf(MREQf)
+// assign #65 n_m1 = n_m1_cpu; //TdCr(M1f)
+// assign #80 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
+// assign #65 a_cpu = a_cpu_cpu; //TdCr(A)
 
 /* CPU SIGNALS (Z84C0008 timings) */
 assign #70 n_rd = n_rd_cpu; //TdCf(RDf)
@@ -218,7 +227,8 @@ initial begin
     $dumpfile("testbench_zx_ula.vcd");
     $dumpvars;
     #500_000 $finish;
-    // #21_000_000 $finish;
+    #21_000_000 $finish;
+    #41_000_000 $finish;
 end
 
 
