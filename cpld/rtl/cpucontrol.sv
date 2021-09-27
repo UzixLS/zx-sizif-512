@@ -29,7 +29,7 @@ module cpucontrol(
 
 
 /* CONTENTION */
-wire iorq_contended = bus.iorq && (~bus.a[0] || (~bus.a[1] && ~bus.a[15]));
+wire iorq_contended = bus.iorq && (~bus.a[0] || (~bus.a[1] && ~bus.a[15])) && (machine != MACHINE_S3);
 reg mreq_delayed, iorq_delayed;
 always @(posedge clkcpu)
     mreq_delayed <= bus.mreq;
