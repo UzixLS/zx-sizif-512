@@ -120,7 +120,8 @@ end
 
 
 /* PORT #1FFD */
-wire port_1ffd_cs = bus.ioreq && bus.a == 16'h1FFD && (machine == MACHINE_S3 || magic_map);
+wire port_1ffd_cs = bus.ioreq && bus.a[15:12] == 4'b0001 && !bus.a[1] &&
+                    (machine == MACHINE_S3 || magic_map);
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         port_1ffd <= 0;
@@ -134,7 +135,8 @@ end
 
 
 /* PORTS #2FFD & #3FFD (+3DOS) */
-wire port_2ffd_3ffd_cs = bus.ioreq && (bus.a == 16'h2FFD || bus.a == 16'h3FFD) && (machine == MACHINE_S3);
+wire port_2ffd_3ffd_cs = bus.ioreq && bus.a[15:13] == 3'b001 && !bus.a[1] &&
+                         (machine == MACHINE_S3);
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         plus3_dwr <= 1'b1;
