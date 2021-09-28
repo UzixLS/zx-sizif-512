@@ -155,7 +155,7 @@ screen screen0(
     .vsync(vsync),
     .hsync(hsync),
 
-    .fetch_allow((!up_write_req && !bus.mreq) || bus.rfsh || clkwait),
+    .fetch_allow((!up_write_req && !bus.mreq) || bus.rfsh || (clkwait && turbo == TURBO_NONE)),
     .fetch(screen_fetch),
     .fetch_up(screen_fetch_up),
     .addr(screen_addr),
@@ -277,7 +277,7 @@ cpucontrol cpucontrol0(
     .machine(machine),
     .screen_contention(screen_contention),
     .turbo(turbo),
-    .ext_wait_cycle(div_wait || up_active),
+    .ext_wait_cycle(div_wait),
 
     .n_rstcpu(n_rstcpu0),
     .clkcpu(clkcpu),

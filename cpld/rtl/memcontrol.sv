@@ -32,11 +32,11 @@ module memcontrol(
     cpu_bus bus,
     inout [7:0] xd,
     output [17:14] ra,
-    output n_romcs,
+    output reg n_romcs,
     output [18:0] va,
     inout [7:0] vd,
     output n_vrd,
-    output n_vwr,
+    output reg n_vwr,
 
     input machine_t machine,
     input screenpage,
@@ -74,23 +74,43 @@ module memcontrol(
     input [7:0] ports_dout
 );
 
-wire romreq =  bus.mreq && !bus.rfsh &&  bus.a[14] == 0 && bus.a[15] == 0 &&
-        (magic_map || (!div_ram && div_map) || (!div_ram && !port_dffd[4] && !port_1ffd[0]));
-wire ramreq = (bus.mreq && !bus.rfsh && !romreq) || up_write_req;
-wire ramreq_wr = ramreq && bus.wr && div_ramwr_mask == 0;
+wire [18:13] ram_a;
 
-assign n_romcs = (romreq && bus.mreq)? 1'b0 : 1'b1;
-assign n_vrd = ((ramreq && bus.rd) || screen_fetch)? 1'b0 : 1'b1;
-assign n_vwr = (ramreq_wr && bus.wr && !screen_fetch)? 1'b0 : 1'b1;
+assign n_vrd = 1'b0;
+
+reg romreq, ramreq;
+always @(posedge clk28) begin
+    romreq =  bus.mreq && !bus.rfsh && bus.a[15:14] == 2'b00 &&
+        (magic_map || (!div_ram && div_map) || (!div_ram && !port_dffd[4] && !port_1ffd[0]));
+    ramreq = (bus.mreq && !bus.rfsh && !romreq) || up_write_req;
+
+    n_vwr = ~(ramreq && bus.wr && !div_ramwr_mask && !screen_fetch);
+    n_romcs = ~romreq;
+end
+
+reg vwr0;
+reg [7:0] xd_bufwr;
+reg ramreq0;
+reg [18:0] va_buf;
+always @(negedge clk28) begin
+    if (~n_vwr && !vwr0)
+        xd_bufwr <= xd;
+    vwr0 <= ~n_vwr;
+
+    if (ramreq && !ramreq0)
+        va_buf <= {ram_a[18:13], bus.a[12:0]};
+    ramreq0 <= ramreq;
+end
+
 
 // reserve 128K RAM for DivMMC
 wire [1:0] rampage_ext0 = {divmmc_en? 1'b1 : ~rampage_ext[1], ~rampage_ext[0]};
 
-wire [18:13] ram_a =
+assign ram_a =
     magic_map & bus.a[15] & bus.a[14]? {2'b00, 3'b111, bus.a[13]} :
     magic_map? {3'b111, screenpage, bus.a[14:13]} :
-    div_map & ~bus.a[14] & ~bus.a[15] & bus.a[13]? {2'b01, div_page} :
-    div_map & ~bus.a[14] & ~bus.a[15]? {2'b01, 4'b0011} :
+    div_map & ~bus.a[15] & ~bus.a[14] & bus.a[13]? {2'b01, div_page} :
+    div_map & ~bus.a[15] & ~bus.a[14]? {2'b01, 4'b0011} :
     port_dffd[3] & bus.a[15]? {2'b11, bus.a[14], bus.a[15], bus.a[14], bus.a[13]} :
     port_dffd[3] & bus.a[14]? {rampage_ext0, rampage128, bus.a[13]} :
     (port_1ffd[2] == 1'b0 && port_1ffd[0] == 1'b1)? {2'b11, port_1ffd[1], bus.a[15], bus.a[14], bus.a[13]} :
@@ -98,6 +118,7 @@ wire [18:13] ram_a =
     (port_1ffd == 3'b111)? {2'b11, ~(bus.a[15] & bus.a[14]), (bus.a[15] | bus.a[14]), bus.a[14], bus.a[13]} :
     bus.a[15] & bus.a[14]? {rampage_ext0, rampage128, bus.a[13]} :
     {2'b11, bus.a[14], bus.a[15], bus.a[14], bus.a[13]} ;
+
 
 assign ra[17:14] =
     magic_map? `BANK_MAGIC :
@@ -132,7 +153,8 @@ assign va[18:0] =
     screen_fetch && snow? {3'b111, screenpage, screen_addr[14:8], bus.a[7:0]} :
     screen_fetch? {3'b111, screenpage, screen_addr} :
     up_write_req? {2'b00, 3'b111, 8'b11111111, up_write_addr} :
-    {ram_a[18:13], bus.a[12:0]};
+    va_buf;
+
 
 // this is required because of weak xd pullup causing garbage reads from nonexisting ports
 reg [1:0] xd_precharge0;
@@ -151,8 +173,8 @@ assign xd[7:0] =
     {8{1'bz}} ;
 
 assign vd[7:0] =
-    n_vrd == 0? {8{1'bz}} :
-    xd;
+    (~n_vwr & vwr0)? xd_bufwr :
+    {8{1'bz}};
 
 
 endmodule

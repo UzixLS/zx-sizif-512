@@ -45,19 +45,22 @@ assign snow = bus.a[14] && ~bus.a[15] && bus.rfsh && (machine == MACHINE_S48 || 
 
 
 /* CLOCK */
-reg [2:0] turbo_wait;
-wire turbo_wait_trig0 = bus.rd || bus.wr;
-reg turbo_wait_trig1;
+reg [3:0] turbo_wait;
+wire turbo_wait_trig0 = turbo == TURBO_14 && bus.mreq && !bus.rfsh;
+wire turbo_wait_trig1 = turbo == TURBO_14 && (bus.rd || bus.wr);
+reg turbo_wait_trig0_prev, turbo_wait_trig1_prev;
 always @(posedge clk28) begin
-    turbo_wait[0] <= turbo == TURBO_14 && turbo_wait_trig0 && !turbo_wait_trig1;
-    turbo_wait[1] <= turbo_wait[0] && (bus.iorq || ext_wait_cycle);
-    turbo_wait[2] <= turbo_wait[1];
-    turbo_wait_trig1 <= turbo_wait_trig0;
+    turbo_wait[0] <= turbo_wait_trig0 && !turbo_wait_trig0_prev;
+    turbo_wait[1] <= turbo_wait[0] || (turbo_wait_trig1 && !turbo_wait_trig1_prev);
+    turbo_wait[2] <= turbo_wait[1] && (bus.iorq || ext_wait_cycle);
+    turbo_wait[3] <= turbo_wait[2];
+    turbo_wait_trig0_prev <= turbo_wait_trig0;
+    turbo_wait_trig1_prev <= turbo_wait_trig1;
 end
 
 reg clkcpu_prev;
 assign clkcpu_ck = clkcpu && !clkcpu_prev;
-assign clkwait = contention || (|turbo_wait);
+assign clkwait = contention || (|turbo_wait[3:1]);
 always @(posedge clk28) begin
     clkcpu_prev <= clkcpu;
     if (clkwait)

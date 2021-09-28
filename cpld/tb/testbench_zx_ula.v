@@ -111,8 +111,10 @@ end
 
 reg [7:0] ram [0:524288];
 reg [7:0] ram_q;
+wire [7:0] ram_q0;
+assign #55 ram_q0 = ram_q;
 wire [18:0] ram_addr_a;
-always @(posedge clk28) begin
+always @* begin
     if (n_vwr == 0) begin
         ram[ram_addr_a] <= vd;
     end
@@ -133,7 +135,7 @@ assign rom_addr = {ra[16:14], a_cpu[13:0]};
 assign ram_addr_a = va;
 
 assign vd =
-    ~n_vrd? ram_q :
+    (~n_vrd & n_vwr)? ram_q0 :
     {8{1'bz}};
 
 assign (weak0, weak1) xd =
