@@ -29,12 +29,12 @@ module cpucontrol(
 
 
 /* CONTENTION */
-wire iorq_contended = bus.iorq && (~bus.a[0] || (~bus.a[1] && ~bus.a[15])) && (machine != MACHINE_S3);
+wire iorq_contended = bus.iorq && (~bus.a[0] || (~bus.a[1] && ~bus.a[15] && bus.wr)) && (machine != MACHINE_S3);
 reg mreq_delayed, iorq_delayed;
 always @(posedge clkcpu)
     mreq_delayed <= bus.mreq;
 always @(posedge clkcpu)
-    iorq_delayed <= iorq_contended;
+    iorq_delayed <= bus.iorq && ~bus.a[0];
 wire contention_mem_page = (machine == MACHINE_S3)? rampage128[2] : rampage128[0];
 wire contention_mem_addr = bus.a[14] & (~bus.a[15] | (bus.a[15] & contention_mem_page));
 wire contention_mem = iorq_delayed == 1'b0 && mreq_delayed == 1'b0 && contention_mem_addr;
