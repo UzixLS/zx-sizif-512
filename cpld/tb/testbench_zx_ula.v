@@ -7,7 +7,8 @@ reg clk28;
 
 
 /* CPU */
-wire clkcpu;
+wire clkcpu, clkcpu0;
+assign #5 clkcpu0 = clkcpu;
 wire n_rstcpu;
 wire [15:0] a_cpu, a_cpu_cpu;
 wire [7:0] d_cpu_o, d_cpu_i;
@@ -23,7 +24,7 @@ wire n_nmi, n_nmi0;
 
 T80na cpu1(
     .RESET_n(n_rstcpu),
-    .CLK_n(clkcpu),
+    .CLK_n(clkcpu0),
     .WAIT_n(n_wait_cpu),
     .INT_n(n_int),
     .NMI_n(n_nmi0),
@@ -123,7 +124,7 @@ end
 initial begin
     integer i;
     for (i = 0; i < 524288; i++)
-        ram[i] <= 0;
+        ram[i] <= i[7:0];
 end
 
 
@@ -159,13 +160,13 @@ assign d_cpu_i =
 // assign a_cpu = a_cpu_cpu;
 
 /* CPU SIGNALS (Z84C0020 timings) */
-// assign #40 n_rd = n_rd_cpu; //TdCf(RDf)
-// assign #40 n_wr = n_wr_cpu; //TdCf(WRf)
-// assign #40 n_iorq = n_iorq_cpu; //TdCr(IORQf)
-// assign #40 n_mreq = n_mreq_cpu; //TdCf(MREQf)
-// assign #45 n_m1 = n_m1_cpu; //TdCr(M1f)
-// assign #60 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
-// assign #57 a_cpu = a_cpu_cpu; //TdCr(A)
+assign #40 n_rd = n_rd_cpu; //TdCf(RDf)
+assign #40 n_wr = n_wr_cpu; //TdCf(WRf)
+assign #40 n_iorq = n_iorq_cpu; //TdCr(IORQf)
+assign #40 n_mreq = n_mreq_cpu; //TdCf(MREQf)
+assign #45 n_m1 = n_m1_cpu; //TdCr(M1f)
+assign #60 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
+assign #57 a_cpu = a_cpu_cpu; //TdCr(A)
 
 /* CPU SIGNALS (Z84C0010 timings) */
 // assign #65 n_rd = n_rd_cpu; //TdCf(RDf)
@@ -177,13 +178,13 @@ assign d_cpu_i =
 // assign #65 a_cpu = a_cpu_cpu; //TdCr(A)
 
 /* CPU SIGNALS (Z84C0008 timings) */
-assign #70 n_rd = n_rd_cpu; //TdCf(RDf)
-assign #60 n_wr = n_wr_cpu; //TdCf(WRf)
-assign #55 n_iorq = n_iorq_cpu; //TdCr(IORQf)
-assign #60 n_mreq = n_mreq_cpu; //TdCf(MREQf)
-assign #70 n_m1 = n_m1_cpu; //TdCr(M1f)
-assign #95 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
-assign #80 a_cpu = a_cpu_cpu; //TdCr(A)
+// assign #70 n_rd = n_rd_cpu; //TdCf(RDf)
+// assign #60 n_wr = n_wr_cpu; //TdCf(WRf)
+// assign #55 n_iorq = n_iorq_cpu; //TdCr(IORQf)
+// assign #60 n_mreq = n_mreq_cpu; //TdCf(MREQf)
+// assign #70 n_m1 = n_m1_cpu; //TdCr(M1f)
+// assign #95 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
+// assign #80 a_cpu = a_cpu_cpu; //TdCr(A)
 
 /* CPU SIGNALS (Z84C0004 timings) */
 // assign #85 n_rd = n_rd_cpu; //TdCf(RDf)

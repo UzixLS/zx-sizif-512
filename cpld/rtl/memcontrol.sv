@@ -90,16 +90,14 @@ end
 
 reg vwr0;
 reg [7:0] xd_bufwr;
-reg ramreq0;
 reg [18:0] va_buf;
 always @(negedge clk28) begin
     if (~n_vwr && !vwr0)
         xd_bufwr <= xd;
     vwr0 <= ~n_vwr;
 
-    if (ramreq && !ramreq0)
+    if (bus.mreq && ramreq)
         va_buf <= {ram_a[18:13], bus.a[12:0]};
-    ramreq0 <= ramreq;
 end
 
 
