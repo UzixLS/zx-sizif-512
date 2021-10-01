@@ -22,7 +22,9 @@ reserved DW
     MENUENTRY_T str_cpu         menu_clock_value_cb       menu_clock_cb
     MENUENTRY_T str_panning     menu_panning_value_cb     menu_panning_cb
     MENUENTRY_T str_joystick    menu_joystick_value_cb    menu_joystick_cb
+    IFNDEF SIZIFXXS
     MENUENTRY_T str_rom48       menu_rom48_value_cb       menu_rom48_cb
+    ENDIF
     MENUENTRY_T str_divmmc      menu_divmmc_value_cb      menu_divmmc_cb
     MENUENTRY_T str_ulaplus     menu_ulaplus_value_cb     menu_ulaplus_cb
     MENUENTRY_T str_dac         menu_dac_value_cb         menu_dac_cb
