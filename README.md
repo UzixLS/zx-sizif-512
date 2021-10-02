@@ -4,17 +4,16 @@ Another CPLD-based ZX Spectrum clone for 48K rubber case with some sweet feature
 [![photo](images/revD.small.jpg)](images/revD.jpg?raw=true)
 
 ### Tech specs
-* Half-sized PCB for 48K rubber case, case modifications isn't necessary
-* Pentagon, Spectrum 128K and Spectrum 48K timings
+* Half-sized PCB for 48K rubber case
+* Pentagon, Spectrum 128, Spectrum 48 and Spectrum +3e modes
 * Altera EPM1270 CPLD
-* Real Z80 in 3.5MHz, 7MHz (no-wait turbo) and 14MHz (turbo with wait-states) modes
-* Switchable 128K / +3e-divmmc ROM
+* Real Z80 in 3.5MHz, 4.4MHz, 5.2MHz, 7MHz (no-wait turbo) and 14MHz (turbo with wait-states) modes
 * 512K RAM
-* Real AY-8910 with switchable stereo ABC/ACB/mono output
+* Real AY-3-8910 with switchable stereo ABC/ACB/mono output
 * Sega 6-button joystick input; Kempston/Sinclair modes
 * Integrated DivMMC, 1x microSD socket
-* PAL and RGB video out (Sega Mini-DIN/9 connector)
-* Digital video out for EGA monitors
+* PAL and RGB video output (Sega Mini-DIN/9 connector)
+* Digital video output header for EGA monitors, VGA scandoublers, etc.
 * ULAplus
 * Mono covox (Pentagon standard)
 * SounDrive (4-channel stereo covox)
@@ -30,7 +29,7 @@ With extension board ([link](https://github.com/UzixLS/zx-sizif-512-ext)) more f
 * MIDI sound
 
 ### Demonstration
-Running Pentagon 128 and Spectrum 128 demos: [link](https://www.youtube.com/watch?v=_RoLKcfJSTY)  
+Running Pentagon and Spectrum 128 demos: [link](https://www.youtube.com/watch?v=_RoLKcfJSTY)  
 Playing music from SD: [link](https://www.youtube.com/watch?v=TmikKD3yqOU)  
 Some random photos: [link](https://cloud.err200.net/index.php/s/73TR85tYZkMm8Ax?path=%2Fsizif-512)
 
@@ -39,8 +38,7 @@ Review by The Retro Shack youtube channel: [link](https://www.youtube.com/watch?
 Building from scratch experience in Terence Ang's blog: [part1](https://www.terenceang.com/2021/08/28/building-a-zx-spectrum-clone-in-2021-begining/) [part2](https://www.terenceang.com/2021/08/29/building-a-zx-spectrum-clone-in-2021-sourcing-for-parts/) [part3](https://www.terenceang.com/2021/08/31/building-a-zx-spectrum-clone-in-2021-populating-the-board/)
 
 ### Magic button
-Sizif have some configurable things which you may change at any moment and that's doesn't require reboot.
-To do this just hold Magic button for a second.
+Sizif has a number of configurable parameters that you can change on the fly. To do this just hold Magic button for a second.
 
 [![photo](doc/sizif-menu.gif)](doc/sizif-menu.gif?raw=true)
 
@@ -69,8 +67,7 @@ Sega gamepad support will be available starting from PCB rev.D (or Rev.C with sl
 | Button | Function |
 | - | - |
 | F5 | Magic button |
-| F11 | Leave pause |
-| F12 | Enter pause |
+| F12 | Pause |
 | Ctrl+Alt+Del | Reboot |
 | Ctrl+Alt+Backspace | Reboot |
 | Numpad 8, 2/5, 4, 6 | Joystick's up-down-left-right |
@@ -81,6 +78,7 @@ Sega gamepad support will be available starting from PCB rev.D (or Rev.C with sl
 Sizif contains 512K RAM. There are two cases how to access it:
 1. DivMMC enabled (SD card insert) - 128K available via 7FFDh port, 128K via DFFDh (Profi standart, most compatible with old 128K software) and 128K reserved for DivMMC.
 2. No SD card present - 128K available via 7FFDh and 384K via DFFDh. Please note: ULAplus and Magic button shares one page of memory with DFFD port. If you run 512K-software, it's good idea not to use ULAplus and Magic.
+Note that DFFDh port available only in Pentagon mode.
 
 ### SD card
 Sizif have preinstalled esxDOS firmware, which provides ability to load TAP, TRD, SCL, Z80 files and save snapshots. To use this you should format SD cart to FAT32 or FAT16 and unpack latest esxDOS release ([link](http://www.esxdos.org/index.html)) to card. Also it's recommended to install Long Filename Browser ([link](https://spectrumcomputing.co.uk/forums/viewtopic.php?t=2553)) to card.
@@ -88,14 +86,16 @@ Sizif have preinstalled esxDOS firmware, which provides ability to load TAP, TRD
 You may observe strange lines on border and creaky sounds on SD card access. It's not a bug, it's a feature ;)
 
 ### Tested addons
-* AYX-32 - OK
-* BDI-ZX ver 2.0 MVcomp - OK (if SD card isn't insert)
-* ZX Dandanator! Mini 2.1 - OK (if SD card isn't insert)
-* ZX TSid - OK
-* Multiface 128 1.00 by Steve Smith - OK (if SD card isn't insert)
+* [AYX-32](https://github.com/tslabs/arm/tree/master/AYX-32) - OK
+* BDI-ZX ver 2.0 MVcomp FDD interface - OK
+* [ZX Dandanator! Mini 2.1](http://www.dandare.es/Proyectos_Dandare/ZX_Dandanator%21_Mini_EN.html) - OK
+* [ZX TSid](https://github.com/UzixLS/zx-tsid) - OK
+* [Multiface 128 1.00 by Steve Smith](http://projectspeccy.com/projects/) - OK (if SD card isn't insert)
 * Noname +3DOS floppy controller - OK (since rev.D)
+* [PLUS 2A FDD Interface](https://github.com/konkotgit/PLUS-2A-FDD) - OK (since rev.D)
 * DivIDE 5.7d - OK (if SD card isn't insert)
 * DMA 2.02 by ShamaZX - OK
+* [Kempston + TurboSound interface](https://github.com/konkotgit/KTS) - OK
 
 ### Changelog & current status
 * Rev.A - first release. Please note the [errata](pcb/rev.A/ERRATA.ru.txt) (in russian).
@@ -112,13 +112,9 @@ You may observe strange lines on border and creaky sounds on SD card access. It'
     * fixed compatibility with some keyboards
 * Rev.D1: minor changes in pcb layout
 
-### Roadmap
-Firmware:
-* improve 48K/128K timings for 100% compatibility
-
 ### Acknowledgments
-This work is based on a lot of other projects and would hardly have been successful without them.
-* Harlequin (no official link?)
+This work is inspired and based on a lot of other projects and would hardly have been successful without them:
+* Harlequin ([link](https://www.facebook.com/groups/349470902442395/))
 * Karabas-128 ([link](https://github.com/andykarpov/karabas-128))
 * ZX Evolution ([link](http://nedopc.com/zxevo/zxevo.php))
 * zx_ula verilog implementation ([link](https://opencores.org/projects/zx_ula))
