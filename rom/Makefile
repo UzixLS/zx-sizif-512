@@ -3,9 +3,9 @@ bank00=128p-0.rom             # 0x00000
 bank01=128-1.rom              # 0x04000
 bank02=../rom_src/main.bin    # 0x08000
 bank03=ESXMMC.BIN ESXMMC.BIN  # 0x0C000
-bank04=dvmen3e0.rom           # 0x10000
-bank05=dvmen3e1.rom           # 0x14000
-bank06=dvmen3e2.rom           # 0x18000
+bank04=zcen3e0.rom            # 0x10000
+bank05=zcen3e1.rom            # 0x14000
+bank06=zcen3e2.rom            # 0x18000
 bank07=lg18alt.rom            # 0x1C000
 # A17 (JP3)
 bank08=S128_ZX81_ED2_ROM.bin  # 0x20000
@@ -14,7 +14,7 @@ bank10=S128_ZX81_ED2_ROM.bin  # 0x28000
 bank11=S128_ZX80_ROM.bin      # 0x2C000
 bank12=128-0.rom              # 0x30000
 bank13=48.rom                 # 0x34000
-bank14=dvmen3e3.rom           # 0x38000
+bank14=zcen3e3.rom            # 0x38000
 bank15=opense.rom             # 0x3C000
 # A18 (JP2)
 bank16=DiagROM.v54            # 0x40000
