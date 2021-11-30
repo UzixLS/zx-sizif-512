@@ -94,11 +94,14 @@ str_rom48_lg_end:
 str_rom48_opense: DB " OpenSE",0
 str_rom48_opense_end:
 
+str_sd: DB "SD card",0
+str_sd_end:
+
 str_divmmc: DB "DivMMC",0
 str_divmmc_end:
 
-str_divmmc_noos: DB "NO OS",0
-str_divmmc_noos_end:
+str_zc3e: DB "ZC/+3e",0
+str_zc3e_end:
 
 str_ulaplus: DB "ULA+",0
 str_ulaplus_end

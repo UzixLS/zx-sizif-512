@@ -306,7 +306,7 @@ wire joy_sinclair, up_en, ay_en, covox_en, sd_en;
 panning_t panning;
 assign ay_mono = panning == PANNING_MONO;
 assign ay_abc = panning == PANNING_ABC;
-divmmc_t divmmc_en;
+wire divmmc_en, zc_en;
 `ifndef REV_C
     assign bus0 = magic_mode;
 `endif
@@ -324,7 +324,6 @@ magic magic0(
 
     .magic_button(~n_magic || joy_mode || ps2_key_magic),
     .pause_button(ps2_key_pause || joy_start),
-    .sd_cd(sd_cd),
     .div_automap(div_automap),
 
     .magic_mode(magic_mode),
@@ -341,6 +340,7 @@ magic magic0(
     .rom_custom(rom_custom),
     .panning(panning),
     .divmmc_en(divmmc_en),
+    .zc_en(zc_en),
     .ulaplus_en(up_en),
     .ay_en(ay_en),
     .covox_en(covox_en),
@@ -453,8 +453,9 @@ divmmc divmmc0(
     .clk28(clk28),
     .ck14(ck14),
     .ck7(ck7),
-    .en(divmmc_en == DIVMMC_ON || divmmc_en == DIVMMC_NOOS),
-    .en_hooks(divmmc_en == DIVMMC_ON),
+    .en(divmmc_en),
+    .en_hooks(divmmc_en),
+    .en_zc(zc_en),
 
     .bus(bus),
     .d_out(div_dout),
@@ -529,7 +530,7 @@ memcontrol memcontrol0(
     .rom_alt48(rom_alt48),
     .rom_custom_en(rom_custom_en),
     .rom_custom(rom_custom),
-    .divmmc_en(divmmc_en != DIVMMC_OFF),
+    .divmmc_en(divmmc_en),
     .div_ram(div_ram),
     .div_map(div_map),
     .div_ramwr_mask(div_ramwr_mask),

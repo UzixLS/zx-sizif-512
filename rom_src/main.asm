@@ -207,17 +207,16 @@ init_cpld:
 
 
 detect_sd_card:
-    ld a, #ff                   ; read sd_cd state in bit 2 of #FFFF port
-    in a, (#ff)                 ; ...
-    bit 2, a                    ; check sd_cd == 0 (card is insert)
+    in a, (#77)                 ; read sd_cd state from ZC status port
+    bit 0, a                    ; check sd_cd == 0 (card is insert)
     jr z, .is_insert            ; yes?
 .no_card:
-    xor a                       ; divmmc = OFF
-    ld (cfg_saved.divmmc), a    ; ...
+    xor a                       ; sd = OFF
+    ld (cfg_saved.sd), a        ; ...
     ret
 .is_insert:
-    ld a, 1                     ; divmmc = ON
-    ld (cfg_saved.divmmc), a    ; ...
+    ld a, 1                     ; sd = divmmc
+    ld (cfg_saved.sd), a        ; ...
     ret
 
 
@@ -283,7 +282,7 @@ detect_external_ay:
 
 
 ; Check if external BDI (TR-DOS) addon is connected to zx-bus
-; If yes - set divmmc to no-os mode
+; If yes - set SD to ZC mode
 detect_external_bdi:
     ld a, #10                ; BDI entry points is inactive if basic128 is selected
     ld bc, #7ffd             ; ... so we choose basic48
@@ -297,11 +296,11 @@ detect_external_bdi:
     out (c), a               ; ...
     ret z                    ; if a == #42 (no tr-dos) - just exit
 .reconfig:                   ; ... otherwise disable esxdos
-    ld a, (cfg_saved.divmmc) ; if (divmmc == on) divmmc = no-os
+    ld a, (cfg_saved.sd)     ; if (sd != off) sd = zc
     or a                     ; ...
     ret z                    ; ...
     ld a, 2                  ; ...
-    ld (cfg_saved.divmmc), a ; ...
+    ld (cfg_saved.sd), a     ; ...
     ret
 .sub:
     push hl                  ; call tr-dos rom procedure, which just does ret to HL
@@ -334,9 +333,13 @@ check_custom_rom:
     ld a, #83       ; rom #3
 .reconfig:
     ld (cfg_saved.custom_rom), a ; set custom rom
-    xor a
-    ld (cfg_saved.divmmc), a     ; disable divmmc
-    ld (cfg_saved.ulaplus), a    ; disable ula+
+    xor a                        ; disable ula+
+    ld (cfg_saved.ulaplus), a    ; ...
+    ld a, (cfg_saved.sd)         ; if (sd != off) sd = zc
+    or a                         ; ...
+    ret z                        ; ...
+    ld a, 2                      ; ...
+    ld (cfg_saved.sd), a         ; ...
     ret
 
 

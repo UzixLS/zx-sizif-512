@@ -25,7 +25,7 @@ reserved DW
     IFNDEF SIZIFXXS
     MENUENTRY_T str_rom48       menu_rom48_value_cb       menu_rom48_cb
     ENDIF
-    MENUENTRY_T str_divmmc      menu_divmmc_value_cb      menu_divmmc_cb
+    MENUENTRY_T str_sd          menu_sd_value_cb          menu_sd_cb
     MENUENTRY_T str_ulaplus     menu_ulaplus_value_cb     menu_ulaplus_cb
     MENUENTRY_T str_dac         menu_dac_value_cb         menu_dac_cb
     MENUENTRY_T str_exit        menu_exit_value_cb        menu_exit_cb
@@ -38,7 +38,7 @@ reserved DW
     MENUENTRY_T str_panning     menu_panning_value_cb     menu_panning_cb
     MENUENTRY_T str_joystick    menu_joystick_value_cb    menu_joystick_cb
     MENUENTRY_T str_rom48       menu_rom48_value_cb       menu_rom48_cb
-    MENUENTRY_T str_divmmc      menu_divmmc_value_cb      menu_divmmc_cb
+    MENUENTRY_T str_sd          menu_sd_value_cb          menu_sd_cb
     MENUENTRY_T str_ulaplus     menu_ulaplus_value_cb     menu_ulaplus_cb
     MENUENTRY_T str_dac         menu_dac_value_cb         menu_dac_cb
     MENUENTRY_T str_tsfm        menu_tsfm_value_cb        menu_tsfm_cb
@@ -109,14 +109,14 @@ menu_rom48_value_cb:
     DW str_rom48_lg_end-2
     DW str_rom48_opense_end-2
 
-menu_divmmc_value_cb:
+menu_sd_value_cb:
     ld ix, .values_table
-    ld a, (cfg.divmmc)
+    ld a, (cfg.sd)
     jp menu_value_get
 .values_table:
     DW str_off_end-2
-    DW str_on_end-2
-    DW str_divmmc_noos_end-2
+    DW str_divmmc_end-2
+    DW str_zc3e_end-2
 
 menu_ulaplus_value_cb:
     ld ix, .values_table
@@ -239,11 +239,11 @@ menu_rom48_cb:
     out (c), a
     ret
 
-menu_divmmc_cb:
-    ld a, (cfg.divmmc)
+menu_sd_cb:
+    ld a, (cfg.sd)
     ld c, 2
     call menu_handle_press
-    ld (cfg.divmmc), a
+    ld (cfg.sd), a
     ld bc, #09ff
     out (c), a
     ret
