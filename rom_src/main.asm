@@ -51,6 +51,7 @@ startup_handler:
     call detect_sd_card
     call detect_ext_board
     call detect_external_ay
+    call detect_external_bdi
     call check_custom_rom
 .warm_boot:
     call load_config
@@ -258,7 +259,7 @@ detect_ext_board:
     ret
 
 
-; Check if external AY addon connected to zx bus
+; Check if external AY addon is connected to zx bus
 ; If yes - disable internal AY and TSFM on extension board
 detect_external_ay:
     ld bc, #08ff    ; disable main AY 
@@ -279,6 +280,32 @@ detect_external_ay:
     ld (cfg_saved.ay), a      ; ...
     ld (cfgext_saved.tsfm), a ; ...
     ret
+
+
+; Check if external BDI (TR-DOS) addon is connected to zx-bus
+; If yes - set divmmc to no-os mode
+detect_external_bdi:
+    ld a, #10                ; BDI entry points is inactive if basic128 is selected
+    ld bc, #7ffd             ; ... so we choose basic48
+    out (c), a               ; ...
+    ld a, #c9                ; write RET opcode to 5cc2
+    ld hl, #5cc2             ; ...
+    ld (hl), a               ; ...
+    call .sub                ; do tr-dos call
+    cp #42                   ; if there is no tr-dos then our #3d2f handler will be called, which sets a = #42
+    ld a, #0                 ; revert to default #7ffd state
+    out (c), a               ; ...
+    ret z                    ; if a == #42 (no tr-dos) - just exit
+.reconfig:                   ; ... otherwise disable esxdos
+    ld a, (cfg_saved.divmmc) ; if (divmmc == on) divmmc = no-os
+    or a                     ; ...
+    ret z                    ; ...
+    ld a, 2                  ; ...
+    ld (cfg_saved.divmmc), a ; ...
+    ret
+.sub:
+    push hl                  ; call tr-dos rom procedure, which just does ret to HL
+    jp trdos_3d2f_entrypoint ; ...
 
 
 ; Check if user holds 1/2/3/4 key on poweron. If true - boot with custom rom
@@ -627,6 +654,13 @@ main:
     include strings.asm
 
 app_end:
+; BDI/TR-DOS detection routine. See detect_external_bdi
+    ORG #3D2F
+trdos_3d2f_entrypoint:
+    nop
+    ld a, #42
+    ret
+
     ORG #3FE8
     DB 0,"End of Sizif Magic ROM",0
 
