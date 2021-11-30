@@ -11,7 +11,7 @@ Another CPLD-based ZX Spectrum clone for 48K rubber case with some sweet feature
 * 512K RAM
 * Real AY-3-8910 with switchable stereo ABC/ACB/mono output
 * Sega 6-button joystick input; Kempston/Sinclair modes
-* Integrated DivMMC, 1x microSD socket
+* Integrated DivMMC and Z-Controller, 1x microSD socket
 * PAL and RGB video output (Sega Mini-DIN/9 connector)
 * Digital video output header for EGA monitors, VGA scandoublers, etc.
 * ULAplus
@@ -78,6 +78,7 @@ Sega gamepad support will be available starting from PCB rev.D (or Rev.C with sl
 Sizif contains 512K RAM. There are two cases how to access it:
 1. DivMMC enabled (SD card insert) - 128K available via 7FFDh port, 128K via DFFDh (Profi standart, most compatible with old 128K software) and 128K reserved for DivMMC.
 2. No SD card present - 128K available via 7FFDh and 384K via DFFDh. Please note: ULAplus and Magic button shares one page of memory with DFFD port. If you run 512K-software, it's good idea not to use ULAplus and Magic.
+
 Note that DFFDh port available only in Pentagon mode.
 
 ### SD card

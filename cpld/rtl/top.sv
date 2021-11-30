@@ -460,6 +460,7 @@ divmmc divmmc0(
     .d_out(div_dout),
     .d_out_active(div_dout_active),
 
+    .sd_cd(sd_cd),
     .sd_miso(sd_miso),
     .sd_mosi(sd_mosi),
     .sd_sck(sd_sck),

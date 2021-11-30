@@ -6,11 +6,13 @@ module divmmc(
     input ck7,
     input en,
     input en_hooks,
+    input en_zc,
 
     cpu_bus bus,
     output [7:0] d_out,
     output d_out_active,
 
+    input sd_cd,
     input sd_miso,
     output sd_mosi,
     output reg sd_sck,
@@ -61,21 +63,20 @@ always @(posedge clk28 or negedge rst_n) begin
     end
 end
 
-reg spi_rd;
 reg conmem, mapram;
 wire port_e3_cs = en && bus.ioreq && bus.a[7:0] == 8'hE3;
 wire port_e7_cs = en && bus.ioreq && bus.a[7:0] == 8'hE7;
 wire port_eb_cs = en && bus.ioreq && bus.a[7:0] == 8'hEB;
+wire port_57_cs = en_zc && bus.ioreq && bus.a[7:0] == 8'h57;
+wire port_77_cs = en_zc && bus.ioreq && bus.a[7:0] == 8'h77;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
-        spi_rd <= 0;
         page <= 0;
         mapram <= 0;
         conmem <= 0;
         sd_cs <= 1'b1;
     end
     else begin
-        spi_rd <= port_eb_cs && bus.rd;
         if (port_e3_cs && bus.wr) begin
             page <= bus.d[3:0];
             mapram <= bus.d[6] | mapram;
@@ -84,6 +85,22 @@ always @(posedge clk28 or negedge rst_n) begin
         if (port_e7_cs && bus.wr) begin
             sd_cs <= bus.d[0];
         end
+        else if (port_77_cs && bus.wr) begin
+            sd_cs <= bus.d[1] | ~bus.d[0];
+        end
+    end
+end
+
+reg spi_rd, zc_rd;
+wire [7:0] zc_data = {7'b0000000, sd_cd};
+always @(posedge clk28 or negedge rst_n) begin
+    if (!rst_n) begin
+        spi_rd <= 0;
+        zc_rd <= 0;
+    end
+    else begin
+        spi_rd <= (port_eb_cs || port_57_cs) && bus.rd;
+        zc_rd <= port_77_cs && bus.rd;
     end
 end
 
@@ -93,7 +110,7 @@ assign cpuwait = ~spi_cnt[3];
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         spi_cnt <= 0;
-    else if (port_eb_cs && (bus.rd || bus.wr))
+    else if ((port_eb_cs || port_57_cs) && (bus.rd || bus.wr))
         spi_cnt <= 4'b1110;
     else if (spi_cnt_en && ck7)
         spi_cnt <= spi_cnt + 1'b1;
@@ -103,7 +120,7 @@ reg spi_mosi_en;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         spi_mosi_en <= 0;
-    else if (port_eb_cs && bus.wr)
+    else if ((port_eb_cs || port_57_cs) && bus.wr)
         spi_mosi_en <= 1'b1;
     else if (!spi_cnt_en)
         spi_mosi_en <= 0;
@@ -114,7 +131,7 @@ assign sd_mosi = spi_mosi_en? spi_reg[7] : 1'b1;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         spi_reg <= 0;
-    else if (port_eb_cs && bus.wr)
+    else if ((port_eb_cs || port_57_cs) && bus.wr)
         spi_reg <= bus.d;
     else if (spi_cnt[3] == 1'b0 && ck7)
         spi_reg[7:0] <= {spi_reg[6:0], sd_miso};
@@ -136,7 +153,7 @@ assign ramwr_mask =
     (!bus.a[13] || page == 4'b0011) &&
     !conmem && automap && mapram;
 
-assign d_out_active = spi_rd;
-assign d_out = spi_reg;
+assign d_out_active = zc_rd | spi_rd;
+assign d_out = zc_rd? zc_data : spi_reg;
 
 endmodule
