@@ -122,7 +122,7 @@ assign ra[17:14] =
     magic_map? `BANK_MAGIC :
     div_map? `BANK_DIV :
 `ifndef REV_C
-    rom_custom_en? {2'b10, rom_custom} :
+    (rom_custom_en && rompage128 == 1'b0)? {2'b10, rom_custom} :
 `endif
     (machine == MACHINE_S3)? (
         (port_1ffd[2] == 1'b0 && rompage128 == 1'b0)? `BANK_S3_0 :
