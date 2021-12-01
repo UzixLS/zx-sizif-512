@@ -118,8 +118,7 @@ always @(posedge clk28 or negedge rst_n) begin
         sd_en <= 1'b1;
     end
     else if (config_cs && bus.wr) case (bus.a[15:8])
-        8'h00: magic_reboot <= bus.d[0];
-        8'h01: magic_beeper <= bus.d[0];
+        8'h01: {magic_reboot, magic_beeper} <= bus.d[1:0];
         8'h02: machine <= machine_t'(bus.d[2:0]);
         8'h03: turbo <= turbo_t'(bus.d[2:0]);
         8'h04: panning <= panning_t'(bus.d[1:0]);
@@ -128,8 +127,8 @@ always @(posedge clk28 or negedge rst_n) begin
         8'h07: joy_sinclair <= bus.d[0];
         8'h08: ay_en <= bus.d[0];
         8'h09: {zc_en, divmmc_en} <= bus.d[1:0];
-        8'h0a: ulaplus_en <= bus.d[0];
-        8'h0b: {sd_en, covox_en} <= bus.d[1:0];
+        8'h0A: ulaplus_en <= bus.d[0];
+        8'h0B: {sd_en, covox_en} <= bus.d[1:0];
     endcase
 end
 
@@ -139,7 +138,7 @@ always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         config_rd <= 0;
     else
-        config_rd <= config_cs && bus.rd && bus.a[15:8] == 8'hFF;
+        config_rd <= config_cs && bus.rd && bus.a[15:8] == 8'h00;
 end
 
 

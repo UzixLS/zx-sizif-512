@@ -1,7 +1,6 @@
     DEVICE ZXSPECTRUM48
     OPT --syntax=F
 
-app_begin:
 ; Startup handler
     ORG #0000
     ex de, hl ; EB opcode used by CPLD to determine magic ROM presence
@@ -28,12 +27,13 @@ app_begin:
     ret
 
 ; INT IM2 vector table
-    ORG #0600
+    ORG #0200
     .257 db #01 ; by Z80 user manual int vector is I * 256 + (D & 0xFE)
                 ; but by other references and by T80/A-Z80 implementation int vector is I * 256 + D
                 ; so we just play safe and use symmetric int handler address and vector table with one extra byte
 
 
+    ORG #0570   ; this address chosen to do not overlap with divmmc entrypoints
 startup_handler:
     ld sp, Stack_top
     ld ix, #5800    ; draw 4 rygb boxes on left top corner to indicate boot
@@ -70,8 +70,9 @@ nmi_handler:
     push af
     push hl
     push bc
-    ld a, #01            ; show magic border
-    out (#ff), a         ; ...
+    ld a, 1              ; show magic border
+    ld bc, #01ff         ; ...
+    out (c), a           ; ...
     xor a
     ld (var_magic_enter_cnt), a
     ld (var_magic_leave_cnt), a
@@ -89,8 +90,8 @@ nmi_handler:
     xor a                ; disable border
     ld bc, #01ff         ; ...
     out (c), a           ; ...
-    ld bc, #ffff         ; if divmmc paged - just do retn
-    in a, (c)            ; ...
+    ld bc, #00ff         ; ...
+    in a, (c)            ; if divmmc paged - just do retn
     bit 3, a             ; ...
     jr nz, exit_with_ret ; ... 
     ld hl, #0066         ; otherwise jump to default nmi handler
@@ -193,8 +194,7 @@ init_cpld:
     otdr               ; do { b--; out(bc, *hl); hl--; } while(b)
 .do_load_ext:          ; same for extension board
     ld d, CFGEXT_T     ; ...
-    ld b, #e1          ; ...
-    ld c, #ff          ; ...
+    ld bc, #e1ff       ; ...
     ld hl, cfgext      ; ...
 .do_load_ext_loop:     ; ...
     ld a, (hl)         ; ...
@@ -224,8 +224,7 @@ detect_sd_card:
 ; OUT -  F - garbage
 ; OUT - BC - garbage
 detect_ext_board:
-    ld b, #e0       ; read port #e0ff
-    ld c, #ff       ; ...
+    ld bc, #e0ff    ; read port #e0ff
     in a, (c)       ; ...
     ld b, a         ; if (result & 0xF0 != 0) - return
     and #f0         ; ...
@@ -345,7 +344,7 @@ check_custom_rom:
 
 ; OUT - A bit 1 if we are entering pause, 0 otherwise
 check_entering_pause:
-    ld a, #ff                   ; read pause key state in bit 1 of #FFFF port
+    xor a                       ; read pause key state in bit 1 of #00FF port
     in a, (#ff)                 ; ...
     ret
 
@@ -353,7 +352,7 @@ check_entering_pause:
 ; OUT -  A = 1 if we are entering menu, A = 2 if we are leaving menu, A = 0 otherwise
 ; OUT -  F - garbage
 check_entering_menu: 
-    ld a, #ff                   ; read magic key state in bit 0 of #FFFF port
+    xor a                       ; read magic key state in bit 0 of #00FF port
     in a, (#ff)                 ; ...
     bit 0, a                    ; check key is hold
     jr nz, .is_hold             ; yes?
@@ -556,7 +555,7 @@ main:
 
     ld a, i              ; save I reg and IFF2
     push af              ; ...
-    ld a, #06            ; set our interrupt table address (#06xx)
+    ld a, #02            ; set our IM2 interrupt table address (#02xx)
     ld i, a              ; ...
 
     xor a
@@ -612,7 +611,7 @@ main:
     xor a
     or b
     jr nz, .wait_for_keys_release
-    ld a, #ff                    ; read magic/pause keys state
+    xor a                        ; read magic/pause keys state from port #00FF
     in a, (#ff)                  ; ...
     and #03                      ; ...
     jr nz, .wait_for_keys_release
@@ -623,8 +622,8 @@ main:
     ld a, (var_exit_reboot) ; should we reboot?
     or a                    ; ...
     jr z, .leave_without_reboot ; ...
-    ld a, 1                 ; reboot
-    ld bc, #00ff            ; ...
+    ld a, 2                 ; reboot
+    ld bc, #01ff            ; ...
     out (c), a              ; ...
 .leave_without_reboot:
     pop af               ; A = I
@@ -656,7 +655,10 @@ main:
     include font.asm
     include strings.asm
 
-app_end:
+    DISPLAY "Free space: ",/D,#3D00-$
+    ASSERT $ < #3D00
+
+
 ; BDI/TR-DOS detection routine. See detect_external_bdi
     ORG #3D2F
 trdos_3d2f_entrypoint:
@@ -664,18 +666,24 @@ trdos_3d2f_entrypoint:
     ld a, #42
     ret
 
+; Just some string at the end of ROM
     ORG #3FE8
     DB 0,"End of Sizif Magic ROM",0
 
-; Magic vectors
-Exit_vector EQU #F000
-Readout_vector EQU #F008
-
 ; Variables
-    ORG #D500
-var_save_screen: .6912 DB 0
-    ORG #F020
+    ORG #C000
     include variables.asm
+var_ram_func:
+    .256 DB 0
+var_save_screen:
+    .6912 DB 0
+    ASSERT $ < #EFF0
+
+; Magic vectors
+    ORG #F000
+Exit_vector: 
+    ORG #F008
+Readout_vector:
 
     ORG #FFBE
 Stack_top:
@@ -684,6 +692,5 @@ Ulaplus_pallete:
     .64 DB 0
 
 
-    DISPLAY "Application size: ",/D,app_end-app_begin
     CSPECTMAP "main.map"
     SAVEBIN "main.bin",0,16384
