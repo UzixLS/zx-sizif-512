@@ -47,6 +47,7 @@ module memcontrol(
     input [5:0] screen_up_addr,
     input up_write_req,
     input [5:0] up_write_addr,
+    input rom_wren,
     input magic_map,
     input [2:0] rampage128,
     input rompage128,
@@ -119,6 +120,7 @@ assign ram_a =
 
 
 assign ra[17:14] =
+    rom_wren? {3'b000, bus.a[0]} : // handle jedec sequence (Z80 addr #1555 = ROM addr #05555, Z80 addr #2AAA = ROM addr #02AAA)
     magic_map? `BANK_MAGIC :
     div_map? `BANK_DIV :
 `ifndef REV_C

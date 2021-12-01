@@ -296,6 +296,7 @@ always @(posedge clk28)    // precharge to 1 - this is required because of weak 
     n_nmi0_prev <= n_nmi0; // ... which may cause multiple nmi triggering in Z80 in 14MHz mode
 assign n_nmi = n_nmi0? (n_nmi0_prev? 1'bz : 1'b1) : 1'b0;
 
+wire rom_wren;
 wire div_automap;
 wire [7:0] magic_dout;
 wire magic_dout_active;
@@ -331,6 +332,7 @@ magic magic0(
 
     .magic_reboot(magic_reboot),
     .magic_beeper(magic_beeper),
+    .rom_wren(rom_wren),
     .machine(machine),
     .turbo(turbo),
     .joy_sinclair(joy_sinclair),
@@ -520,6 +522,7 @@ memcontrol memcontrol0(
     .screen_up_addr(screen_up_addr),
     .up_write_req(up_write_req),
     .up_write_addr(up_write_addr),
+    .rom_wren(rom_wren),
     .magic_map(magic_map),
     .rampage128(rampage128),
     .rompage128(rompage128),

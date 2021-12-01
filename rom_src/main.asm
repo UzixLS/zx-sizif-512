@@ -652,6 +652,7 @@ main:
     include pause.asm
     include menu.asm
     include menu_structure.asm
+    include flash.asm
     include font.asm
     include strings.asm
 

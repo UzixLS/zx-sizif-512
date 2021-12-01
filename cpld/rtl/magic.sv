@@ -20,6 +20,7 @@ module magic(
 
     output reg magic_reboot,
     output reg magic_beeper,
+    output reg rom_wren,
     output machine_t machine,
     output turbo_t turbo,
     output panning_t panning,
@@ -102,6 +103,7 @@ always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         magic_reboot <= 0;
         magic_beeper <= 0;
+        rom_wren <= 0;
         machine <= MACHINE_PENT;
         turbo <= TURBO_NONE;
         panning <= PANNING_ABC;
@@ -118,7 +120,7 @@ always @(posedge clk28 or negedge rst_n) begin
         sd_en <= 1'b1;
     end
     else if (config_cs && bus.wr) case (bus.a[15:8])
-        8'h01: {magic_reboot, magic_beeper} <= bus.d[1:0];
+        8'h01: {rom_wren, magic_reboot, magic_beeper} <= bus.d[2:0];
         8'h02: machine <= machine_t'(bus.d[2:0]);
         8'h03: turbo <= turbo_t'(bus.d[2:0]);
         8'h04: panning <= panning_t'(bus.d[1:0]);
