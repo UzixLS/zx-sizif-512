@@ -16,11 +16,20 @@ callback DW
 reserved DW
     ENDS
 
-    MACRO MENUDESCR label_addr, width, items
-        MENU_T (label_addr) (items) (items+2) ((24-(items+2))/2) (((24-(items+2))/2)*8) (width) ((32-width)/2) (((32-width)/2)+width-6)
+    MACRO MENU_DEF width
+        MENU_T {
+            ($+MENU_T)
+            (((.end-$)/MENUENTRY_T-1))
+            (((.end-$)/MENUENTRY_T-1)+2)
+            ( (24-(((.end-$)/MENUENTRY_T-1)+2))/2)
+            (((24-(((.end-$)/MENUENTRY_T-1)+2))/2)*8)
+            (width)
+            ( (32-width)/2)
+            (((32-width)/2)+width-6)
+        }
     ENDM
 
-.menudefault:
+menudefault: MENU_DEF 20
     MENUENTRY_T str_cpu         menu_clock_value_cb       menu_clock_cb
     MENUENTRY_T str_machine     menu_machine_value_cb     menu_machine_cb
     MENUENTRY_T str_panning     menu_panning_value_cb     menu_panning_cb
@@ -33,9 +42,9 @@ reserved DW
     MENUENTRY_T str_dac         menu_dac_value_cb         menu_dac_cb
     MENUENTRY_T str_exit        menu_exit_value_cb        menu_exit_cb
     MENUENTRY_T 0
-!menudefault: MENUDESCR .menudefault, 20, ($-.menudefault)/MENUENTRY_T-1
+.end:
 
-.menuext:
+menuext: MENU_DEF 20
     MENUENTRY_T str_cpu         menu_clock_value_cb       menu_clock_cb
     MENUENTRY_T str_machine     menu_machine_value_cb     menu_machine_cb
     MENUENTRY_T str_panning     menu_panning_value_cb     menu_panning_cb
@@ -49,15 +58,15 @@ reserved DW
     MENUENTRY_T str_gs          menu_gs_value_cb          menu_gs_cb
     MENUENTRY_T str_exit        menu_exit_value_cb        menu_exit_cb
     MENUENTRY_T 0
-!menuext: MENUDESCR .menuext, 20, ($-.menuext)/MENUENTRY_T-1
+.end:
 
-.menuboot:
+menuboot: MENU_DEF 16
     MENUENTRY_T str_normal_boot   0                       menu_boot_normal_cb
     MENUENTRY_T str_zx80          0                       menu_boot_zx80_cb
     MENUENTRY_T str_zx81          0                       menu_boot_zx81_cb
     MENUENTRY_T str_negluk        0                       menu_boot_negluk_cb
     MENUENTRY_T 0
-!menuboot: MENUDESCR .menuboot, 16, ($-.menuboot)/MENUENTRY_T-1
+.end:
 
 
 menu_machine_value_cb:
