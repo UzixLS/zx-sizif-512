@@ -126,3 +126,16 @@ str_saa_end
 
 str_gs: DB "GS",0
 str_gs_end
+
+str_normal_boot: DB "Normal boot", 0
+str_normal_boot_end:
+
+str_zx80: DB "ZX80",0
+str_zx80_end:
+
+str_zx81: DB "ZX81",0
+str_zx81_end:
+
+str_negluk: DB "HE GLUK",0
+str_negluk_end:
+

@@ -1,30 +1,29 @@
+; IN  - HL - pointer to menu
 menu_init:
-    ld bc, MENU_T            ; if (ext board present) var_menu = menuext; else var_menu = menu;
+    ld bc, MENU_T            ; copy menu descriptor from (hl) to (var_menu)
     ld de, var_menu          ; ...
-    ld hl, menu              ; ...
-    ld a, (var_ext_presence) ; ...
-    or a                     ; ...
-    jr z, .set_menu          ; ...
-    ld hl, menuext           ; ...
-.set_menu:                   ; ...
     ldir                     ; ...
+
+    xor a
+    ld (var_menu_current_item), a
+    ld (var_menu_animate_cnt), a
 
     ld ix, var_menu
     ld b, (ix+MENU_T.y_row)
-    ld c, MENU_X
+    ld c, (ix+MENU_T.x)
     ld d, (ix+MENU_T.height)
-    ld e, MENU_WIDTH
+    ld e, (ix+MENU_T.width)
     call draw_box
 
     ld ix, var_menu
     ld hl, str_sizif
     ld b, (ix+MENU_T.y_pixel)
-    ld c, MENU_X
+    ld c, (ix+MENU_T.x)
     call print_string
 
     ld ix, var_menu
     ld b, (ix+MENU_T.y_pixel)
-    ld c, MENU_X+MENU_WIDTH-6
+    ld c, (ix+MENU_T.x_logo)
     ld e, 0
     call draw_logo
 
@@ -64,7 +63,7 @@ menu_animate_logo:
     ld e, a                       ; ...
     ld ix, var_menu               ;
     ld b, (ix+MENU_T.y_pixel)     ; draw logo
-    ld c, MENU_X+MENU_WIDTH-6     ; ...
+    ld c, (ix+MENU_T.x_logo)      ; ...
     call draw_logo                ; ...
 .return:
     ; ret                         ; pass to menu_handle_updown
@@ -158,8 +157,8 @@ menu_draw_selected_item:
     inc b
     add b
     ld b, a
-    ld c, MENU_X
-    ld e, MENU_WIDTH
+    ld c, (ix+MENU_T.x)
+    ld e, (ix+MENU_T.width)
     call draw_attribute_line
     pop af
     ret
@@ -170,8 +169,9 @@ menu_draw_menu:
     ld a, (ix+MENU_T.y_pixel)
     add a, 8
     ld b, a
-    ld c, MENU_X+1
-    ld e, MENU_WIDTH
+    ld c, (ix+MENU_T.x)
+    inc c
+    ld e, (ix+MENU_T.width)
     ld l, (ix+MENU_T.addr+0)
     ld h, (ix+MENU_T.addr+1)
     call draw_menu

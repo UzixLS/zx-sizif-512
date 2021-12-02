@@ -184,6 +184,9 @@ input_process:
     ret
 
 
-;var_input_key: DB 0
-;var_input_key_last: DB 0
-;var_input_key_hold_timer: DB 0
+input_init:
+    xor a
+    ld (var_input_key), a
+    ld (var_input_key_last), a
+    ld (var_input_key_hold_timer), a
+    ret

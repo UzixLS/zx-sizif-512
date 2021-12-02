@@ -19,6 +19,9 @@ int_handler:
     org #8000
 app_begin:
     di
+    call save_screen
+    ld hl, menuext
+    ld (var_menumain), hl
     call menu_init
 
     ld a, #7e            ; set our interrupt table address (#7Fxx)
@@ -38,6 +41,18 @@ app_begin:
 save_variables:
     ret
 
+save_screen:
+    ld bc, 6912
+    ld de, var_save_screen
+    ld hl, #4000
+    ldir
+    ret
+restore_screen:
+    ld bc, 6912
+    ld de, #4000
+    ld hl, var_save_screen
+    ldir
+    ret
 
 includes:
     include config.asm

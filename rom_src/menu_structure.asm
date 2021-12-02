@@ -4,6 +4,9 @@ items DB
 height DB
 y_row DB
 y_pixel DB
+width DB
+x DB
+x_logo DB
     ENDS
 
     STRUCT MENUENTRY_T
@@ -13,13 +16,13 @@ callback DW
 reserved DW
     ENDS
 
-    MACRO MENUDESCR label_addr, items
-        MENU_T (label_addr) (items) (items+2) ((24-(items+2))/2) (((24-(items+2))/2)*8)
+    MACRO MENUDESCR label_addr, width, items
+        MENU_T (label_addr) (items) (items+2) ((24-(items+2))/2) (((24-(items+2))/2)*8) (width) ((32-width)/2) (((32-width)/2)+width-6)
     ENDM
 
-.menu:
-    MENUENTRY_T str_machine     menu_machine_value_cb     menu_machine_cb
+.menudefault:
     MENUENTRY_T str_cpu         menu_clock_value_cb       menu_clock_cb
+    MENUENTRY_T str_machine     menu_machine_value_cb     menu_machine_cb
     MENUENTRY_T str_panning     menu_panning_value_cb     menu_panning_cb
     MENUENTRY_T str_joystick    menu_joystick_value_cb    menu_joystick_cb
     IFNDEF SIZIFXXS
@@ -30,11 +33,11 @@ reserved DW
     MENUENTRY_T str_dac         menu_dac_value_cb         menu_dac_cb
     MENUENTRY_T str_exit        menu_exit_value_cb        menu_exit_cb
     MENUENTRY_T 0
-!menu: MENUDESCR .menu, ($-.menu)/MENUENTRY_T-1
+!menudefault: MENUDESCR .menudefault, 20, ($-.menudefault)/MENUENTRY_T-1
 
 .menuext:
-    MENUENTRY_T str_machine     menu_machine_value_cb     menu_machine_cb
     MENUENTRY_T str_cpu         menu_clock_value_cb       menu_clock_cb
+    MENUENTRY_T str_machine     menu_machine_value_cb     menu_machine_cb
     MENUENTRY_T str_panning     menu_panning_value_cb     menu_panning_cb
     MENUENTRY_T str_joystick    menu_joystick_value_cb    menu_joystick_cb
     MENUENTRY_T str_rom48       menu_rom48_value_cb       menu_rom48_cb
@@ -46,7 +49,15 @@ reserved DW
     MENUENTRY_T str_gs          menu_gs_value_cb          menu_gs_cb
     MENUENTRY_T str_exit        menu_exit_value_cb        menu_exit_cb
     MENUENTRY_T 0
-!menuext: MENUDESCR .menuext, ($-.menuext)/MENUENTRY_T-1
+!menuext: MENUDESCR .menuext, 20, ($-.menuext)/MENUENTRY_T-1
+
+.menuboot:
+    MENUENTRY_T str_normal_boot   0                       menu_boot_normal_cb
+    MENUENTRY_T str_zx80          0                       menu_boot_zx80_cb
+    MENUENTRY_T str_zx81          0                       menu_boot_zx81_cb
+    MENUENTRY_T str_negluk        0                       menu_boot_negluk_cb
+    MENUENTRY_T 0
+!menuboot: MENUDESCR .menuboot, 16, ($-.menuboot)/MENUENTRY_T-1
 
 
 menu_machine_value_cb:
@@ -302,6 +313,42 @@ menu_exit_cb:
     ld (var_exit_reboot), a
     ret
 .exit
+    ld a, 1
+    ld (var_exit_flag), a
+    ret
+
+menu_boot_normal_cb:
+    bit 4, d                ; action?
+    ret z
+    ld a, 0
+    ld (cfg_saved.custom_rom), a 
+    ld a, 1
+    ld (var_exit_flag), a
+    ret
+
+menu_boot_zx80_cb:
+    bit 4, d                ; action?
+    ret z
+    ld a, #81
+    ld (cfg_saved.custom_rom), a 
+    ld a, 1
+    ld (var_exit_flag), a
+    ret
+
+menu_boot_zx81_cb:
+    bit 4, d                ; action?
+    ret z
+    ld a, #80
+    ld (cfg_saved.custom_rom), a 
+    ld a, 1
+    ld (var_exit_flag), a
+    ret
+
+menu_boot_negluk_cb:
+    bit 4, d                ; action?
+    ret z
+    ld a, #83
+    ld (cfg_saved.custom_rom), a 
     ld a, 1
     ld (var_exit_flag), a
     ret

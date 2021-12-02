@@ -7,8 +7,6 @@ INPUT_REPEAT            EQU 2
 INPUT_REPEAT_FIRST      EQU 11
 INPUT_BEEP_DELAY        EQU 255
 
-MENU_WIDTH              EQU 20
-MENU_X                  EQU (32-MENU_WIDTH)/2
 MENU_HEADER_ATTR        EQU #47
 MENU_BODY_ATTR          EQU #78
 MENU_SELECT_ATTR        EQU #68
@@ -19,6 +17,7 @@ PAUSE_X                 EQU (32-PAUSE_WIDTH)/2
 PAUSE_Y                 EQU (24-PAUSE_HEIGHT)/2
 PAUSE_BODY_ATTR         EQU #00
 PAUSE_TEXT_ATTR         EQU #C7
+
 
     STRUCT CFG_T
 _reserv0   DB 0
@@ -40,6 +39,7 @@ tsfm       DB 1
 saa        DB 1
 gs         DB 1
     ENDS
+
 
 CFG_DEFAULT CFG_T
 CFGEXT_DEFAULT CFGEXT_T

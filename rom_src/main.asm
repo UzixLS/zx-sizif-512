@@ -58,6 +58,7 @@ startup_handler:
     call init_cpld
     call save_initialized
     call mute_saa1099  ; saa1099 does not have reset pin
+    ld ix, #5800    ; draw 4 rygb boxes on left top corner to indicate boot
     ld (ix+2), #E4  ; g
     ld (ix+3), #C9  ; b
     ld hl, 0
@@ -70,32 +71,86 @@ nmi_handler:
     push af
     push hl
     push bc
-    ld a, 1              ; show magic border
-    ld bc, #01ff         ; ...
-    out (c), a           ; ...
+    ld a, 1                   ; show magic border
+    ld bc, #01ff              ; ...
+    out (c), a                ; ...
     xor a
     ld (var_magic_enter_cnt), a
     ld (var_magic_leave_cnt), a
-.loop:
+.key_wait_loop:
     call check_entering_pause ; A[1] == 1 if pause button is pressed
     bit 1, a                  ; ...
-    jp nz, enter_pause        ; ...
+    jp nz, .enter_pause       ; ...
     call delay_10ms           ; 
     call check_entering_menu  ; A == 1 if we are entering menu, A == 2 if we are leaving to...
     bit 0, a                  ; ...default nmi handler, A == 0 otherwise
-    jp nz, enter_menu         ; ...
+    jp nz, .enter_menu        ; ...
     bit 1, a                  ; ...
-    jr z, .loop               ; ...
+    jr z, .key_wait_loop      ; ...
+.leave_no_key:
+    xor a                     ; disable border
+    ld bc, #01ff              ; ...
+    out (c), a                ; ...
+    ld bc, #00ff              ; ...
+    in a, (c)                 ; if divmmc paged - just do retn
+    bit 3, a                  ; ...
+    jr nz, exit_with_ret      ; ... 
+    ld hl, #0066              ; otherwise jump to default nmi handler
+    jr exit_with_jp           ; ...
+
+.enter_pause:
+    ld hl, nmi_pause
+    ld (var_main_fun), hl
+    jr .enter  
+.enter_menu:
+    ld hl, nmi_menu
+    ld (var_main_fun), hl
+    ;jr .enter
+.enter:
+    push de
+    push ix
+    push iy
+    ld a, i                   ; save I reg and IFF2
+    push af                   ; ...
+    ld a, #02                 ; set our IM2 interrupt table address (#02xx)
+    ld i, a                   ; ...
+    xor a
+    ld (var_exit_flag), a
+    ld (var_exit_reboot), a
+    call input_init
+    call save
+.run_fun:
+    ld hl, .leave             ; place ret address to stack
+    push hl                   ; ...
+    ld hl, (var_main_fun)     ; jump to our loop function
+    jp (hl)                   ; ...
 .leave:
-    xor a                ; disable border
-    ld bc, #01ff         ; ...
-    out (c), a           ; ...
-    ld bc, #00ff         ; ...
-    in a, (c)            ; if divmmc paged - just do retn
-    bit 3, a             ; ...
-    jr nz, exit_with_ret ; ... 
-    ld hl, #0066         ; otherwise jump to default nmi handler
-    jr exit_with_jp      ; ...
+    call save_config
+    call restore
+    ld a, (var_exit_reboot)   ; should we reboot?
+    or a                      ; ...
+    jr z, .leave_without_reboot ; ...
+    ld a, 2                   ; reboot
+    ld bc, #01ff              ; ...
+    out (c), a                ; ...
+.leave_without_reboot:
+    pop af                    ; A = I
+    push af                   ; 
+    call get_im2_handler      ; HL = default im2 handler address
+    ld (var_int_vector), hl
+    xor a                     ; disable border
+    ld bc, #01ff              ; ...
+    out (c), a                ; ...
+    pop af
+    pop iy
+    pop ix
+    pop de
+    ei                        ; wait for int just for safety
+    halt                      ; ...
+    ld i, a                   ; restore default interrupt table address
+    jp po, exit_with_ret      ; check int was enabled by default. no? just do retn
+    ld hl, (var_int_vector)   ; ...
+    jp exit_with_jp           ; yes? goto default int handler
 
 
 ; IN  - HL - jump address
@@ -306,33 +361,22 @@ detect_external_bdi:
     jp trdos_3d2f_entrypoint ; ...
 
 
-; Check if user holds 1/2/3/4 key on poweron. If true - boot with custom rom
+; Check if user holds CS key on poweron. If true - boot with custom rom
 check_custom_rom:
-    ld a, #f7       ; read 1-5 keys
-    in a, (#fe)     ; ...
-    bit 0, a        ; check key 1 pressed
-    jr z, .key1     ; ...
-    bit 1, a        ; check key 2 pressed
-    jr z, .key2     ; ...
-    bit 2, a        ; check key 3 pressed
-    jr z, .key3     ; ...
-    bit 3, a        ; check key 4 pressed
-    jr z, .key4     ; ...
-    ret
-.key1:
-    ld a, #80       ; rom #0
-    jr .reconfig
-.key2:
-    ld a, #81       ; rom #1
-    jr .reconfig
-.key3:
-    ld a, #82       ; rom #2
-    jr .reconfig
-.key4:
-    ld a, #83       ; rom #3
-.reconfig:
-    ld (cfg_saved.custom_rom), a ; set custom rom
-    xor a                        ; disable ula+
+    ld a, #fe                    ; read cs,z,x,c,v
+    in a, (#fe)                  ; ...
+    bit 0, a                     ; check CS is pressed
+    ret nz                       ; ... exit if no
+.show_menu:
+    ld a, 1                      ; show magic border
+    ld bc, #01ff                 ; ...
+    out (c), a                   ; ...
+    call bootmenu                ; ... else show boot menu
+    ld a, (cfg_saved.custom_rom) ; which rom was choosen?
+    or a                         ; ... do nothing if default
+    ret z                        ; ...
+.custom_rom_boot:
+    xor a                        ; else - disable ula+
     ld (cfg_saved.ulaplus), a    ; ...
     ld a, (cfg_saved.sd)         ; if (sd != off) sd = zc
     or a                         ; ...
@@ -421,15 +465,6 @@ get_im2_handler:
     ret
 
 
-mute_saa1099:
-    ld bc, #ffff       ; select saa register
-    ld a, #1c          ; ...
-    out (c), a         ; ...
-    ld b, #fe          ; mute
-    xor a              ; ...
-    out (c), a         ; ...
-    ret
-
 save:
 .mute_gs:
     ld a, (var_ext_presence) ; if (no_ext_pcb || gs_is_disabled) - skip gs
@@ -486,6 +521,15 @@ save:
     jr nz, .save_ay_sub_loop
     ret
 
+mute_saa1099:
+    ld bc, #ffff       ; select saa register
+    ld a, #1c          ; ...
+    out (c), a         ; ...
+    ld b, #fe          ; mute
+    xor a              ; ...
+    out (c), a         ; ...
+    ret
+
 
 restore:
 .restore_ulaplus:
@@ -496,10 +540,7 @@ restore:
     ld a, (var_save_ulaplus) ; ...
     out (c), a         ; ...
 .restore_screen:
-    ld bc, 6912
-    ld de, #4000
-    ld hl, var_save_screen
-    ldir
+    call restore_screen
 .restore_ay:
     ld hl, var_save_ay+16 ; select second AY chip in TurboSound
     ld a, #fe             ; ...
@@ -536,113 +577,89 @@ restore:
     jr nz, .restore_ay_sub_loop ;
     ret
 
+restore_screen:
+    ld bc, 6912
+    ld de, #4000
+    ld hl, var_save_screen
+    ldir
+    ret
 
-enter_pause:
-    ld a, 1
-    ld (var_pause_flag), a
-    jr main  
 
-enter_menu:
-    xor a
-    ld (var_pause_flag), a
-    jr main
+bootmenu:
+    call input_init
+    ld hl, menuboot
+    call menu_init
+    call menu_input_loop
+    call wait_for_keys_release
+    ret
 
-; Main program
-main:
-    push de
-    push ix
-    push iy
 
-    ld a, i              ; save I reg and IFF2
-    push af              ; ...
-    ld a, #02            ; set our IM2 interrupt table address (#02xx)
-    ld i, a              ; ...
-
+nmi_pause:
     xor a
     ld (var_exit_flag), a
-    ld (var_exit_reboot), a
-    ld (var_input_key), a
-    ld (var_input_key_last), a
-    ld (var_input_key_hold_timer), a
-    ld (var_pause_is_released), a
-    ld (var_menu_current_item), a
-    ld (var_menu_animate_cnt), a
-
-    call save
-    ld a, (var_pause_flag)
-    or a
-    jr z, .menu_init
-
-.pause_init:
     call pause_init
-.pause_loop:
+.loop:
     ei
     halt
     call pause_process
     ld a, (var_exit_flag)
     or a
-    jr z, .pause_loop
-    jr .wait_for_keys_release
+    jr z, .loop
+    ret
 
-.menu_init:
+
+nmi_menu:
     call check_initialized
-    jr z, .menu_init1
+    jr z, .init1
     call init_default_config
     call detect_ext_board
     call load_config
     call save_initialized
-.menu_init1:
+.init1:
+    ld hl, menudefault       ; if (ext board present) menu = menuext; else menu = menudefault;
+    ld a, (var_ext_presence) ; ...
+    or a                     ; ...
+    jr z, .init2             ; ...
+    ld hl, menuext           ; ...
+.init2:
+    ld (var_menumain), hl
     call menu_init
-.menu_loop:
+.loop:
+    call menu_input_loop
+    call wait_for_keys_release
+    ret
+
+
+menu_input_loop:
+    xor a
+    ld (var_exit_flag), a
+    ld (var_exit_reboot), a
+.loop:
     ei
     halt
-    call input_process          ; B = 32 if exit key pressed
+    call input_process ; B = 32 if exit key pressed
     bit 5, b
-    jr nz, .wait_for_keys_release
+    ret nz
     call menu_process
     ld a, (var_exit_flag)
     or a
-    jr z, .menu_loop
+    jr z, .loop
+    ret
 
-.wait_for_keys_release:
+
+wait_for_keys_release:
+.loop:
     ei
     halt
-    call input_process           ; B = 0 if no keys pressed
+    call input_process ; B = 0 if no keys pressed
     xor a
     or b
-    jr nz, .wait_for_keys_release
-    xor a                        ; read magic/pause keys state from port #00FF
-    in a, (#ff)                  ; ...
-    and #03                      ; ...
-    jr nz, .wait_for_keys_release
-
-.leave:
-    call save_config
-    call restore
-    ld a, (var_exit_reboot) ; should we reboot?
-    or a                    ; ...
-    jr z, .leave_without_reboot ; ...
-    ld a, 2                 ; reboot
-    ld bc, #01ff            ; ...
-    out (c), a              ; ...
-.leave_without_reboot:
-    pop af               ; A = I
-    push af              ; 
-    call get_im2_handler ; HL = default im2 handler address
-    ld (var_int_vector), hl
-    xor a                ; disable border
-    ld bc, #01ff         ; ...
-    out (c), a           ; ...
-    pop af
-    pop iy
-    pop ix
-    pop de
-    ei                   ; wait for int just for safety
-    halt                 ; ...
-    ld i, a              ; restore default interrupt table address
-    jp po, exit_with_ret ; check int was enabled by default. no? just do retn
-    ld hl, (var_int_vector) ; ...
-    jp exit_with_jp      ; yes? goto default int handler
+    jr nz, .loop
+    xor a              ; read magic/pause keys state from port #00FF
+    in a, (#ff)        ; ...
+    and #03            ; ...
+    jr nz, .loop
+    ret
 
 
 ; Includes
@@ -676,8 +693,6 @@ trdos_3d2f_entrypoint:
     include variables.asm
 var_ram_func:
     .256 DB 0
-var_save_screen:
-    .6912 DB 0
     ASSERT $ < #EFF0
 
 ; Magic vectors

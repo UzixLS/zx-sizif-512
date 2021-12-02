@@ -1,4 +1,6 @@
 pause_init:
+    xor a
+    ld (var_pause_is_released), a
     ld d, PAUSE_BODY_ATTR
     ld c, PAUSE_X
     ld b, PAUSE_Y
