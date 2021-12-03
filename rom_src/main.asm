@@ -48,6 +48,7 @@ startup_handler:
     halt            ; ...
     djnz .loop      ; ...
     call init_default_config
+    call load_user_config
     call detect_sd_card
     call detect_ext_board
     call detect_external_ay
@@ -176,6 +177,7 @@ exit_with_ret:
 
 check_initialized:
     ld hl, cfg_initialized     ; if (cfg_initialized == "magic word") Z = 0, else Z = 1
+.check;
     ld a, #B1                  ; ...
     cpi                        ; ... hl++
     ret nz                     ; ...
@@ -214,6 +216,35 @@ save_config:
     ld de, cfg_saved      ; ...
     ld hl, cfg            ; ... 
     ldir                  ; ...
+    ret
+
+
+load_user_config:
+    ld hl, user_config_initialized ; check if magic world is written to flash
+    call check_initialized.check   ; if no - do no do anything
+    ret nz                         ; ...
+    ld bc, CFG_T                   ; else - cfg_saved = user_config
+    ld de, cfg_saved               ; ...
+    ld hl, user_config             ; ...
+    ldir                           ; ...
+.quirks:                           ; some options shouldn't be saved by user, so we just overwrite them from default config
+    ld a, (CFG_DEFAULT+CFG_T.ay)   ; AY should be disabled only by detect_external_ay
+    ld (cfg_saved+CFG_T.ay), a     ; ...
+    ld a, (CFG_DEFAULT+CFG_T.sd)   ; SD is always autodetected
+    ld (cfg_saved+CFG_T.sd), a     ; ...
+    ret
+
+save_user_config:
+    ld iy, user_config_sector      ; erase
+    call flash_erase_sector        ; ...
+    ld ix, cfg                     ; program config to flash
+    ld iy, user_config             ; ...
+    ld b, CFG_T                    ; ...
+    call flash_program             ; ...
+    ld ix, cfg_initialized         ; program magic word to flash
+    ld iy, user_config_initialized ; ...
+    ld b, 4                        ; ...
+    call flash_program             ; ...
     ret
 
 
@@ -366,12 +397,13 @@ check_custom_rom:
     ld a, #fe                    ; read cs,z,x,c,v
     in a, (#fe)                  ; ...
     bit 0, a                     ; check CS is pressed
-    ret nz                       ; ... exit if no
+    jr nz, .check_custom_rom     ; ... skip menu if no
 .show_menu:
     ld a, 1                      ; show magic border
     ld bc, #01ff                 ; ...
     out (c), a                   ; ...
     call bootmenu                ; ... else show boot menu
+.check_custom_rom:
     ld a, (cfg_saved.custom_rom) ; which rom was choosen?
     or a                         ; ... do nothing if default
     ret z                        ; ...
@@ -673,8 +705,15 @@ wait_for_keys_release:
     include font.asm
     include strings.asm
 
-    DISPLAY "Free space: ",/D,#3D00-$
-    ASSERT $ < #3D00
+    DISPLAY "Free space: ",/D,#2000-$
+    ASSERT $ < #2000
+
+
+; Rewrittable area to save user settings. Flash sector size = 4Kb
+    ORG #2000
+user_config_sector:
+user_config_initialized: DB 0,0,0,0
+user_config CFG_T 
 
 
 ; BDI/TR-DOS detection routine. See detect_external_bdi

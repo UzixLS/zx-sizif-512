@@ -64,6 +64,7 @@ menuext: MENU_DEF 20
 
 menuadv: MENU_DEF 22
     MENUENTRY_T str_sd_indication menu_sdind_value_cb     menu_sdind_cb
+    MENUENTRY_T str_save_settings 0                       menu_cfgsave_cb
     MENUENTRY_T str_back          0                       menu_back_cb
     MENUENTRY_T 0
 .end:
@@ -357,6 +358,35 @@ menu_sdind_cb:
     ld bc, #0cff
     out (c), a
     ret
+
+menu_cfgsave_cb:
+    bit 4, d                ; action?
+    ret z
+    call save_user_config
+    push de
+    ld a, 1
+    ld b, SAVE_ANIMATION_LEN    ; show some border effect to provide feedback about operation
+.loop:                          ; ...
+    push bc                     ; ...
+    call .save_animation_effect ; ...
+    pop bc                      ; ... 
+    djnz .loop                  ; ...
+    pop de
+    ret
+.save_animation_effect:
+    ld e, 255
+.loop_outer:
+    inc a                       ; toggle border
+    and 1                       ; ...
+    ld bc, #01ff                ; ...
+    out (c), a                  ; ...
+    ld d, 255
+.loop_inner:
+    dec d
+    jr nz, .loop_inner
+    dec e
+    jr nz, .loop_outer
+    ret    
 
 menu_back_cb:
     call restore_screen

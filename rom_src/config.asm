@@ -18,6 +18,8 @@ PAUSE_Y                 EQU (24-PAUSE_HEIGHT)/2
 PAUSE_BODY_ATTR         EQU #00
 PAUSE_TEXT_ATTR         EQU #C7
 
+SAVE_ANIMATION_LEN      EQU 8
+
 
     STRUCT CFG_T
 _reserv0   DB 0

@@ -139,6 +139,9 @@ str_menuadv_end:
 str_sd_indication: DB "SD indication",0
 str_sd_indication_end:
 
+str_save_settings: DB "Save settings",0
+str_save_settings_end:
+
 str_back: DB "Go back...",0
 str_back_end:
 

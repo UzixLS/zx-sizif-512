@@ -38,7 +38,8 @@ app_begin:
     or a
     jr z, .loop
 
-save_variables:
+
+save_user_config:
     ret
 
 save_screen:
