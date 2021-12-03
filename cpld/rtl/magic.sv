@@ -34,7 +34,8 @@ module magic(
     output reg ulaplus_en,
     output reg ay_en,
     output reg covox_en,
-    output reg sd_en
+    output reg soundrive_en,
+    output reg sd_indication_en
 );
 
 reg magic_unmap_next;
@@ -117,7 +118,8 @@ always @(posedge clk28 or negedge rst_n) begin
         ulaplus_en <= 1'b1;
         ay_en <= 1'b1;
         covox_en <= 1'b1;
-        sd_en <= 1'b1;
+        soundrive_en <= 1'b1;
+        sd_indication_en <= 1'b1;
     end
     else if (config_cs && bus.wr) case (bus.a[15:8])
         8'h01: {rom_wren, magic_reboot, magic_beeper} <= bus.d[2:0];
@@ -130,7 +132,8 @@ always @(posedge clk28 or negedge rst_n) begin
         8'h08: ay_en <= bus.d[0];
         8'h09: {zc_en, divmmc_en} <= bus.d[1:0];
         8'h0A: ulaplus_en <= bus.d[0];
-        8'h0B: {sd_en, covox_en} <= bus.d[1:0];
+        8'h0B: {soundrive_en, covox_en} <= bus.d[1:0];
+        8'h0C: sd_indication_en <= bus.d[0];
     endcase
 end
 

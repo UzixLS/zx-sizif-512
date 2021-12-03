@@ -84,8 +84,6 @@ Note that DFFDh port available only in Pentagon mode.
 ### SD card
 Sizif have preinstalled esxDOS firmware, which provides ability to load TAP, TRD, SCL, Z80 files and save snapshots. To use this you should format SD cart to FAT32 or FAT16 and unpack latest esxDOS release ([link](http://www.esxdos.org/index.html)) to card. Also it's recommended to install Long Filename Browser ([link](https://spectrumcomputing.co.uk/forums/viewtopic.php?t=2553)) to card.
 
-You may observe strange lines on border and creaky sounds on SD card access. It's not a bug, it's a feature ;)
-
 ### Tested addons
 * [AYX-32](https://github.com/tslabs/arm/tree/master/AYX-32) - OK
 * BDI-ZX ver 2.0 MVcomp FDD interface - OK

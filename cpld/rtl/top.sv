@@ -129,7 +129,7 @@ end
 
 /* SCREEN CONTROLLER */
 wire up_write_req;
-wire [2:0] screen_border = {border[2] ^ ~sd_cs, border[1] ^ magic_beeper, border[0]};
+wire [2:0] screen_border = {border[2] ^ sd_indication, border[1] ^ magic_beeper, border[0]};
 wire [2:0] r0, g0;
 wire [1:0] b0;
 wire screen_fetch, screen_fetch_up, screen_contention, port_ff_active;
@@ -301,16 +301,19 @@ wire div_automap;
 wire [7:0] magic_dout;
 wire magic_dout_active;
 wire magic_mode, magic_map;
-wire [1:0] rom_custom;
-wire rom_alt48_en, rom_alt48, rom_custom_en;
-wire joy_sinclair, up_en, ay_en, covox_en, sd_en;
-panning_t panning;
-assign ay_mono = panning == PANNING_MONO;
-assign ay_abc = panning == PANNING_ABC;
-wire divmmc_en, zc_en;
 `ifndef REV_C
     assign bus0 = magic_mode;
 `endif
+
+wire [1:0] rom_custom;
+wire rom_alt48_en, rom_alt48, rom_custom_en;
+wire joy_sinclair, up_en, ay_en, covox_en, soundrive_en;
+panning_t panning;
+assign ay_mono = panning == PANNING_MONO;
+assign ay_abc = panning == PANNING_ABC;
+wire divmmc_en, zc_en, sd_indication_en;
+wire sd_indication = sd_indication_en & ~sd_cs;
+
 magic magic0(
     .rst_n(n_rstcpu0),
     .clk28(clk28),
@@ -346,7 +349,8 @@ magic magic0(
     .ulaplus_en(up_en),
     .ay_en(ay_en),
     .covox_en(covox_en),
-    .sd_en(sd_en)
+    .soundrive_en(soundrive_en),
+    .sd_indication_en(sd_indication_en)
 );
 
 
@@ -417,7 +421,7 @@ soundrive soundrive0(
     .rst_n(usrrst_n),
     .clk28(clk28),
     .en_covox(covox_en),
-    .en_soundrive(sd_en),
+    .en_soundrive(soundrive_en),
 
     .bus(bus),
 
@@ -435,7 +439,7 @@ mixer mixer0(
 
     .beeper(beeper ^ magic_beeper),
     .tape_out(tape_out),
-    .tape_in(tape_in ^ sd_cs),
+    .tape_in(tape_in ^ sd_indication),
     .sd_l0(soundrive_l0),
     .sd_l1(soundrive_l1),
     .sd_r0(soundrive_r0),

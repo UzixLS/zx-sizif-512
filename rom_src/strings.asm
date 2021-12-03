@@ -28,6 +28,12 @@ str_on_end:
 str_off: DB "      OFF",0
 str_off_end:
 
+str_on_short: DB " ON",0
+str_on_short_end:
+
+str_off_short: DB "OFF",0
+str_off_short_end:
+
 str_machine: DB "Machine",0
 str_machine_end:
 
@@ -126,6 +132,15 @@ str_saa_end
 
 str_gs: DB "GS",0
 str_gs_end
+
+str_menuadv: DB "Advanced...",0
+str_menuadv_end:
+
+str_sd_indication: DB "SD indication",0
+str_sd_indication_end:
+
+str_back: DB "Go back...",0
+str_back_end:
 
 str_normal_boot: DB "Normal boot", 0
 str_normal_boot_end:
