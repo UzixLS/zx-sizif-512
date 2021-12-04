@@ -9,7 +9,7 @@ build_rev:
 	${MAKE} -C cpld/syn/ REVISION=rev_${REV} clean build
 	${MAKE} -C rom_src/ REV=${REV} clean all
 	${MAKE} -C rom/ REV=${REV} clean all
-	cp cpld/syn/output/rev_${REV}.pof ${OUTDIR}/
+	cp cpld/syn/output/rev_${REV}.pof ${OUTDIR}/cpld.rev.${REV}.pof
 	cp rom/sizif512-040.rom ${OUTDIR}/rom.rev.${REV}.rom
 
 clean:
