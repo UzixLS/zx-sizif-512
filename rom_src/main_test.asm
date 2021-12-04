@@ -40,6 +40,7 @@ app_begin:
 
 
 save_user_config:
+    xor a
     ret
 
 save_screen:

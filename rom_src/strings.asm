@@ -142,6 +142,12 @@ str_sd_indication_end:
 str_save_settings: DB "Save settings",0
 str_save_settings_end:
 
+str_error: DB "ERROR",0
+str_error_end:
+
+str_no_error: DB "     ",0
+str_no_error_end:
+
 str_back: DB "Go back...",0
 str_back_end:
 

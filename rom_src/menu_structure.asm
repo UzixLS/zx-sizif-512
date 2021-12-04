@@ -64,7 +64,7 @@ menuext: MENU_DEF 20
 
 menuadv: MENU_DEF 22
     MENUENTRY_T str_sd_indication menu_sdind_value_cb     menu_sdind_cb
-    MENUENTRY_T str_save_settings 0                       menu_cfgsave_cb
+    MENUENTRY_T str_save_settings menu_cfgsave_value_cb   menu_cfgsave_cb
     MENUENTRY_T str_back          0                       menu_back_cb
     MENUENTRY_T 0
 .end:
@@ -190,6 +190,14 @@ menu_gs_value_cb:
     DW str_off_end-2
     DW str_on_end-2
 
+menu_exit_value_cb:
+    ld ix, .values_table
+    ld a, (var_exit_reboot)
+    jp menu_value_get
+.values_table:
+    DW str_exit_no_reboot_end-2
+    DW str_exit_reboot_end-2
+
 menu_sdind_value_cb:
     ld ix, .values_table
     ld a, (cfg.sdind)
@@ -198,13 +206,13 @@ menu_sdind_value_cb:
     DW str_off_short_end-2
     DW str_on_short_end-2
 
-menu_exit_value_cb:
+menu_cfgsave_value_cb:
     ld ix, .values_table
-    ld a, (var_exit_reboot)
+    ld a, (var_flash_error)
     jp menu_value_get
 .values_table:
-    DW str_exit_no_reboot_end-2
-    DW str_exit_reboot_end-2
+    DW str_no_error_end-2
+    DW str_error_end-2
 
 
 menu_value_get:
@@ -363,6 +371,8 @@ menu_cfgsave_cb:
     bit 4, d                ; action?
     ret z
     call save_user_config
+    or a                    ; a == 1 means error
+    ret nz                  ; ...
     push de
     ld a, 1
     ld b, SAVE_ANIMATION_LEN    ; show some border effect to provide feedback about operation

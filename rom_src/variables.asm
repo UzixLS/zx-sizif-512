@@ -16,6 +16,7 @@ var_menu: MENU_T
 var_menu_current_item: DB 0
 var_menu_animate_cnt: DB 0
 var_ext_presence: DB 1
+var_flash_error: DB 0
 
 cfg CFG_T
 cfgext CFGEXT_T

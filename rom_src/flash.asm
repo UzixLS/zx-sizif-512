@@ -96,3 +96,42 @@ flash_erase_sector:
 	out (c), h                  ; ...
 	ret
 .sub_end:
+
+
+; OUT -  A - garbage
+; OUT -  F - Z = 0 if flash is supported, 1 if not
+; OUT - BC - garbage
+; OUT - DE - garbage
+; OUT - HL - garbage
+flash_is_supported:
+	ld de, var_ram_func
+	ld hl, .sub
+	ld bc, .sub_end-.sub
+	ldir
+	call var_ram_func
+	ld a, e                     ; a = manufacturer_id
+	cp #bf                      ; if manufacturer != SST - exit
+	ret nz                      ; ...
+	ld a, d                     ; a = device_id
+	cp #b7                      ; SST32SF040
+	ret z                       ; ...
+	cp #b6                      ; SST32SF020
+	ret z                       ; ...
+	cp #b5                      ; SST39SF010
+	ret                         ; ...
+.sub:
+	ld bc, #01ff                ; enable jedec seq
+	ld h, #4                    ; ...
+	out (c), h                  ; ...
+	ld hl, #1555 : ld (hl), #AA ; software id entry jedec sequence
+	ld hl, #2aaa : ld (hl), #55 ; ...
+	ld hl, #1555 : ld (hl), #90 ; ...
+	nop                         ; just for safety, m1 cycle is longer than T{ida}
+	ld de, (#0000)              ; d = device_id; e = manufacturer_id
+	ld hl, #1555 : ld (hl), #AA ; software id exit jedec sequence
+	ld hl, #2aaa : ld (hl), #55 ; ...
+	ld hl, #1555 : ld (hl), #F0 ; ...
+	ld h, #1                    ; disable jedec seq, enable border
+	out (c), h                  ; ...
+	ret
+.sub_end:
