@@ -72,9 +72,11 @@ menuadv: MENU_DEF 22
 
 menuboot: MENU_DEF 16
     MENUENTRY_T str_normal_boot   0                       menu_boot_normal_cb
+    IFNDEF REV_C
     MENUENTRY_T str_zx80          0                       menu_boot_zx80_cb
     MENUENTRY_T str_zx81          0                       menu_boot_zx81_cb
     MENUENTRY_T str_negluk        0                       menu_boot_negluk_cb
+    ENDIF
     MENUENTRY_T 0
 .end:
 
