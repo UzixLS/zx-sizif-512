@@ -21,6 +21,13 @@ PAUSE_TEXT_ATTR         EQU #C7
 SAVE_ANIMATION_LEN      EQU 8
 
 
+    IFDEF REV_C
+        DEFINE BRIGHT_DEFAULT 1
+    ELSE
+        DEFINE BRIGHT_DEFAULT 0
+    ENDIF
+
+
     STRUCT CFG_T
 _reserv0   DB 0
 _reserv1   DB 0
@@ -35,6 +42,8 @@ sd         DB 2
 ulaplus    DB 1
 dac        DB 3
 sdind      DB 1
+bright     DB BRIGHT_DEFAULT
+ENDIF
     ENDS
 
     STRUCT CFGEXT_T

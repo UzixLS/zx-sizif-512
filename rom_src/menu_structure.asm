@@ -64,6 +64,7 @@ menuext: MENU_DEF 20
 
 menuadv: MENU_DEF 22
     MENUENTRY_T str_sd_indication menu_sdind_value_cb     menu_sdind_cb
+    MENUENTRY_T str_bright_boost  menu_bright_value_cb    menu_bright_cb
     MENUENTRY_T str_save_settings menu_cfgsave_value_cb   menu_cfgsave_cb
     MENUENTRY_T str_back          0                       menu_back_cb
     MENUENTRY_T 0
@@ -201,6 +202,14 @@ menu_exit_value_cb:
 menu_sdind_value_cb:
     ld ix, .values_table
     ld a, (cfg.sdind)
+    jp menu_value_get
+.values_table:
+    DW str_off_short_end-2
+    DW str_on_short_end-2
+
+menu_bright_value_cb:
+    ld ix, .values_table
+    ld a, (cfg.bright)
     jp menu_value_get
 .values_table:
     DW str_off_short_end-2
@@ -364,6 +373,15 @@ menu_sdind_cb:
     call menu_handle_press
     ld (cfg.sdind), a
     ld bc, #0cff
+    out (c), a
+    ret
+
+menu_bright_cb:
+    ld a, (cfg.bright)
+    ld c, 1
+    call menu_handle_press
+    ld (cfg.bright), a
+    ld bc, #0dff
     out (c), a
     ret
 

@@ -185,6 +185,7 @@ rgb rgb0(
     .clk28(clk28),
     .strobe(clk14 ^ even_line),
     .up_en(up_active),
+    .bright_boost(bright_boost),
     .r_i(r0),
     .g_i(g0),
     .b_i(b0),
@@ -313,6 +314,7 @@ assign ay_mono = panning == PANNING_MONO;
 assign ay_abc = panning == PANNING_ABC;
 wire divmmc_en, zc_en, sd_indication_en;
 wire sd_indication = sd_indication_en & ~sd_cs;
+wire bright_boost;
 
 magic magic0(
     .rst_n(n_rstcpu0),
@@ -350,7 +352,8 @@ magic magic0(
     .ay_en(ay_en),
     .covox_en(covox_en),
     .soundrive_en(soundrive_en),
-    .sd_indication_en(sd_indication_en)
+    .sd_indication_en(sd_indication_en),
+    .bright_boost(bright_boost)
 );
 
 
