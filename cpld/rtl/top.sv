@@ -89,6 +89,8 @@ wire up_active;
 wire clkwait;
 wire [2:0] rampage128;
 wire div_wait;
+wire sd_indication;
+wire bright_boost;
 
 
 /* CPU BUS */
@@ -313,8 +315,7 @@ panning_t panning;
 assign ay_mono = panning == PANNING_MONO;
 assign ay_abc = panning == PANNING_ABC;
 wire divmmc_en, zc_en, sd_indication_en;
-wire sd_indication = sd_indication_en & ~sd_cs;
-wire bright_boost;
+assign sd_indication = sd_indication_en & ~sd_cs;
 
 magic magic0(
     .rst_n(n_rstcpu0),
