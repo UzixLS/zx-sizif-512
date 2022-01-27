@@ -681,10 +681,10 @@ font_latin_small_letter_c:
     DG --------
 
 font_latin_small_letter_d:
+    DG --------
     DG -----#--
     DG -----#--
     DG --####--
-    DG -#---#--
     DG -#---#--
     DG -#---#--
     DG --####--
