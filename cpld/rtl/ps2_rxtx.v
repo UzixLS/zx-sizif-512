@@ -17,7 +17,7 @@ module ps2_rxtx#(
 
 localparam CLKWAIT_US = 1;
 localparam CLKWAIT_TICKS = int'(CLKWAIT_US*CLK_FREQ/1e6) + 1'b1;
-localparam TOUT_US = 100; // must be greater than CLKWAIT_US
+localparam TOUT_US = 150; // must be greater than CLKWAIT_US
 localparam TOUT_TICKS = int'(TOUT_US*CLK_FREQ/1e6) + 1'b1;
 localparam TIMER_WIDTH = $clog2(TOUT_TICKS);
 reg [TIMER_WIDTH-1:0] timer;
