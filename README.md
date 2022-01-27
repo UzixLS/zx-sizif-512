@@ -109,7 +109,22 @@ Sizif have preinstalled esxDOS firmware, which provides ability to load TAP, TRD
     * added Bluetooth tape input (via M18 module)
     * added alternative microSD card socket footprint
     * fixed compatibility with some keyboards
+    * modified tape input circuit
 * Rev.D1: minor changes in pcb layout
+
+### Roadmap
+PCB rev.E:
+* add fuse on power input
+* add protection diode on 5V power rail
+* rotate left keyboard connector by 180 degrees
+* use film capacitors C37,C38,C39 instead of ceramic (optional)
+* add ability to simultaneously install the power/reset keys together with the connectors
+* tape input circuit reverted to one used in rev.C because it has better sensitivity
+* add speaker amplifier on LM386
+* replace 74HCU04-based crystal clock generator by ICS501-based
+* fix compatibility with wireless sega gamepads
+* replace TRS audio connectors by TRRS with video output
+* add jumper for wiring minidin-9 pin 4 with composite or sync output for compatibility with dirty scart cables
 
 ### Acknowledgments
 This work is inspired and based on a lot of other projects and would hardly have been successful without them:
