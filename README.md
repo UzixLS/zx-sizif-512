@@ -95,6 +95,10 @@ Sizif have preinstalled esxDOS firmware, which provides ability to load TAP, TRD
 * DivIDE 5.7d - OK (if SD card isn't insert)
 * DMA 2.02 by ShamaZX - OK
 * [Kempston + TurboSound interface](https://github.com/konkotgit/KTS) - OK
+* [ZX-HD](https://www.bytedelight.com/?page_id=1800) - OK
+* [ZX-VGA-JOY](http://zx-vga-joy.com/) - OK
+* [Spectranet by ByteDelight](https://www.bytedelight.com/?page_id=3515) - OK
+* Spectranet by ShamaZX (aka ZX Net 512) - OK
 
 ### Changelog & current status
 * Rev.A - first release. Please note the [errata](pcb/rev.A/ERRATA.ru.txt) (in russian).
