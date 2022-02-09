@@ -177,7 +177,7 @@ exit_with_ret:
 
 check_initialized:
     ld hl, cfg_initialized     ; if (cfg_initialized == "magic word") Z = 0, else Z = 1
-.check;
+.check:
     ld a, #B1                  ; ...
     cpi                        ; ... hl++
     ret nz                     ; ...
@@ -646,6 +646,11 @@ nmi_pause:
     ld a, (var_exit_flag)
     or a
     jr z, .loop
+.wait_for_pause_key_release:
+    xor a              ; read magic/pause keys state from port #00FF
+    in a, (#ff)        ; ...
+    and #03            ; ...
+    jr nz, .wait_for_pause_key_release
     ret
 
 
