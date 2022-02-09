@@ -1,14 +1,7 @@
     DB 0
 
-    IFDEF SIZIFXXS
-str_sizif: DB "SIZIF-XXS",0
-str_sizif_end:
-    ENDIF
-
-    IFDEF SIZIF512
 str_sizif: DB "SIZIF-512",0
 str_sizif_end:
-    ENDIF
 
 str_pause DB " PAUSE ",0
 str_pause_end:

@@ -34,9 +34,7 @@ menudefault: MENU_DEF 20
     MENUENTRY_T str_machine     menu_machine_value_cb     menu_machine_cb
     MENUENTRY_T str_panning     menu_panning_value_cb     menu_panning_cb
     MENUENTRY_T str_joystick    menu_joystick_value_cb    menu_joystick_cb
-    IFNDEF SIZIFXXS
     MENUENTRY_T str_rom48       menu_rom48_value_cb       menu_rom48_cb
-    ENDIF
     MENUENTRY_T str_sd          menu_sd_value_cb          menu_sd_cb
     MENUENTRY_T str_ulaplus     menu_ulaplus_value_cb     menu_ulaplus_cb
     MENUENTRY_T str_dac         menu_dac_value_cb         menu_dac_cb
