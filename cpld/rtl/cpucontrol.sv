@@ -18,7 +18,7 @@ module cpucontrol(
     input turbo_t turbo,
     input ext_wait_cycle,
 
-    output reg n_rstcpu,
+    output reg n_rstcpu_out,
     output reg clkcpu,
     output clkcpu_ck,
     output clkwait,
@@ -112,13 +112,13 @@ end
 /* RESET */
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
-        n_rstcpu <= 0;
+        n_rstcpu_out <= 0;
 `ifdef TESTBENCH
     else if (hc[4])
-        n_rstcpu <= 1'b1;
+        n_rstcpu_out <= 1'b1;
 `endif
     else if (vc[8])
-        n_rstcpu <= 1'b1;
+        n_rstcpu_out <= 1'b1;
 end
 
 

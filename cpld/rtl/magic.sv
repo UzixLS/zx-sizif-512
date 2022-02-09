@@ -39,6 +39,8 @@ module magic(
     output reg bright_boost
 );
 
+localparam magic_on_start = 1'b1;
+
 reg magic_unmap_next;
 reg magic_map_next;
 reg opcode_check_next;
@@ -48,11 +50,11 @@ reg opcode_is_reading;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         n_nmi <= 1'b1;
-        magic_mode <= 1'b1;
-        magic_map <= 1'b1;
+        magic_mode <= magic_on_start;
+        magic_map <= magic_on_start;
         magic_map_next <= 0;
         magic_unmap_next <= 0;
-        opcode_check_next <= 1'b1;
+        opcode_check_next <= magic_on_start;
         opcode_match <= 0;
         opcode_is_reading <= 0;
     end

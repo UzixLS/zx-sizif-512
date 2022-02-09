@@ -6,7 +6,7 @@ module zx_ula (
     input rst_n,
     input clk28,
 
-    output n_rstcpu,
+    inout n_rstcpu,
     output clkcpu,
     output n_clkcpu,
 
@@ -111,21 +111,34 @@ assign bus.ioreq = ~(~n_m1 | n_iorqge | n_iorqge_delayed);
 
 /* RESET */
 reg rst_n0 = 0;
-reg [2:0] rst_n0_cnt = 0;
+reg [2:0] rst_n0_cnt = 3'b111;
 always @(posedge clk28) begin
-    if (rst_n == 1'b0) begin
-        if (! (&rst_n0_cnt))
-            rst_n0_cnt <= rst_n0_cnt + 1'b1;
-    end
-    else begin
+    if (rst_n == 1'b1)
         rst_n0_cnt <= 0;
-    end
+    else if (! (&rst_n0_cnt))
+        rst_n0_cnt <= rst_n0_cnt + 1'b1;
     rst_n0 <= (&rst_n0_cnt)? 1'b0 : 1'b1;
 end
 
 reg usrrst_n = 0;
 always @(posedge clk28) begin
     usrrst_n <= (&rst_n0_cnt || ps2_key_reset || magic_reboot)? 1'b0 : 1'b1;
+end
+
+reg n_rstcpu_in = 0;
+reg [2:0] n_rstcpu_in_cnt = 3'b111;
+always @(posedge clk28 or negedge usrrst_n) begin
+    if (usrrst_n == 1'b0) begin
+        n_rstcpu_in_cnt <= 3'b111;
+        n_rstcpu_in <= 0;
+    end
+    else begin
+        if (n_rstcpu == 1'b1)
+            n_rstcpu_in_cnt <= 0;
+        else if (! (&n_rstcpu_in_cnt))
+            n_rstcpu_in_cnt <= n_rstcpu_in_cnt + 1'b1;
+        n_rstcpu_in <= (&n_rstcpu_in_cnt)? 1'b0 : 1'b1;
+    end
 end
 
 
@@ -260,8 +273,8 @@ wire [7:0] kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, ps2_joy_fire | joy
 
 /* CPU CONTROLLER */
 wire n_int_next, clkcpu_ck, snow;
-wire n_rstcpu0;
-assign n_rstcpu = n_rstcpu0? 1'bz : 1'b0;
+wire n_rstcpu_out;
+assign n_rstcpu = n_rstcpu_out? 1'bz : 1'b0;
 assign n_clkcpu = ~clkcpu;
 cpucontrol cpucontrol0(
     .rst_n(usrrst_n),
@@ -282,7 +295,7 @@ cpucontrol cpucontrol0(
     .turbo(turbo),
     .ext_wait_cycle(div_wait),
 
-    .n_rstcpu(n_rstcpu0),
+    .n_rstcpu_out(n_rstcpu_out),
     .clkcpu(clkcpu),
     .clkcpu_ck(clkcpu_ck),
     .clkwait(clkwait),
@@ -318,7 +331,7 @@ wire divmmc_en, zc_en, sd_indication_en;
 assign sd_indication = sd_indication_en & ~sd_cs;
 
 magic magic0(
-    .rst_n(n_rstcpu0),
+    .rst_n(n_rstcpu_in),
     .clk28(clk28),
 
     .bus(bus),
@@ -370,7 +383,7 @@ wire [4:0] port_dffd;
 wire plus3_mtr0;
 assign plus3_mtr = plus3_mtr0? 1'bz : 1'b0;
 ports ports0 (
-    .rst_n(n_rstcpu0),
+    .rst_n(n_rstcpu_in),
     .clk28(clk28),
 
     .bus(bus),
@@ -407,7 +420,7 @@ ports ports0 (
 /* AY */
 wire ay_dout_active;
 ay ay0(
-    .rst_n(usrrst_n),
+    .rst_n(n_rstcpu_in),
     .clk28(clk28),
     .en(ay_en),
     .bus(bus),
@@ -422,7 +435,7 @@ ay ay0(
 /* COVOX & SOUNDRIVE */
 wire [7:0] soundrive_l0, soundrive_l1, soundrive_r0, soundrive_r1;
 soundrive soundrive0(
-    .rst_n(usrrst_n),
+    .rst_n(n_rstcpu_in),
     .clk28(clk28),
     .en_covox(covox_en),
     .en_soundrive(soundrive_en),
@@ -459,7 +472,7 @@ wire div_map, div_ram, div_ramwr_mask, div_dout_active;
 wire [7:0] div_dout;
 wire [3:0] div_page;
 divmmc divmmc0(
-    .rst_n(n_rstcpu0),
+    .rst_n(n_rstcpu_in),
     .clk28(clk28),
     .ck14(ck14),
     .ck7(ck7),
@@ -476,7 +489,7 @@ divmmc divmmc0(
     .sd_mosi(sd_mosi),
     .sd_sck(sd_sck),
     .sd_cs(sd_cs),
-    
+
     .rammap(port_dffd[4] | port_1ffd[0]),
     .magic_mode(magic_mode),
     .magic_map(magic_map),
@@ -495,7 +508,7 @@ wire up_dout_active;
 wire [7:0] up_dout;
 wire [5:0] up_write_addr;
 ulaplus ulaplus0(
-    .rst_n(n_rstcpu0),
+    .rst_n(n_rstcpu_in),
     .clk28(clk28),
     .en(up_en),
 
