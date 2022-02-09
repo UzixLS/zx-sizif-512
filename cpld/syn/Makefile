@@ -1,4 +1,5 @@
-REVISION = rev_D
+REV = D
+REVISION = rev_${REV}
 
 .PHONY: build program clean
 

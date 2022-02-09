@@ -1,14 +1,17 @@
 OUTDIR=out_new
+REV=D
+
+.PHONY: all build_rev clean pipeline
 
 all:
 	mkdir -p ${OUTDIR}/
-	${MAKE} build_rev REV=C
-	${MAKE} build_rev REV=D
+	${MAKE} REV=C build_rev
+	${MAKE} REV=D build_rev
 
 build_rev:
-	${MAKE} -C cpld/syn/ REVISION=rev_${REV} clean build
-	${MAKE} -C rom_src/ REV=${REV} clean all
-	${MAKE} -C rom/ REV=${REV} clean all
+	${MAKE} REV=${REV} -C rom_src/ clean all
+	${MAKE} REV=${REV} -C rom/ clean all
+	${MAKE} REV=${REV} -C cpld/syn/ clean build
 	cp cpld/syn/output/rev_${REV}.pof ${OUTDIR}/cpld.rev.${REV}.pof
 	cp rom/sizif512-040.rom ${OUTDIR}/rom.rev.${REV}.rom
 
@@ -16,5 +19,12 @@ clean:
 	rm -f "${OUTDIR}"
 	${MAKE} -C cpld/syn/ clean
 	${MAKE} -C cpld/tb/ clean
-	${MAKE} -C rom_src/ clean
 	${MAKE} -C rom/ clean
+	${MAKE} -C rom_src/ clean
+
+pipeline:
+	${MAKE} REV=${REV} -C rom_src/
+	${MAKE} REV=${REV} -C rom/
+	${MAKE} REV=${REV} -C cpld/syn/ build report program
+
+-include Makefile.local
