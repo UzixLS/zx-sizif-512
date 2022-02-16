@@ -156,7 +156,7 @@ always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         kempston_rd <= 0;
     else
-        kempston_rd <= en_kempston && bus.ioreq && bus.rd && bus.a[7:5] == 3'b000;
+        kempston_rd <= en_kempston && bus.ioreq && bus.rd && bus.a[5:0] == 6'h1F;
 end
 
 
