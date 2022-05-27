@@ -82,7 +82,7 @@ nmi_handler:
     call check_entering_pause ; A[1] == 1 if pause button is pressed
     bit 1, a                  ; ...
     jp nz, .enter_pause       ; ...
-    call delay_10ms           ; 
+    call delay_10ms           ;
     call check_entering_menu  ; A == 1 if we are entering menu, A == 2 if we are leaving to...
     bit 0, a                  ; ...default nmi handler, A == 0 otherwise
     jp nz, .enter_menu        ; ...
@@ -95,14 +95,14 @@ nmi_handler:
     ld bc, #00ff              ; ...
     in a, (c)                 ; if divmmc paged - just do retn
     bit 3, a                  ; ...
-    jr nz, exit_with_ret      ; ... 
+    jr nz, exit_with_ret      ; ...
     ld hl, #0066              ; otherwise jump to default nmi handler
     jr exit_with_jp           ; ...
 
 .enter_pause:
     ld hl, nmi_pause
     ld (var_main_fun), hl
-    jr .enter  
+    jr .enter
 .enter_menu:
     ld hl, nmi_menu
     ld (var_main_fun), hl
@@ -136,7 +136,7 @@ nmi_handler:
     out (c), a                ; ...
 .leave_without_reboot:
     pop af                    ; A = I
-    push af                   ; 
+    push af                   ;
     call get_im2_handler      ; HL = default im2 handler address
     ld (var_int_vector), hl
     xor a                     ; disable border
@@ -214,7 +214,7 @@ load_config:
 save_config:
     ld bc, CFG_T+CFGEXT_T ; cfg_saved = cfg
     ld de, cfg_saved      ; ...
-    ld hl, cfg            ; ... 
+    ld hl, cfg            ; ...
     ldir                  ; ...
     ret
 
@@ -284,7 +284,7 @@ init_cpld:
     out (c), a                  ; ...
 .do_load:
     ld b, CFG_T        ; B = registers count
-    ld c, #ff          ; 
+    ld c, #ff          ;
     ld hl, cfg+CFG_T-1 ; HL = &cfg[registers count-1]
     otdr               ; do { b--; out(bc, *hl); hl--; } while(b)
 .do_load_ext:          ; same for extension board
@@ -355,10 +355,10 @@ detect_ext_board:
 ; Check if external AY addon is connected to zx bus
 ; If yes - disable internal AY and TSFM on extension board
 detect_external_ay:
-    ld bc, #08ff    ; disable main AY 
+    ld bc, #08ff    ; disable main AY
     xor a           ; ...
     out (c), a      ; ...
-    ld b, #e1       ; disable extension board's AY 
+    ld b, #e1       ; disable extension board's AY
     out (c), a      ; ...
     ld bc, #fffd    ; set AY register = R6
     ld a, 6         ; ...
@@ -436,7 +436,7 @@ check_entering_pause:
 
 ; OUT -  A = 1 if we are entering menu, A = 2 if we are leaving menu, A = 0 otherwise
 ; OUT -  F - garbage
-check_entering_menu: 
+check_entering_menu:
     xor a                       ; read magic key state in bit 0 of #00FF port
     in a, (#ff)                 ; ...
     bit 0, a                    ; check key is hold
@@ -651,6 +651,13 @@ nmi_pause:
     in a, (#ff)        ; ...
     and #03            ; ...
     jr nz, .wait_for_pause_key_release
+    ei                 ; second read to fix start button bouncing on 8bitdo gamepad
+    halt               ; ...
+.wait_for_pause_key_release2:
+    xor a              ; read magic/pause keys state from port #00FF
+    in a, (#ff)        ; ...
+    and #03            ; ...
+    jr nz, .wait_for_pause_key_release2
     ret
 
 
@@ -728,7 +735,7 @@ wait_for_keys_release:
     ORG #2000
 user_config_sector:
 user_config_initialized: DB 0,0,0,0
-user_config CFG_T 
+user_config CFG_T
 
 
 ; BDI/TR-DOS detection routine. See detect_external_bdi
@@ -751,7 +758,7 @@ var_ram_func:
 
 ; Magic vectors
     ORG #F000
-Exit_vector: 
+Exit_vector:
     ORG #F008
 Readout_vector:
 
