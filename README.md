@@ -129,6 +129,8 @@ PCB rev.E:
 * fix compatibility with wireless sega gamepads
 * replace TRS audio connectors by TRRS with video output
 * add jumper for wiring minidin-9 pin 4 with composite or sync output for compatibility with dirty scart cables
+* add ability to install full-height 4.43MHz crystal
+* all 0.5/0.3 vias replaced by 0.6/0.3
 
 ### Acknowledgments
 This work is inspired and based on a lot of other projects and would hardly have been successful without them:
