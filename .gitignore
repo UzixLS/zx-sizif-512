@@ -1,50 +1,43 @@
 ## Kicad
-*-lib-table
-*-cache
-*-rescue.lib
-*.sch-bak
-*.kicad_pcb-bak
-*.dcm
-*.kicad_prl
-pcb/**/*-backups/
-pcb/**/*.xml
-pcb/**/out/
-pcb/mask-color.png
-pcb.*/
-pcb/rev*~*/
+/pcb/**/*-lib-table
+/pcb/**/*-cache
+/pcb/**/*-rescue.lib
+/pcb/**/*.sch-bak
+/pcb/**/*.kicad_pcb-bak
+/pcb/**/*.dcm
+/pcb/**/*.kicad_prl
+/pcb/**/*-backups/
+/pcb/**/*.xml
+/pcb/**/out/
 
 ## Quartus
-db/
-incremental_db/
-output/
-*.dpf
-*.cdf
-*.qws
-*.srf
-cpld/*/simulation/
-cpld/*/top-old.v
-cpld/*/top-test*.v
-cpld/*/top28.v
-cpld/*/chroma_gen28.vhd
-cpld.*/
+/cpld/**/db/
+/cpld/**/incremental_db/
+/cpld/**/output/
+/cpld/**/*.dpf
+/cpld/**/*.cdf
+/cpld/**/*.qws
+/cpld/**/*.srf
 
 ## Testbench
-cpld/tb/ivl_vhdl_work/
-cpld/tb/work/
-cpld/tb/*.gtkw
-cpld/tb/*.vcd
-cpld/tb/*.bin
-cpld/tb/*.mem
-cpld/tb.*/
+/cpld/tb/ivl_vhdl_work/
+/cpld/tb/work/
+/cpld/tb/*.gtkw
+/cpld/tb/*.vcd
+/cpld/tb/*.bin
+/cpld/tb/*.mem
+
+## ROM
+/rom/sizif*.rom
+/rom_src/*.bin
+/rom_src/*.hex
+/rom_src/*.map
+/rom_src/*.sna
+/rom_src.*/
 
 ## Etc.
-rom/sizif*.rom
-rom_src/*.bin
-rom_src/*.hex
-rom_src/*.map
-rom_src/*.sna
-rom_src.*/
-out_new/
+/out_new/
 *.bak
-*.*~
+*~
 *.sublime-*
+.vscode/
