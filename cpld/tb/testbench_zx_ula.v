@@ -130,6 +130,7 @@ end
 
 /* BUS ARBITER */
 assign n_wait_cpu = 1'b1;
+assign (pull1, highz0) n_rstcpu = 1'b1;
 assign (pull1, highz0) n_nmi = 1'b1;
 assign n_nmi0 = n_nmi; // workarround because for some reason T80na+ModelSim isn't working with pulled-up n_nmi
 assign rom_addr = {ra[16:14], a_cpu[13:0]};
@@ -144,7 +145,7 @@ assign (weak0, weak1) xd =
     ~n_romcs? rom_q :
     {8{1'bz}};
 
-assign d_cpu_i = 
+assign d_cpu_i =
     ~n_wr? d_cpu_o :
     ~n_romcs? rom_q :
     xd;
