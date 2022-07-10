@@ -221,17 +221,15 @@ save_config:
 
 load_user_config:
     ld hl, user_config_initialized ; check if magic world is written to flash
-    call check_initialized.check   ; if no - do no do anything
+    call check_initialized.check   ; if no - do not do anything
     ret nz                         ; ...
     ld bc, CFG_T                   ; else - cfg_saved = user_config
     ld de, cfg_saved               ; ...
     ld hl, user_config             ; ...
     ldir                           ; ...
 .quirks:                           ; some options shouldn't be saved by user, so we just overwrite them from default config
-    ld a, (CFG_DEFAULT+CFG_T.ay)   ; AY should be disabled only by detect_external_ay
-    ld (cfg_saved+CFG_T.ay), a     ; ...
-    ld a, (CFG_DEFAULT+CFG_T.sd)   ; SD is always autodetected
-    ld (cfg_saved+CFG_T.sd), a     ; ...
+    ld a, (CFG_DEFAULT.ay)         ; AY should be disabled only by detect_external_ay
+    ld (cfg_saved.ay), a           ; ...
     ret
 
 ; OUT -  A = 1 if error, 0 if ok
@@ -304,13 +302,12 @@ init_cpld:
 detect_sd_card:
     in a, (#77)                 ; read sd_cd state from ZC status port
     bit 0, a                    ; check sd_cd == 0 (card is insert)
-    jr z, .is_insert            ; yes?
+    ret z                       ; yes?
 .no_card:
+    ld a, (cfg_saved.sd)        ; if (sd == divmmc) sd = OFF
+    cp 1                        ; ...
+    ret nz                      ; ...
     xor a                       ; sd = OFF
-    ld (cfg_saved.sd), a        ; ...
-    ret
-.is_insert:
-    ld a, 1                     ; sd = divmmc
     ld (cfg_saved.sd), a        ; ...
     ret
 
@@ -662,9 +659,11 @@ nmi_pause:
 
 
 nmi_menu:
-    call check_initialized
-    jr z, .init1
+    call check_initialized     ; cpld and our variables may be not initialized at this point because magic rom was shadowed at start by external peripheral
+    jr z, .init1               ; so we're initialize our variables for properly menu work, but skip cpld initialization as it already initialized itself with safe values
     call init_default_config
+    ld a, 2                    ; default cpld sd card state - ZC
+    ld (cfg_saved.sd), a       ; ...
     call detect_ext_board
     call load_config
     call save_initialized
