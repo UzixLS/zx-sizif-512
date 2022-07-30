@@ -16,7 +16,8 @@ module cpucontrol(
     input [2:0] rampage128,
     input machine_t machine,
     input turbo_t turbo,
-    input ext_wait_cycle,
+    input ext_wait_cycle1,
+    input ext_wait_cycle2,
 
     output reg n_rstcpu_out,
     output reg clkcpu,
@@ -45,22 +46,24 @@ assign snow = bus.a[14] && ~bus.a[15] && bus.rfsh && (machine == MACHINE_S48 || 
 
 
 /* CLOCK */
-reg [3:0] turbo_wait;
+reg [5:0] turbo_wait;
 wire turbo_wait_trig0 = turbo == TURBO_14 && bus.mreq && !bus.rfsh;
 wire turbo_wait_trig1 = turbo == TURBO_14 && (bus.rd || bus.wr);
 reg turbo_wait_trig0_prev, turbo_wait_trig1_prev;
 always @(posedge clk28) begin
     turbo_wait[0] <= turbo_wait_trig0 && !turbo_wait_trig0_prev;
     turbo_wait[1] <= turbo_wait[0] || (turbo_wait_trig1 && !turbo_wait_trig1_prev);
-    turbo_wait[2] <= turbo_wait[1] && (bus.iorq || ext_wait_cycle);
+    turbo_wait[2] <= turbo_wait[1] && (bus.iorq || ext_wait_cycle1);
     turbo_wait[3] <= turbo_wait[2];
+    turbo_wait[4] <= turbo_wait[3] && ext_wait_cycle2;
+    turbo_wait[5] <= turbo_wait[4];
     turbo_wait_trig0_prev <= turbo_wait_trig0;
     turbo_wait_trig1_prev <= turbo_wait_trig1;
 end
 
 reg clkcpu_prev;
 assign clkcpu_ck = clkcpu && !clkcpu_prev;
-assign clkwait = contention || (|turbo_wait[3:1]);
+assign clkwait = contention || (|turbo_wait[5:1]);
 always @(posedge clk28) begin
     clkcpu_prev <= clkcpu;
     if (clkwait)
@@ -92,7 +95,7 @@ wire int_begin =
         vc == INT_V_S128 && hc == INT_H_S128 :
     // Pentagon
         vc == INT_V_PENT && hc == INT_H_PENT ;
-        
+
 reg [4:0] int_cnt;
 assign n_int_next = (|int_cnt)? 1'b0 : 1'b1;
 always @(posedge clk28 or negedge rst_n) begin

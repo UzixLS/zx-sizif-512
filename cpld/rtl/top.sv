@@ -88,6 +88,7 @@ wire magic_reboot, magic_beeper;
 wire up_active;
 wire clkwait;
 wire [2:0] rampage128;
+wire ay_wait;
 wire div_wait;
 wire sd_indication;
 wire bright_boost;
@@ -293,7 +294,8 @@ cpucontrol cpucontrol0(
     .machine(machine),
     .screen_contention(screen_contention),
     .turbo(turbo),
-    .ext_wait_cycle(div_wait),
+    .ext_wait_cycle1(ay_wait || div_wait),
+    .ext_wait_cycle2(ay_wait),
 
     .n_rstcpu_out(n_rstcpu_out),
     .clkcpu(clkcpu),
@@ -428,7 +430,8 @@ ay ay0(
     .ay_clk(ay_clk),
     .ay_bc1(ay_bc1),
     .ay_bdir(ay_bdir),
-    .d_out_active(ay_dout_active)
+    .d_out_active(ay_dout_active),
+    .cpuwait(ay_wait)
 );
 
 
