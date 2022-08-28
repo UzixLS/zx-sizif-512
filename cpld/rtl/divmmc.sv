@@ -24,13 +24,13 @@ module divmmc(
 
     output reg [3:0] page,
     output map,
-    output reg automap,
+    output reg mapram,
     output ram,
     output ramwr_mask,
     output cpuwait
 );
 
-reg automap_next;
+reg automap, automap_next;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         automap_next <= 0;
@@ -63,7 +63,7 @@ always @(posedge clk28 or negedge rst_n) begin
     end
 end
 
-reg conmem, mapram;
+reg conmem;
 wire port_e3_cs = en && bus.ioreq && bus.a[7:0] == 8'hE3;
 wire port_e7_cs = en && bus.ioreq && bus.a[7:0] == 8'hE7;
 wire port_eb_cs = en && bus.ioreq && bus.a[7:0] == 8'hEB;

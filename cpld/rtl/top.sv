@@ -315,7 +315,8 @@ always @(posedge clk28)    // precharge to 1 - this is required because of weak 
 assign n_nmi = n_nmi0? (n_nmi0_prev? 1'bz : 1'b1) : 1'b0;
 
 wire rom_wren;
-wire div_automap;
+wire div_map;
+wire div_mapram;
 wire [7:0] magic_dout;
 wire magic_dout_active;
 wire magic_mode, magic_map;
@@ -346,7 +347,7 @@ magic magic0(
 
     .magic_button(~n_magic || joy_mode || ps2_key_magic),
     .pause_button(ps2_key_pause || joy_start),
-    .div_automap(div_automap),
+    .div_paged(div_map && !div_mapram),
 
     .magic_mode(magic_mode),
     .magic_map(magic_map),
@@ -471,7 +472,7 @@ mixer mixer0(
 
 
 /* DIVMMC */
-wire div_map, div_ram, div_ramwr_mask, div_dout_active;
+wire div_ram, div_ramwr_mask, div_dout_active;
 wire [7:0] div_dout;
 wire [3:0] div_page;
 divmmc divmmc0(
@@ -499,7 +500,7 @@ divmmc divmmc0(
 
     .page(div_page),
     .map(div_map),
-    .automap(div_automap),
+    .mapram(div_mapram),
     .ram(div_ram),
     .ramwr_mask(div_ramwr_mask),
     .cpuwait(div_wait)
