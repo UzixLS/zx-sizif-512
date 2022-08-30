@@ -336,6 +336,7 @@ assign sd_indication = sd_indication_en & ~sd_cs;
 magic magic0(
     .rst_n(n_rstcpu_in),
     .clk28(clk28),
+    .ck35(ck35),
 
     .bus(bus),
     .d_out(magic_dout),

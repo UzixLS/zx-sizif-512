@@ -2,6 +2,7 @@ import common::*;
 module magic(
     input rst_n,
     input clk28,
+    input ck35,
 
     cpu_bus bus,
     output [7:0] d_out,
@@ -102,6 +103,8 @@ end
 
 
 /* MAGIC CONFIG */
+turbo_t turbo0;
+reg autoturbo_en;
 wire config_cs = magic_map && bus.ioreq && bus.a[7:0] == 8'hFF;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
@@ -109,7 +112,7 @@ always @(posedge clk28 or negedge rst_n) begin
         magic_beeper <= 0;
         rom_wren <= 0;
         machine <= MACHINE_PENT;
-        turbo <= TURBO_NONE;
+        turbo0 <= TURBO_NONE;
         panning <= PANNING_ABC;
         rom_custom_en <= 0;
         rom_custom <= 0;
@@ -128,11 +131,12 @@ always @(posedge clk28 or negedge rst_n) begin
         `else
             bright_boost <= 1'b0;
         `endif
+        autoturbo_en <= 1'b0;
     end
     else if (config_cs && bus.wr) case (bus.a[15:8])
         8'h01: {rom_wren, magic_reboot, magic_beeper} <= bus.d[2:0];
         8'h02: machine <= machine_t'(bus.d[2:0]);
-        8'h03: turbo <= turbo_t'(bus.d[2:0]);
+        8'h03: turbo0 <= turbo_t'(bus.d[2:0]);
         8'h04: panning <= panning_t'(bus.d[1:0]);
         8'h05: {rom_custom_en, rom_custom} <= {bus.d[7], bus.d[1:0]};
         8'h06: {rom_alt48_en, rom_alt48} <= {bus.d[0] | bus.d[1], bus.d[1]};
@@ -143,6 +147,7 @@ always @(posedge clk28 or negedge rst_n) begin
         8'h0B: {soundrive_en, covox_en} <= bus.d[1:0];
         8'h0C: sd_indication_en <= bus.d[0];
         8'h0D: bright_boost <= bus.d[0];
+        8'h0E: autoturbo_en <= bus.d[0];
     endcase
 end
 
@@ -153,6 +158,28 @@ always @(posedge clk28 or negedge rst_n) begin
         config_rd <= 0;
     else
         config_rd <= config_cs && bus.rd && bus.a[15:8] == 8'h00;
+end
+
+
+/* AUTOMATIC TURBO */
+reg [11:0] portfe_noturbo; // 1170uS
+always @(posedge clk28 or negedge rst_n) begin
+    if (!rst_n)
+        portfe_noturbo <= 0;
+    else if (bus.ioreq && !bus.a[0])
+        portfe_noturbo <= 1'b1;
+    else if (|portfe_noturbo && ck35)
+        portfe_noturbo <= portfe_noturbo + 1'b1;
+end
+always @(posedge clk28 or negedge rst_n) begin
+    if (!rst_n)
+        turbo <= TURBO_NONE;
+    else if (autoturbo_en && div_paged && !magic_map)
+        turbo <= TURBO_14;
+    else if (autoturbo_en && |portfe_noturbo)
+        turbo <= TURBO_NONE;
+    else
+        turbo <= turbo0;
 end
 
 

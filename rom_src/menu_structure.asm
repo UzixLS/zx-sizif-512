@@ -63,6 +63,7 @@ menuext: MENU_DEF 20
 menuadv: MENU_DEF 22
     MENUENTRY_T str_sd_indication menu_sdind_value_cb     menu_sdind_cb
     MENUENTRY_T str_bright_boost  menu_bright_value_cb    menu_bright_cb
+    MENUENTRY_T str_autoturbo     menu_autoturbo_value_cb menu_autoturbo_cb
     MENUENTRY_T str_save_settings menu_cfgsave_value_cb   menu_cfgsave_cb
     MENUENTRY_T str_back          0                       menu_back_cb
     MENUENTRY_T 0
@@ -210,6 +211,14 @@ menu_sdind_value_cb:
 menu_bright_value_cb:
     ld ix, .values_table
     ld a, (cfg.bright)
+    jp menu_value_get
+.values_table:
+    DW str_off_short_end-2
+    DW str_on_short_end-2
+
+menu_autoturbo_value_cb:
+    ld ix, .values_table
+    ld a, (cfg.autoturbo)
     jp menu_value_get
 .values_table:
     DW str_off_short_end-2
@@ -385,6 +394,15 @@ menu_bright_cb:
     out (c), a
     ret
 
+menu_autoturbo_cb:
+    ld a, (cfg.autoturbo)
+    ld c, 1
+    call menu_handle_press
+    ld (cfg.autoturbo), a
+    ld bc, #0eff
+    out (c), a
+    ret
+
 menu_cfgsave_cb:
     bit 4, d                ; action?
     ret z
@@ -397,7 +415,7 @@ menu_cfgsave_cb:
 .loop:                          ; ...
     push bc                     ; ...
     call .save_animation_effect ; ...
-    pop bc                      ; ... 
+    pop bc                      ; ...
     djnz .loop                  ; ...
     pop de
     ret
@@ -414,7 +432,7 @@ menu_cfgsave_cb:
     jr nz, .loop_inner
     dec e
     jr nz, .loop_outer
-    ret    
+    ret
 
 menu_back_cb:
     call restore_screen
@@ -425,7 +443,7 @@ menu_boot_normal_cb:
     bit 4, d                ; action?
     ret z
     ld a, 0
-    ld (cfg_saved.custom_rom), a 
+    ld (cfg_saved.custom_rom), a
     ld a, 1
     ld (var_exit_flag), a
     ret
@@ -434,7 +452,7 @@ menu_boot_zx80_cb:
     bit 4, d                ; action?
     ret z
     ld a, #81
-    ld (cfg_saved.custom_rom), a 
+    ld (cfg_saved.custom_rom), a
     ld a, 1
     ld (var_exit_flag), a
     ret
@@ -443,7 +461,7 @@ menu_boot_zx81_cb:
     bit 4, d                ; action?
     ret z
     ld a, #80
-    ld (cfg_saved.custom_rom), a 
+    ld (cfg_saved.custom_rom), a
     ld a, 1
     ld (var_exit_flag), a
     ret
@@ -452,7 +470,7 @@ menu_boot_negluk_cb:
     bit 4, d                ; action?
     ret z
     ld a, #83
-    ld (cfg_saved.custom_rom), a 
+    ld (cfg_saved.custom_rom), a
     ld a, 1
     ld (var_exit_flag), a
     ret
@@ -486,4 +504,3 @@ menu_handle_press:
 .decrement_roll:
     ld a, c                 ; value = max
     ret
-

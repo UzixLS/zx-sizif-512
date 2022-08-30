@@ -135,6 +135,9 @@ str_sd_indication_end:
 str_bright_boost: DB "Bright boost",0
 str_bright_boost_end:
 
+str_autoturbo: DB "Auto CPU freq",0
+str_autoturbo_end:
+
 str_save_settings: DB "Save settings",0
 str_save_settings_end:
 
@@ -158,4 +161,3 @@ str_zx81_end:
 
 str_negluk: DB "HE GLUK",0
 str_negluk_end:
-
