@@ -47,6 +47,7 @@ reg key2_l_ctrl, key2_r_ctrl, key2_up, key2_down, key2_left, key2_right, key2_es
 reg key2_minus, key2_equals, key2_back_slash, key2_tab, key2_l_bracket, key2_r_bracket, key2_semicolon, key2_quote;
 reg key2_comma, key2_period, key2_slash, key2_caps, key2_pgup, key2_pgdn;
 reg key2_alt, key2_del;
+reg key_reset0;
 
 reg is_press;
 reg is_ext;
@@ -135,8 +136,10 @@ always @(posedge clk or negedge rst_n) begin
                 `PS2_PGUP:      key2_pgup <= is_press;
                 `PS2_PGDN:      key2_pgdn <= is_press;
 
+                `PS2_F1:        key_pause <= is_press;
                 `PS2_F5:        key_magic <= is_press;
-                `PS2_F12:       key_pause <= is_press;
+                `PS2_F10:       key_reset0 <= is_press;
+                `PS2_F12:       key_reset0 <= is_press;
                 `PS2_DELETE:    key2_del <= is_press;
 
                 `PS2_KP_8:      joy_up <= is_press;
@@ -163,7 +166,7 @@ always @(posedge clk or negedge rst_n) begin
     if (!rst_n)
         key_reset <= 0;
     else
-        key_reset <= (key2_l_ctrl || key2_r_ctrl) && key2_alt && (key2_del || key2_backspace);
+        key_reset <= ((key2_l_ctrl || key2_r_ctrl) && key2_alt && (key2_del || key2_backspace)) || key_reset0;
 end
 
 

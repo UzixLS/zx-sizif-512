@@ -29,12 +29,12 @@ With extension board ([link](https://github.com/UzixLS/zx-sizif-512-ext)) more f
 * MIDI sound
 
 ### Demonstration
-Running Pentagon and Spectrum 128 demos: [link](https://www.youtube.com/watch?v=_RoLKcfJSTY)  
-Playing music from SD: [link](https://www.youtube.com/watch?v=TmikKD3yqOU)  
+Running Pentagon and Spectrum 128 demos: [link](https://www.youtube.com/watch?v=_RoLKcfJSTY)
+Playing music from SD: [link](https://www.youtube.com/watch?v=TmikKD3yqOU)
 Some random photos: [link](https://cloud.err200.net/index.php/s/73TR85tYZkMm8Ax?path=%2Fsizif-512)
 
-Review by Martin's 8-bit blog (in czech): [link](https://www.8bity.cz/2020/zx-spectrum-clone-with-cpld-ulaplus-sizif-512/#)  
-Review by The Retro Shack youtube channel: [link](https://www.youtube.com/watch?v=l5IgQTgq_bg)  
+Review by Martin's 8-bit blog (in czech): [link](https://www.8bity.cz/2020/zx-spectrum-clone-with-cpld-ulaplus-sizif-512/#)
+Review by The Retro Shack youtube channel: [link](https://www.youtube.com/watch?v=l5IgQTgq_bg)
 Building from scratch experience in Terence Ang's blog: [part1](https://www.terenceang.com/2021/08/28/building-a-zx-spectrum-clone-in-2021-begining/) [part2](https://www.terenceang.com/2021/08/29/building-a-zx-spectrum-clone-in-2021-sourcing-for-parts/) [part3](https://www.terenceang.com/2021/08/31/building-a-zx-spectrum-clone-in-2021-populating-the-board/)
 
 ### Magic button
@@ -66,8 +66,10 @@ Sega gamepad support will be available starting from PCB rev.D (or Rev.C with sl
 ### PS/2 keyboard buttons
 | Button | Function |
 | - | - |
+| F1 | Pause |
 | F5 | Magic button |
-| F12 | Pause |
+| F10 | Reboot |
+| F12 | Reboot |
 | Ctrl+Alt+Del | Reboot |
 | Ctrl+Alt+Backspace | Reboot |
 | Numpad 8, 2/5, 4, 6 | Joystick's up-down-left-right |
