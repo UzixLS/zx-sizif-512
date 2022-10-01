@@ -138,6 +138,9 @@ str_bright_boost_end:
 str_autoturbo: DB "Auto CPU freq",0
 str_autoturbo_end:
 
+str_zxkit1: DB "ZXKit1",0
+str_zxkit1_end:
+
 str_save_settings: DB "Save settings",0
 str_save_settings_end:
 

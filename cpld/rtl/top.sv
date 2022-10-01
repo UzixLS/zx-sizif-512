@@ -92,6 +92,7 @@ wire ay_wait;
 wire div_wait;
 wire sd_indication;
 wire bright_boost;
+wire zxkit1;
 
 
 /* CPU BUS */
@@ -156,6 +157,9 @@ wire [8:0] vc, hc;
 wire [4:0] blink_cnt;
 wire blink, even_line;
 wire clk14, clk7, clk35, ck14, ck7, ck35;
+wire vsync0, hsync0;
+assign vsync = zxkit1? clk14 : vsync0;
+assign hsync = zxkit1? csync : hsync0;
 screen screen0(
     .rst_n(usrrst_n),
     .clk28(clk28),
@@ -168,8 +172,8 @@ screen screen0(
     .g(g0),
     .b(b0),
     .csync(csync),
-    .vsync(vsync),
-    .hsync(hsync),
+    .vsync(vsync0),
+    .hsync(hsync0),
 
     .fetch_allow((!up_write_req && !bus.mreq) || bus.rfsh || (clkwait && turbo == TURBO_NONE)),
     .fetch(screen_fetch),
@@ -371,7 +375,8 @@ magic magic0(
     .covox_en(covox_en),
     .soundrive_en(soundrive_en),
     .sd_indication_en(sd_indication_en),
-    .bright_boost(bright_boost)
+    .bright_boost(bright_boost),
+    .zxkit1(zxkit1)
 );
 
 

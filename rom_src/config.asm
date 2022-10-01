@@ -44,6 +44,7 @@ dac        DB 3
 sdind      DB 1
 bright     DB BRIGHT_DEFAULT
 autoturbo  DB 0
+zxkit1     DB 0
 ENDIF
     ENDS
 
