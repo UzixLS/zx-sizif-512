@@ -117,22 +117,20 @@ Sizif have preinstalled esxDOS firmware, which provides ability to load TAP, TRD
     * fixed compatibility with some keyboards
     * modified tape input circuit
 * Rev.D1: minor changes in pcb layout
-
-### Roadmap
-PCB rev.E:
-* add fuse on power input
-* add protection diode on 5V power rail
-* rotate left keyboard connector by 180 degrees
-* use film capacitors C37,C38,C39 instead of ceramic (optional)
-* add ability to simultaneously install the power/reset keys together with the connectors
-* tape input circuit reverted to one used in rev.C because it has better sensitivity
-* add speaker amplifier on LM386
-* replace 74HCU04-based crystal clock generator by ICS501-based
-* fix compatibility with wireless sega gamepads
-* replace TRS audio connectors by TRRS with video output
-* add jumper for wiring minidin-9 pin 4 with composite or sync output for compatibility with dirty scart cables
-* add ability to install full-height 4.43MHz crystal
-* all 0.5/0.3 vias replaced by 0.6/0.3
+* Rev.E:
+    * added fuse on power input
+    * added protection diode on 5V power rail
+    * rotated left keyboard connector by 180 degrees
+    * replaced TRS audio connectors by TRRS with video output
+    * changed C37,C38,C39 footprint to able to install film capacitors
+    * improved compatibility with wireless sega gamepads - 3.3V power replaced by 5V
+    * added ability to simultaneously install the power/reset keys together with the connectors
+    * added jumper for wiring minidin-9 pin 4 with composite or sync output for compatibility with dirty scart cables
+    * added ability to install full-height 4.43MHz crystal
+    * all 0.5/0.3 vias replaced by 0.6/0.3
+    * experimental: 74HCU04-based speaker amplifier replaced by LM386-based
+    * experimental: 74HCU04-based tape input circuit replaced by LM311-based
+    * experimental: 74HCU04-based crystal clock generator replaced by ICS501-based
 
 ### Acknowledgments
 This work is inspired and based on a lot of other projects and would hardly have been successful without them:
