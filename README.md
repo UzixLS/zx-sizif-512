@@ -131,6 +131,8 @@ Sizif have preinstalled esxDOS firmware, which provides ability to load TAP, TRD
     * experimental: 74HCU04-based speaker amplifier replaced by LM386-based
     * experimental: 74HCU04-based tape input circuit replaced by LM311-based
     * experimental: 74HCU04-based crystal clock generator replaced by ICS501-based
+* Rev.E1:
+    * reverted experimental rev.E changes
 
 ### Acknowledgments
 This work is inspired and based on a lot of other projects and would hardly have been successful without them:
