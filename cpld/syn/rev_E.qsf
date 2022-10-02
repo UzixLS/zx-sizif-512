@@ -1,0 +1,243 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 1991-2009 Altera Corporation
+# Your use of Altera Corporation's design tools, logic functions
+# and other software and tools, and its AMPP partner logic
+# functions, and any output files from any of the foregoing
+# (including device programming or simulation files), and any
+# associated documentation or information are expressly subject
+# to the terms and conditions of the Altera Program License
+# Subscription Agreement, Altera MegaCore Function License
+# Agreement, or other applicable license agreement, including,
+# without limitation, that your use is for the sole purpose of
+# programming logic devices manufactured by Altera and sold by
+# Altera or its authorized distributors.  Please refer to the
+# applicable agreement for further details.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus II
+# Version 9.0 Build 235 06/17/2009 Service Pack 2 SJ Web Edition
+# Date created = 08:15:12  April 28, 2019
+#
+# -------------------------------------------------------------------------- #
+#
+# Notes:
+#
+# 1) The default values for assignments are stored in the file:
+#		rev_E_assignment_defaults.qdf
+#    If this file doesn't exist, see file:
+#		assignment_defaults.qdf
+#
+# 2) Altera recommends that you do not modify this file. This
+#    file is updated automatically by the Quartus II software
+#    and any changes you make may be lost or overwritten.
+#
+# -------------------------------------------------------------------------- #
+
+
+set_global_assignment -name FAMILY "MAX II"
+set_global_assignment -name DEVICE EPM1270T144C5
+set_global_assignment -name TOP_LEVEL_ENTITY zx_ula
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION "13.0 SP1"
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "12:23:37  FEBRUARY 02, 2021"
+set_global_assignment -name LAST_QUARTUS_VERSION "13.0 SP1"
+set_global_assignment -name USE_GENERATED_PHYSICAL_CONSTRAINTS OFF -section_id eda_blast_fpga
+set_global_assignment -name MAX7000_DEVICE_IO_STANDARD "3.3-V LVTTL"
+set_global_assignment -name VERILOG_INPUT_VERSION SYSTEMVERILOG_2005
+set_global_assignment -name VERILOG_SHOW_LMF_MAPPING_MESSAGES OFF
+set_global_assignment -name MAX7000_OPTIMIZATION_TECHNIQUE AREA
+set_global_assignment -name FMAX_REQUIREMENT "14.4 MHz"
+set_global_assignment -name FMAX_REQUIREMENT "14.4 MHz" -section_id clk14
+set_global_assignment -name FMAX_REQUIREMENT "7.156 MHz" -section_id clkcpu
+set_instance_assignment -name CLOCK_SETTINGS clkcpu -to clkcpu
+set_global_assignment -name AUTO_LCELL_INSERTION OFF
+set_global_assignment -name INCREMENTAL_COMPILATION OFF
+set_global_assignment -name FMAX_REQUIREMENT "32 MHz" -section_id clk32
+set_instance_assignment -name CLOCK_SETTINGS clk32 -to clk32
+set_global_assignment -name FMAX_REQUIREMENT "8 MHz" -section_id clk8
+set_global_assignment -name FMAX_REQUIREMENT "4 MHz" -section_id clk4
+set_instance_assignment -name CLOCK_SETTINGS clk8 -to "lpm_counter:wgcnt_rtl_1|dffs[1]"
+set_instance_assignment -name CLOCK_SETTINGS clk4 -to "lpm_counter:wgcnt_rtl_1|dffs[2]"
+
+set_global_assignment -name OPTIMIZE_HOLD_TIMING OFF
+set_global_assignment -name FITTER_EFFORT "STANDARD FIT"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output/
+set_global_assignment -name FMAX_REQUIREMENT "7.156 MHz" -section_id clk7
+set_global_assignment -name DUTY_CYCLE 40 -section_id clk7
+
+set_global_assignment -name SAVE_DISK_SPACE OFF
+set_global_assignment -name SMART_RECOMPILE ON
+set_global_assignment -name POWER_USE_PVA OFF
+set_global_assignment -name OPTIMIZE_MULTI_CORNER_TIMING OFF
+set_global_assignment -name SYNTH_TIMING_DRIVEN_SYNTHESIS OFF
+
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
+set_global_assignment -name DEVICE_FILTER_PACKAGE "ANY QFP"
+set_global_assignment -name DEVICE_FILTER_PIN_COUNT 144
+set_global_assignment -name DEVICE_FILTER_SPEED_GRADE 5
+set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "3.3-V LVTTL"
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "NO HEAT SINK WITH STILL AIR"
+
+set_location_assignment PIN_1 -to r[1]
+set_location_assignment PIN_2 -to vsync
+set_location_assignment PIN_3 -to hsync
+set_location_assignment PIN_4 -to ps2_clk
+set_location_assignment PIN_5 -to ps2_dat
+set_location_assignment PIN_6 -to sd_cd
+set_location_assignment PIN_7 -to sd_miso
+set_location_assignment PIN_8 -to sd_sck
+set_location_assignment PIN_11 -to sd_mosi
+set_location_assignment PIN_12 -to sd_cs
+set_location_assignment PIN_13 -to kd[4]
+set_location_assignment PIN_14 -to kd[3]
+set_location_assignment PIN_15 -to kd[2]
+set_location_assignment PIN_16 -to kd[1]
+set_location_assignment PIN_18 -to kd[0]
+set_location_assignment PIN_22 -to bus0
+set_location_assignment PIN_23 -to bus1
+set_location_assignment PIN_24 -to n_romcs
+set_location_assignment PIN_27 -to ra[17]
+set_location_assignment PIN_28 -to ra[16]
+set_location_assignment PIN_29 -to ra[15]
+set_location_assignment PIN_30 -to ra[14]
+set_location_assignment PIN_31 -to xd[4]
+set_location_assignment PIN_32 -to xa[14]
+set_location_assignment PIN_37 -to xa[15]
+set_location_assignment PIN_38 -to xd[3]
+set_location_assignment PIN_39 -to xd[5]
+set_location_assignment PIN_40 -to xd[6]
+set_location_assignment PIN_41 -to xd[7]
+set_location_assignment PIN_42 -to xa[10]
+set_location_assignment PIN_43 -to xa[11]
+set_location_assignment PIN_44 -to xa[9]
+set_location_assignment PIN_45 -to xa[8]
+set_location_assignment PIN_48 -to n_m1
+set_location_assignment PIN_49 -to n_rd
+set_location_assignment PIN_50 -to n_wr
+set_location_assignment PIN_51 -to n_rfsh
+set_location_assignment PIN_52 -to n_mreq
+set_location_assignment PIN_53 -to xa[12]
+set_location_assignment PIN_55 -to xa[7]
+set_location_assignment PIN_57 -to xa[6]
+set_location_assignment PIN_58 -to xa[4]
+set_location_assignment PIN_59 -to xa[3]
+set_location_assignment PIN_60 -to xa[2]
+set_location_assignment PIN_61 -to xa[1]
+set_location_assignment PIN_62 -to xa[0]
+set_location_assignment PIN_63 -to n_iorqge
+set_location_assignment PIN_66 -to xa[5]
+set_location_assignment PIN_67 -to xd[0]
+set_location_assignment PIN_68 -to xd[1]
+set_location_assignment PIN_69 -to xd[2]
+set_location_assignment PIN_70 -to clkcpu
+set_location_assignment PIN_71 -to xa[13]
+set_location_assignment PIN_72 -to n_clkcpu
+set_location_assignment PIN_73 -to n_int
+set_location_assignment PIN_74 -to n_nmi
+set_location_assignment PIN_75 -to n_rstcpu
+set_location_assignment PIN_76 -to plus3_mtr
+set_location_assignment PIN_77 -to plus3_dwr
+set_location_assignment PIN_78 -to plus3_drd
+set_location_assignment PIN_79 -to ay_abc
+set_location_assignment PIN_80 -to ay_mono
+set_location_assignment PIN_81 -to snd_l
+set_location_assignment PIN_84 -to n_magic
+set_location_assignment PIN_85 -to rst_n
+set_location_assignment PIN_86 -to ay_bc1
+set_location_assignment PIN_87 -to ay_bdir
+set_location_assignment PIN_88 -to snd_r
+set_location_assignment PIN_89 -to ay_clk
+set_location_assignment PIN_91 -to clk28
+set_location_assignment PIN_98 -to shift_clk
+set_location_assignment PIN_101 -to vd[3]
+set_location_assignment PIN_102 -to vd[4]
+set_location_assignment PIN_103 -to shift_pl
+set_location_assignment PIN_104 -to vd[5]
+set_location_assignment PIN_105 -to csync
+set_location_assignment PIN_106 -to va[10]
+set_location_assignment PIN_107 -to vd[7]
+set_location_assignment PIN_108 -to vd[6]
+set_location_assignment PIN_109 -to n_vrd
+set_location_assignment PIN_110 -to va[11]
+set_location_assignment PIN_111 -to va[9]
+set_location_assignment PIN_112 -to va[8]
+set_location_assignment PIN_113 -to va[13]
+set_location_assignment PIN_114 -to n_vwr
+set_location_assignment PIN_117 -to va[18]
+set_location_assignment PIN_118 -to va[15]
+set_location_assignment PIN_119 -to va[17]
+set_location_assignment PIN_120 -to shift_out
+set_location_assignment PIN_121 -to joy_sel
+set_location_assignment PIN_122 -to va[16]
+set_location_assignment PIN_123 -to va[14]
+set_location_assignment PIN_124 -to va[12]
+set_location_assignment PIN_125 -to va[7]
+set_location_assignment PIN_127 -to va[6]
+set_location_assignment PIN_129 -to va[5]
+set_location_assignment PIN_130 -to va[4]
+set_location_assignment PIN_131 -to va[3]
+set_location_assignment PIN_132 -to va[2]
+set_location_assignment PIN_133 -to va[1]
+set_location_assignment PIN_134 -to va[0]
+set_location_assignment PIN_137 -to vd[0]
+set_location_assignment PIN_138 -to vd[2]
+set_location_assignment PIN_139 -to vd[1]
+set_location_assignment PIN_140 -to b[0]
+set_location_assignment PIN_141 -to g[0]
+set_location_assignment PIN_142 -to r[0]
+set_location_assignment PIN_143 -to b[1]
+set_location_assignment PIN_144 -to g[1]
+
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to xd[7]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to xd[6]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to xd[5]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to xd[4]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to xd[3]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to xd[2]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to xd[1]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to xd[0]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_rd
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_wr
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sd_cd
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sd_miso
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_magic
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to shift_out
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_iorqge
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_m1
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_mreq
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_rfsh
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_rstcpu
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to n_nmi
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to rst_n
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ps2_clk
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ps2_dat
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MINIMUM CURRENT" -to joy_sel
+set_instance_assignment -name PCI_IO ON -to n_nmi
+set_instance_assignment -name PCI_IO ON -to n_rstcpu
+set_global_assignment -name VERILOG_MACRO "REV_E=<None>"
+
+set_global_assignment -name USE_CONFIGURATION_DEVICE ON
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED WITH WEAK PULL-UP"
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/shiftreg165.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/ulaplus.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/soundrive.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/screen.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/rgb.sv
+set_global_assignment -name VERILOG_FILE ../rtl/ps2_rxtx.v
+set_global_assignment -name VERILOG_FILE ../rtl/ps2.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/ports.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/mixer.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/magic.sv
+set_global_assignment -name VERILOG_FILE ../rtl/joysega.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/divmmc.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/cpucontrol.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/memcontrol.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/common.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/ay.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/top.sv
+set_global_assignment -name VERILOG_INCLUDE_FILE ../rtl/util.vh
+set_global_assignment -name SDC_FILE clocks.sdc
+set_global_assignment -name CDF_FILE output/zx_ula.cdf
+

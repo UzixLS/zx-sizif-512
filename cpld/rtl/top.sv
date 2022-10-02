@@ -1,5 +1,12 @@
 // `define REV_C
 // `define REV_D
+// `define REV_E
+
+`ifdef REV_C
+    `define REV_CD
+`elsif REV_D
+    `define REV_CD
+`endif
 
 import common::*;
 module zx_ula (
@@ -29,11 +36,6 @@ module zx_ula (
     output n_int,
     output n_nmi,
 
-    input [4:0] kd,
-    input tape_in,
-
-    input n_magic,
-
     output [1:0] r,
     output [1:0] g,
     output [1:0] b,
@@ -50,12 +52,22 @@ module zx_ula (
     output snd_l,
     output snd_r,
 
+    input [4:0] kd,
+    input n_magic,
+
+`ifdef REV_CD
+    input tape_in,
     input n_joy_down,
     input n_joy_right,
     input n_joy_left,
     input n_joy_up,
     input n_joy_b1,
     input n_joy_b2,
+`else
+    input shift_out,
+    output shift_clk,
+    output shift_pl,
+`endif
     output joy_sel,
 
     input sd_cd,
@@ -243,6 +255,24 @@ assign {ps2_joy_up, ps2_joy_down, ps2_joy_left, ps2_joy_right, ps2_joy_fire} = 0
 `endif
 
 
+/* SHIFT REGISTER */
+`ifndef REV_CD
+wire [7:0] shift_d;
+wire tape_in = shift_d[3], n_joy_down = shift_d[5], n_joy_right = shift_d[7], n_joy_left = shift_d[6], n_joy_up = shift_d[2], n_joy_b1 = shift_d[4], n_joy_b2 = shift_d[0];
+wire shift_sync;
+shiftreg165 #(.DEFAULT_STATE(1'b1)) shiftreg165_0(
+    .rst_n(rst_n0),
+    .clk(clk28),
+    .clk_en(ck7),
+    .sync(shift_sync),
+    .q(~shift_out),
+    .cp(shift_clk),
+    .pl(shift_pl),
+    .d(shift_d)
+);
+`endif
+
+
 /* JOYSTICK / GAMEPAD */
 wire joy_up, joy_down, joy_left, joy_right, joy_b1_turbo, joy_b2_turbo, joy_b3_turbo, joy_mode;
 joysega joysega0(
@@ -252,6 +282,9 @@ joysega joysega0(
     .vc(vc),
     .hc(hc),
     .turbo_strobe(blink_cnt[1]),
+`ifndef REV_CD
+    .sync_strobe(shift_sync),
+`endif
 
     .n_joy_up(n_joy_up),
     .n_joy_down(n_joy_down),
@@ -272,7 +305,7 @@ joysega joysega0(
     .joy_mode(joy_mode)
 );
 
-wire [7:0] kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, ps2_joy_fire | joy_b1_turbo, 
+wire [7:0] kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, ps2_joy_fire | joy_b1_turbo,
     ps2_joy_up | joy_up, ps2_joy_down | joy_down, ps2_joy_left | joy_left, ps2_joy_right | joy_right};
 
 
