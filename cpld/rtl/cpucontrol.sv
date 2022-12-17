@@ -24,7 +24,7 @@ module cpucontrol(
     output clkcpu_ck,
     output clkwait,
     output reg n_int,
-    output n_int_next,
+    output reg n_int_next,
     output snow
 );
 
@@ -84,10 +84,13 @@ end
 /* INT GENERATOR */
 localparam INT_V_S48       = 248;
 localparam INT_H_S48       = 0;
+localparam INT_L_S48       = 63;
 localparam INT_V_S128      = 248;
 localparam INT_H_S128      = 4;
+localparam INT_L_S128      = 71;
 localparam INT_V_PENT      = 239;
 localparam INT_H_PENT      = 322;
+localparam INT_L_PENT      = 63;
 wire int_begin =
     (machine == MACHINE_S48)?
         vc == INT_V_S48 && hc == INT_H_S48 :
@@ -95,20 +98,31 @@ wire int_begin =
         vc == INT_V_S128 && hc == INT_H_S128 :
     // Pentagon
         vc == INT_V_PENT && hc == INT_H_PENT ;
+wire [6:0] int_len =
+    (machine == MACHINE_S48)?
+        INT_L_S48 :
+    (machine == MACHINE_S128 || machine == MACHINE_S3)?
+        INT_L_S128 :
+    // Pentagon
+        INT_L_PENT ;
 
-reg [4:0] int_cnt;
-assign n_int_next = (|int_cnt)? 1'b0 : 1'b1;
+reg [6:0] int_cnt;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         int_cnt <= 0;
+        n_int_next <= 1'b1;
+    end
+    else if ((int_cnt != 0 && ck7) || (int_cnt == 0 && int_begin)) begin
+        int_cnt <= int_cnt + 1'b1;
+        n_int_next <= (int_cnt < int_len)? 1'b0 : 1'b1;
+    end
+end
+
+always @(posedge clk28 or negedge rst_n) begin
+    if (!rst_n)
         n_int <= 1'b1;
-    end
-    else begin
-        if (clkcpu_ck)
-            n_int <= n_int_next;
-        if ((int_cnt != 0 && clkcpu_ck) || (int_cnt == 0 && int_begin))
-            int_cnt <= int_cnt + 1'b1;
-    end
+    else if (clkcpu_ck)
+        n_int <= n_int_next;
 end
 
 
