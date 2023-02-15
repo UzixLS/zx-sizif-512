@@ -1,5 +1,6 @@
+    ASSERT __SJASMPLUS__ >= 0x011401 ; SjASMPlus 1.20.1
+    OPT --syntax=abf
     DEVICE ZXSPECTRUM48
-    OPT --syntax=F
 
 ; Startup handler
     ORG #0000
