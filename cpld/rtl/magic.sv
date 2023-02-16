@@ -38,7 +38,8 @@ module magic(
     output reg soundrive_en,
     output reg sd_indication_en,
     output reg bright_boost,
-    output reg zxkit1
+    output reg zxkit1,
+    output reg joy_a_up
 );
 
 localparam magic_on_start = 1'b1;
@@ -134,6 +135,7 @@ always @(posedge clk28 or negedge rst_n) begin
         `endif
         autoturbo_en <= 1'b0;
         zxkit1 <= 1'b0;
+        joy_a_up <= 1'b0;
     end
     else if (config_cs && bus.wr) case (bus.a[15:8])
         8'h01: {rom_wren, magic_reboot, magic_beeper} <= bus.d[2:0];
@@ -151,6 +153,7 @@ always @(posedge clk28 or negedge rst_n) begin
         8'h0D: bright_boost <= bus.d[0];
         8'h0E: autoturbo_en <= bus.d[0];
         8'h0F: zxkit1 <= bus.d[0];
+        8'h10: joy_a_up <= bus.d[0];
     endcase
 end
 

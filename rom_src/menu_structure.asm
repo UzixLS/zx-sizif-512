@@ -65,6 +65,7 @@ menuadv: MENU_DEF 22
     MENUENTRY_T str_bright_boost  menu_bright_value_cb    menu_bright_cb
     MENUENTRY_T str_autoturbo     menu_autoturbo_value_cb menu_autoturbo_cb
     MENUENTRY_T str_zxkit1        menu_zxkit1_value_cb    menu_zxkit1_cb
+    MENUENTRY_T str_joy_a_up      menu_joy_a_up_value_cb  menu_joy_a_up_cb
     MENUENTRY_T str_save_settings menu_cfgsave_value_cb   menu_cfgsave_cb
     MENUENTRY_T str_back          0                       menu_back_cb
     MENUENTRY_T 0
@@ -228,6 +229,14 @@ menu_autoturbo_value_cb:
 menu_zxkit1_value_cb:
     ld ix, .values_table
     ld a, (cfg.zxkit1)
+    jp menu_value_get
+.values_table:
+    DW str_off_short.end-2
+    DW str_on_short.end-2
+
+menu_joy_a_up_value_cb:
+    ld ix, .values_table
+    ld a, (cfg.joy_a_up)
     jp menu_value_get
 .values_table:
     DW str_off_short.end-2
@@ -418,6 +427,15 @@ menu_zxkit1_cb:
     call menu_handle_press
     ld (cfg.zxkit1), a
     ld bc, #0fff
+    out (c), a
+    ret
+
+menu_joy_a_up_cb:
+    ld a, (cfg.joy_a_up)
+    ld c, 1
+    call menu_handle_press
+    ld (cfg.joy_a_up), a
+    ld bc, #10ff
     out (c), a
     ret
 

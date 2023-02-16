@@ -45,7 +45,7 @@ sdind      DB 1
 bright     DB BRIGHT_DEFAULT
 autoturbo  DB 0
 zxkit1     DB 0
-ENDIF
+joy_a_up   DB 0
     ENDS
 
     STRUCT CFGEXT_T

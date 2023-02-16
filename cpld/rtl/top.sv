@@ -105,6 +105,7 @@ wire div_wait;
 wire sd_indication;
 wire bright_boost;
 wire zxkit1;
+wire joy_a_up;
 
 
 /* CPU BUS */
@@ -305,8 +306,14 @@ joysega joysega0(
     .joy_mode(joy_mode)
 );
 
-wire [7:0] kempston_data = {1'b0, joy_b3_turbo, joy_b2_turbo, ps2_joy_fire | joy_b1_turbo,
-    ps2_joy_up | joy_up, ps2_joy_down | joy_down, ps2_joy_left | joy_left, ps2_joy_right | joy_right};
+wire [7:0] kempston_data = {1'b0,
+    (joy_a_up? 1'b0 : joy_b3_turbo),
+    joy_b2_turbo,
+    ps2_joy_fire | joy_b1_turbo,
+    ps2_joy_up | joy_up | (joy_a_up? joy_b3_turbo : 1'b0),
+    ps2_joy_down | joy_down,
+    ps2_joy_left | joy_left,
+    ps2_joy_right | joy_right};
 
 
 /* CPU CONTROLLER */
@@ -409,7 +416,8 @@ magic magic0(
     .soundrive_en(soundrive_en),
     .sd_indication_en(sd_indication_en),
     .bright_boost(bright_boost),
-    .zxkit1(zxkit1)
+    .zxkit1(zxkit1),
+    .joy_a_up(joy_a_up)
 );
 
 
