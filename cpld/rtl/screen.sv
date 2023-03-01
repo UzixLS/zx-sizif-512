@@ -22,20 +22,23 @@ module screen(
     input [7:0] fetch_data,
 
     output contention,
-    output blink,
     output reg even_line,
     output port_ff_active,
     output [7:0] port_ff_data,
 
     output [8:0] hc_out,
     output [8:0] vc_out,
-    output reg [4:0] blink_cnt,
     output clk14,
     output clk7,
     output clk35,
     output ck14,
     output ck7,
-    output ck35
+    output ck35,
+    output clk25hz,
+    output clk12_5hz,
+    output clk6_25hz,
+    output clk3_125hz,
+    output clk1_5625hz
 );
 
 /* SCREEN CONTROLLER */
@@ -155,7 +158,13 @@ always @(posedge clk28 or negedge rst_n) begin
     end
 end
 
-assign blink = blink_cnt[$bits(blink_cnt)-1];
+reg [4:0] blink_cnt;
+wire blink = blink_cnt[$bits(blink_cnt)-1];
+assign clk25hz = blink_cnt[0];
+assign clk12_5hz = blink_cnt[1];
+assign clk6_25hz = blink_cnt[2];
+assign clk3_125hz = blink_cnt[3];
+assign clk1_5625hz = blink_cnt[4];
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         blink_cnt <= 0;
@@ -282,7 +291,7 @@ end
 wire port_ff_attr = (machine == MACHINE_PENT) || hc[3:1] == 3'h6 || hc[3:1] == 3'h0;
 wire port_ff_bitmap = (hc[3] && hc[1]);
 assign port_ff_active = loading && (port_ff_attr || port_ff_bitmap);
-assign port_ff_data = 
+assign port_ff_data =
     port_ff_attr? attr_next :
     port_ff_bitmap? bitmap_next :
     8'hFF;

@@ -167,9 +167,8 @@ wire [14:0] screen_addr;
 wire [5:0] screen_up_addr;
 wire [7:0] port_ff_data;
 wire [8:0] vc, hc;
-wire [4:0] blink_cnt;
-wire blink, even_line;
-wire clk14, clk7, clk35, ck14, ck7, ck35;
+wire even_line;
+wire clk14, clk7, clk35, ck14, ck7, ck35, clk12_5hz;
 wire vsync0, hsync0;
 assign vsync = zxkit1? clk14 : vsync0;
 assign hsync = zxkit1? csync : hsync0;
@@ -196,20 +195,19 @@ screen screen0(
     .fetch_data(vd),
 
     .contention(screen_contention),
-    .blink(blink),
     .even_line(even_line),
     .port_ff_active(port_ff_active),
     .port_ff_data(port_ff_data),
 
     .vc_out(vc),
     .hc_out(hc),
-    .blink_cnt(blink_cnt),
     .clk14(clk14),
     .clk7(clk7),
     .clk35(clk35),
     .ck14(ck14),
     .ck7(ck7),
-    .ck35(ck35)
+    .ck35(ck35),
+    .clk12_5hz(clk12_5hz)
 );
 
 
@@ -282,7 +280,7 @@ joysega joysega0(
 
     .vc(vc),
     .hc(hc),
-    .turbo_strobe(blink_cnt[1]),
+    .turbo_strobe(clk12_5hz),
 `ifndef REV_CD
     .sync_strobe(shift_sync),
 `endif
