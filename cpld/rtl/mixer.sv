@@ -18,8 +18,8 @@ module mixer(
 localparam WIDTH = 10;
 
 reg [WIDTH:0] dac_l_cnt, dac_r_cnt;
-assign dac_l = dac_l_cnt[WIDTH];
-assign dac_r = dac_r_cnt[WIDTH];
+assign dac_l = dac_l_cnt[WIDTH]? 1'b1 : 1'bz;
+assign dac_r = dac_r_cnt[WIDTH]? 1'b1 : 1'bz;
 
 wire [WIDTH-1:0] dac_next_l =
     sd_l0 + sd_l1 +

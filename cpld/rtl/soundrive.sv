@@ -21,10 +21,10 @@ wire soundrive_d_cs = en_soundrive && bus.ioreq && bus.a[7:0] == 8'h5F;
 
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
-        ch_l0 <= 8'h80;
-        ch_l1 <= 8'h80;
-        ch_r0 <= 8'h80;
-        ch_r1 <= 8'h80;
+        ch_l0 <= 0;
+        ch_l1 <= 0;
+        ch_r0 <= 0;
+        ch_r1 <= 0;
     end
     else begin
         if ((covox_cs || soundrive_a_cs) && bus.wr)
@@ -37,6 +37,5 @@ always @(posedge clk28 or negedge rst_n) begin
             ch_r1 <= bus.d;
     end
 end
-
 
 endmodule
