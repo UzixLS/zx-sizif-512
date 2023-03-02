@@ -106,6 +106,9 @@ wire sd_indication;
 wire bright_boost;
 wire zxkit1;
 wire joy_a_up;
+wire div_map;
+wire div_mapram;
+wire basic48_paged;
 
 
 /* CPU BUS */
@@ -357,8 +360,6 @@ always @(posedge clk28)    // precharge to 1 - this is required because of weak 
 assign n_nmi = n_nmi0? (n_nmi0_prev? 1'bz : 1'b1) : 1'b0;
 
 wire rom_wren;
-wire div_map;
-wire div_mapram;
 wire [7:0] magic_dout;
 wire magic_dout_active;
 wire magic_mode, magic_map;
@@ -391,6 +392,7 @@ magic magic0(
     .magic_button(~n_magic || joy_mode || ps2_key_magic),
     .pause_button(ps2_key_pause || joy_start),
     .div_paged(div_map && !div_mapram),
+    .basic48_paged(basic48_paged),
 
     .magic_mode(magic_mode),
     .magic_map(magic_map),
@@ -582,6 +584,8 @@ memcontrol memcontrol0(
     .vd(vd),
     .n_vrd(n_vrd),
     .n_vwr(n_vwr),
+
+    .basic48_paged(basic48_paged),
 
     .machine(machine),
     .screenpage(screenpage),

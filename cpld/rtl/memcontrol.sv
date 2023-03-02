@@ -38,6 +38,8 @@ module memcontrol(
     output n_vrd,
     output reg n_vwr,
 
+    output basic48_paged,
+
     input machine_t machine,
     input screenpage,
     input screen_fetch,
@@ -147,6 +149,8 @@ assign ra[17:14] =
     (rom_alt48_en && rom_alt48)? `BANK_48ALT2 :
     (rom_alt48_en)? `BANK_48ALT1 :
     `BANK_48;
+
+assign basic48_paged = (ra == `BANK_48) || (ra == `BANK_48ALT1) || (ra == `BANK_48ALT2) || (ra == `BANK_S128_1) || (ra == `BANK_S3_3);
 
 assign va[18:0] =
     screen_fetch && screen_fetch_up? {2'b00, 3'b111, 8'b11111111, screen_up_addr} :

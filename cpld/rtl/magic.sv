@@ -15,6 +15,7 @@ module magic(
     input magic_button,
     input pause_button,
     input div_paged,
+    input basic48_paged,
 
     output reg magic_mode,
     output reg magic_map,
@@ -177,6 +178,15 @@ always @(posedge clk28 or negedge rst_n) begin
     else if (|portfe_noturbo && ck35)
         portfe_noturbo <= portfe_noturbo + 1'b1;
 end
+reg basic48_ramclear_turbo;
+always @(posedge clk28 or negedge rst_n) begin
+    if (!rst_n)
+        basic48_ramclear_turbo <= 0;
+    else if (basic48_paged && bus.m1 && bus.a[15:6] == 10'b0001000111)
+        basic48_ramclear_turbo <= 1'b1;
+    else if (!basic48_paged || (bus.m1 && bus.a[15:6] != 10'b0001000111))
+        basic48_ramclear_turbo <= 0;
+end
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         turbo <= TURBO_NONE;
@@ -184,6 +194,8 @@ always @(posedge clk28 or negedge rst_n) begin
         turbo <= TURBO_14;
     else if (autoturbo_en && |portfe_noturbo)
         turbo <= TURBO_NONE;
+    else if (autoturbo_en && basic48_ramclear_turbo)
+        turbo <= TURBO_14;
     else
         turbo <= turbo0;
 end
