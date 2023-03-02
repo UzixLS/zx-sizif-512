@@ -60,7 +60,7 @@ set_global_assignment -name FMAX_REQUIREMENT "4 MHz" -section_id clk4
 set_instance_assignment -name CLOCK_SETTINGS clk8 -to "lpm_counter:wgcnt_rtl_1|dffs[1]"
 set_instance_assignment -name CLOCK_SETTINGS clk4 -to "lpm_counter:wgcnt_rtl_1|dffs[2]"
 
-set_global_assignment -name OPTIMIZE_HOLD_TIMING OFF
+set_global_assignment -name OPTIMIZE_HOLD_TIMING "ALL PATHS"
 set_global_assignment -name FITTER_EFFORT "STANDARD FIT"
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output/
 set_global_assignment -name FMAX_REQUIREMENT "7.156 MHz" -section_id clk7
@@ -69,8 +69,15 @@ set_global_assignment -name DUTY_CYCLE 40 -section_id clk7
 set_global_assignment -name SAVE_DISK_SPACE OFF
 set_global_assignment -name SMART_RECOMPILE ON
 set_global_assignment -name POWER_USE_PVA OFF
-set_global_assignment -name OPTIMIZE_MULTI_CORNER_TIMING OFF
+set_global_assignment -name OPTIMIZE_MULTI_CORNER_TIMING ON
 set_global_assignment -name SYNTH_TIMING_DRIVEN_SYNTHESIS OFF
+
+set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC ON
+set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_RETIMING ON
+set_global_assignment -name PHYSICAL_SYNTHESIS_ASYNCHRONOUS_SIGNAL_PIPELINING ON
+set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_DUPLICATION ON
+set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC_FOR_AREA ON
+set_global_assignment -name PHYSICAL_SYNTHESIS_EFFORT EXTRA
 
 set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
 set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
