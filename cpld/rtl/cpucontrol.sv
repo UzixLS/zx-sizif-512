@@ -30,17 +30,16 @@ module cpucontrol(
 
 
 /* CONTENTION */
-wire iorq_contended = bus.iorq && (~bus.a[0] || (~bus.a[1] && ~bus.a[15] && bus.wr)) && (machine != MACHINE_S3);
+wire iorq_contended = bus.iorq && (~bus.a[0] || (bus.a == 16'hBF3B) || (bus.a == 16'hFF3B)) && (machine != MACHINE_S3);
 reg mreq_delayed, iorq_delayed;
 always @(posedge clkcpu)
     mreq_delayed <= bus.mreq;
 always @(posedge clkcpu)
-    iorq_delayed <= bus.iorq && ~bus.a[0];
-wire contention_mem_page = (machine == MACHINE_S3)? rampage128[2] : rampage128[0];
-wire contention_mem_addr = bus.a[14] & (~bus.a[15] | (bus.a[15] & contention_mem_page));
-wire contention_mem = iorq_delayed == 1'b0 && mreq_delayed == 1'b0 && contention_mem_addr;
-wire contention_io = iorq_delayed == 1'b0 && iorq_contended;
-wire contention0 = screen_contention && (contention_mem || contention_io);
+    iorq_delayed <= iorq_contended;
+wire contention_page = (machine == MACHINE_S3)? rampage128[2] : rampage128[0];
+wire contention_addr = bus.a[14] & (~bus.a[15] | (bus.a[15] & contention_page));
+wire contention_mem = !iorq_contended && !mreq_delayed && contention_addr;
+wire contention0 = screen_contention && !iorq_delayed && (contention_mem || iorq_contended);
 wire contention = clkcpu && contention0 && turbo == TURBO_NONE && (machine == MACHINE_S48 || machine == MACHINE_S128 || machine == MACHINE_S3);
 assign snow = bus.a[14] && ~bus.a[15] && bus.rfsh && (machine == MACHINE_S48 || machine == MACHINE_S128);
 
