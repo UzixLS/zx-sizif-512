@@ -1,4 +1,4 @@
-    ASSERT __SJASMPLUS__ >= 0x011401 ; SjASMPlus 1.20.1
+    ASSERT __SJASMPLUS__ >= 0x011402 ; SjASMPlus 1.20.2
     OPT --syntax=abf
     DEVICE ZXSPECTRUM48
 
@@ -727,7 +727,7 @@ wait_for_keys_release:
     include font.asm
     include strings.asm
 
-    DISPLAY "Free space: ",/D,#2000-$
+    DISPLAY "Free space: ",/D,#2000-$," (",$,")"
     ASSERT $ < #2000
 
 
@@ -745,9 +745,18 @@ trdos_3d2f_entrypoint:
     ld a, #42
     ret
 
-; Just some string at the end of ROM
-    ORG #3FE8
-    DB 0,"End of Sizif Magic ROM",0
+; Just some firmware info at the end of ROM
+    ORG #4000-(fwinfo.end-fwinfo)
+fwinfo:
+    DB 0
+.version:
+    DB VERSION, 0
+.date
+    DB __DATE__, 0
+.time:
+    DB __TIME__, 0
+    DB "End of Sizif Magic ROM", 0
+.end
 
 ; Variables
     ORG #C000
