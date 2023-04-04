@@ -1,29 +1,31 @@
 `ifdef REV_C
-    `define BANK_PENT_0 4'd0
-    `define BANK_S128_0 4'd0
-    `define BANK_S128_1 4'd1
-    `define BANK_MAGIC  4'd2
-    `define BANK_DIV    4'd3
-    `define BANK_S3_0   4'd4
-    `define BANK_S3_1   4'd5
-    `define BANK_S3_2   4'd6
-    `define BANK_S3_3   4'd1
-    `define BANK_48     4'd1
-    `define BANK_48ALT1 4'd7
-    `define BANK_48ALT2 4'd7
+    `define BANK_PENT_0   4'd0
+    `define BANK_S128_0   4'd0
+    `define BANK_S128_1   4'd1
+    `define BANK_MAGIC    4'd2
+    `define BANK_DIV      4'd3
+    `define BANK_S3_0     4'd4
+    `define BANK_S3_1     4'd5
+    `define BANK_S3_2     4'd6
+    `define BANK_S3_3     4'd1
+    `define BANK_S3_3_DIV 4'd1
+    `define BANK_48       4'd1
+    `define BANK_48ALT1   4'd7
+    `define BANK_48ALT2   4'd7
 `else
-    `define BANK_PENT_0 4'd0
-    `define BANK_S128_0 4'd12
-    `define BANK_S128_1 4'd1
-    `define BANK_MAGIC  4'd2
-    `define BANK_DIV    4'd3
-    `define BANK_S3_0   4'd4
-    `define BANK_S3_1   4'd5
-    `define BANK_S3_2   4'd6
-    `define BANK_S3_3   4'd14
-    `define BANK_48     4'd13
-    `define BANK_48ALT1 4'd7
-    `define BANK_48ALT2 4'd15
+    `define BANK_PENT_0   4'd0
+    `define BANK_S128_0   4'd9
+    `define BANK_S128_1   4'd1
+    `define BANK_MAGIC    4'd2
+    `define BANK_DIV      4'd3
+    `define BANK_S3_0     4'd4
+    `define BANK_S3_1     4'd5
+    `define BANK_S3_2     4'd6
+    `define BANK_S3_3     4'd11
+    `define BANK_S3_3_DIV 4'd12
+    `define BANK_48       4'd10
+    `define BANK_48ALT1   4'd7
+    `define BANK_48ALT2   4'd8
 `endif
 
 import common::*;
@@ -126,7 +128,7 @@ assign ra[17:14] =
     magic_map? `BANK_MAGIC :
     div_map? `BANK_DIV :
 `ifndef REV_C
-    (rom_custom_en && rompage128 == 1'b0)? {2'b10, rom_custom} :
+    (rom_custom_en && rompage128 == 1'b0)? {2'b11, rom_custom} :
 `endif
     (machine == MACHINE_S3)? (
         (port_1ffd[2] == 1'b0 && rompage128 == 1'b0)? `BANK_S3_0 :
@@ -134,6 +136,7 @@ assign ra[17:14] =
         (port_1ffd[2] == 1'b1 && rompage128 == 1'b0)? `BANK_S3_2 :
         (rom_alt48_en && rom_alt48)? `BANK_48ALT2 :
         (rom_alt48_en)? `BANK_48ALT1 :
+        (divmmc_en)? `BANK_S3_3_DIV :
         `BANK_S3_3 ) :
     (machine == MACHINE_S128)? (
         (rompage128 == 1'b0)? `BANK_S128_0 :
@@ -150,7 +153,7 @@ assign ra[17:14] =
     (rom_alt48_en)? `BANK_48ALT1 :
     `BANK_48;
 
-assign basic48_paged = (ra == `BANK_48) || (ra == `BANK_48ALT1) || (ra == `BANK_48ALT2) || (ra == `BANK_S128_1) || (ra == `BANK_S3_3);
+assign basic48_paged = (ra == `BANK_48) || (ra == `BANK_48ALT1) || (ra == `BANK_48ALT2) || (ra == `BANK_S128_1) || (ra == `BANK_S3_3) || (ra == `BANK_S3_3_DIV);
 
 assign va[18:0] =
     screen_fetch && screen_fetch_up? {2'b00, 3'b111, 8'b11111111, screen_up_addr} :

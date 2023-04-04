@@ -487,7 +487,7 @@ menu_boot_normal_cb:
 menu_boot_zx80_cb:
     bit 4, d                ; action?
     ret z
-    ld a, #81
+    ld a, #82
     ld (cfg_saved.custom_rom), a
     ld a, 1
     ld (var_exit_flag), a
@@ -496,7 +496,7 @@ menu_boot_zx80_cb:
 menu_boot_zx81_cb:
     bit 4, d                ; action?
     ret z
-    ld a, #80
+    ld a, #83
     ld (cfg_saved.custom_rom), a
     ld a, 1
     ld (var_exit_flag), a
@@ -505,7 +505,7 @@ menu_boot_zx81_cb:
 menu_boot_negluk_cb:
     bit 4, d                ; action?
     ret z
-    ld a, #83
+    ld a, #81
     ld (cfg_saved.custom_rom), a
     ld a, 1
     ld (var_exit_flag), a
