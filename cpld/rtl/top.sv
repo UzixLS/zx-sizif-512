@@ -542,8 +542,9 @@ divmmc divmmc0(
     .sd_cs(sd_cs),
 
     .rammap(port_dffd[4] | port_1ffd[0]),
-    .magic_mode(magic_mode),
-    .magic_map(magic_map),
+    .mask_hooks(magic_map),
+    .mask_nmi_hook(magic_mode),
+    .basic48_paged(basic48_paged),
 
     .page(div_page),
     .map(div_map),
