@@ -39,8 +39,7 @@ always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         port_ff_rd <= 0;
     else
-        port_ff_rd <= bus.rd && bus.ioreq && !magic_map && port_ff_active &&
-            (machine != MACHINE_S3) && (machine != MACHINE_PENT || bus.a[7:0] == 8'hFF);
+        port_ff_rd <= bus.rd && bus.ioreq && !magic_map && port_ff_active && (machine != MACHINE_S3) && bus.a[7:0] == 8'hFF;
 end
 
 
