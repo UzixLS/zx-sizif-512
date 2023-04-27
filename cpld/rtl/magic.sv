@@ -47,7 +47,7 @@ localparam magic_on_start = 1'b1;
 
 reg magic_unmap_next;
 reg magic_map_next;
-reg opcode_check_next;
+reg [1:0] opcode_check_next;
 reg opcode_match;
 reg opcode_is_reading;
 
@@ -58,7 +58,7 @@ always @(posedge clk28 or negedge rst_n) begin
         magic_map <= magic_on_start;
         magic_map_next <= 0;
         magic_unmap_next <= 0;
-        opcode_check_next <= magic_on_start;
+        opcode_check_next <= {2{magic_on_start}};
         opcode_match <= 0;
         opcode_is_reading <= 0;
     end
@@ -69,8 +69,8 @@ always @(posedge clk28 or negedge rst_n) begin
             magic_mode <= 1'b1;
         end
 
-        if (opcode_check_next) begin
-            // Check first fetched opcode from magic rom is 0xEB
+        if (|opcode_check_next) begin
+            // Check two first fetched opcodes from magic rom is 0xEB
             // Otherwise assume there is no magic rom
             if (bus.mreq && bus.m1 && bus.rd) begin
                 opcode_is_reading <= 1'b1;
@@ -78,7 +78,7 @@ always @(posedge clk28 or negedge rst_n) begin
             end
             else if (opcode_is_reading) begin
                 opcode_is_reading <= 1'b0;
-                opcode_check_next <= 1'b0;
+                opcode_check_next <= opcode_match? {1'b0, opcode_check_next[1]} : 2'b00;
                 magic_mode <= magic_mode && opcode_match;
                 magic_map <= magic_map && opcode_match;
             end
@@ -99,7 +99,7 @@ always @(posedge clk28 or negedge rst_n) begin
             n_nmi <= 1'b1;
             magic_map <= 1'b1;
             magic_map_next <= 1'b0;
-            opcode_check_next <= bus.a == 16'h0066;
+            opcode_check_next[1] <= bus.a == 16'h0066;
         end
     end
 end
