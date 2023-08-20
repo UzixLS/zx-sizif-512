@@ -489,6 +489,7 @@ soundrive soundrive0(
     .rst_n(n_rstcpu_in),
     .clk28(clk28),
     .en_covox(covox_en),
+    .en_specdrum(covox_en),
     .en_soundrive(soundrive_en),
 
     .bus(bus),

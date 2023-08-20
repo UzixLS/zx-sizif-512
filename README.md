@@ -15,7 +15,7 @@ Another CPLD-based ZX Spectrum clone for 48K rubber case with some sweet feature
 * PAL and RGB video output (Sega Mini-DIN/9 connector)
 * Digital video output header for EGA monitors, VGA scandoublers, etc.
 * ULAplus
-* Mono covox (Pentagon standard)
+* Mono covox (Pentagon ans SpecDrum standards)
 * SounDrive (4-channel stereo covox)
 * WiFi addon ([link](https://github.com/UzixLS/zx-sizif-512-wifi))
 * Tape input via 3.5" jack and Bluetooth

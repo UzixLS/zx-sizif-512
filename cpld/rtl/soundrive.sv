@@ -2,8 +2,9 @@ import common::*;
 module soundrive(
     input rst_n,
     input clk28,
-    input en_soundrive,
     input en_covox,
+    input en_specdrum,
+    input en_soundrive,
 
     cpu_bus bus,
 
@@ -14,6 +15,7 @@ module soundrive(
 );
 
 wire covox_cs = en_covox && bus.ioreq && bus.a[7:0] == 8'hFB;
+wire specdrum_cs = en_specdrum && bus.ioreq && bus.a[7:0] == 8'hDF;
 wire soundrive_a_cs = en_soundrive && bus.ioreq && bus.a[7:0] == 8'h0F;
 wire soundrive_b_cs = en_soundrive && bus.ioreq && bus.a[7:0] == 8'h1F;
 wire soundrive_c_cs = en_soundrive && bus.ioreq && bus.a[7:0] == 8'h4F;
@@ -27,13 +29,13 @@ always @(posedge clk28 or negedge rst_n) begin
         ch_r1 <= 0;
     end
     else begin
-        if ((covox_cs || soundrive_a_cs) && bus.wr)
+        if ((covox_cs || specdrum_cs || soundrive_a_cs) && bus.wr)
             ch_l0 <= bus.d;
-        if ((covox_cs || soundrive_b_cs) && bus.wr)
+        if ((covox_cs || specdrum_cs || soundrive_b_cs) && bus.wr)
             ch_l1 <= bus.d;
-        if ((covox_cs || soundrive_c_cs) && bus.wr)
+        if ((covox_cs || specdrum_cs || soundrive_c_cs) && bus.wr)
             ch_r0 <= bus.d;
-        if ((covox_cs || soundrive_d_cs) && bus.wr)
+        if ((covox_cs || specdrum_cs || soundrive_d_cs) && bus.wr)
             ch_r1 <= bus.d;
     end
 end
