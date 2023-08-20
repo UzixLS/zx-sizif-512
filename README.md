@@ -100,6 +100,7 @@ Sizif have preinstalled esxDOS firmware, which provides ability to load TAP, TRD
 * [ZX-VGA-JOY](http://zx-vga-joy.com/) - OK
 * [Spectranet by ByteDelight](https://www.bytedelight.com/?page_id=3515) - OK
 * Spectranet by ShamaZX (aka ZX Net 512) - OK
+* ZXKit1 VGA converter (with [alternative firmware](https://github.com/UzixLS/zxkit1-vga-scandoubler-firmware)) - OK
 
 ### Changelog & current status
 * Rev.A - first release. Please note the [errata](pcb/rev.A/ERRATA.ru.txt) (in russian).
