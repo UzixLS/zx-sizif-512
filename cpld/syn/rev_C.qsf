@@ -236,15 +236,15 @@ set_global_assignment -name USE_CONFIGURATION_DEVICE ON
 set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED WITH WEAK PULL-UP"
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/ulaplus.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/soundrive.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/screen.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/video.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/rgb.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/ports.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/mixer.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/magic.sv
 set_global_assignment -name VERILOG_FILE ../rtl/joysega.v
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/divmmc.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/cpucontrol.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/memcontrol.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/cpu.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/mem.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/common.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/ay.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/top.sv

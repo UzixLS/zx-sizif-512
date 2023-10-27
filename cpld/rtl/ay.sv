@@ -11,7 +11,7 @@ module ay(
     output reg ay_bc1,
     output reg ay_bdir,
     output d_out_active,
-    output cpuwait
+    output ext_wait_cycle2
 );
 
 //              bdir bc1 description
@@ -36,7 +36,7 @@ always @(posedge clk28 or negedge rst_n) begin
 end
 
 assign d_out_active = !ay_bdir && ay_bc1;
-assign cpuwait = ay_bc1 | ay_bdir;
+assign ext_wait_cycle2 = ay_bdir || ay_bc1;
 
 
 endmodule

@@ -20,10 +20,10 @@ module ports(
     output reg tape_out,
     output reg beeper,
     output reg [2:0] border,
-    output reg screenpage,
-    output reg rompage128,
-    output reg [2:0] rampage128,
-    output reg [2:0] rampage_ext,
+    output reg video_page,
+    output reg rom_page128,
+    output reg [2:0] ram_page128,
+    output reg [2:0] ram_pageext,
     output reg [2:0] port_1ffd,
     output reg [4:0] port_dffd,
 
@@ -91,15 +91,15 @@ wire port_7ffd_cs = bus.ioreq && bus.a[1] == 0 && bus.a[15] == 0 &&
                     (lock_7ffd == 0 || port_dffd[4] == 1'b1);
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
-        rampage128 <= 0;
-        screenpage <= 0;
-        rompage128 <= 0;
+        ram_page128 <= 0;
+        video_page <= 0;
+        rom_page128 <= 0;
         lock_7ffd <= 0;
     end
     else if (port_7ffd_cs && bus.wr) begin
-        rampage128 <= bus.d[2:0];
-        screenpage <= bus.d[3];
-        rompage128 <= bus.d[4];
+        ram_page128 <= bus.d[2:0];
+        video_page <= bus.d[3];
+        rom_page128 <= bus.d[4];
         lock_7ffd <= bus.d[5];
     end
 end
@@ -109,11 +109,11 @@ end
 wire port_dffd_cs = bus.ioreq && bus.a == 16'hDFFD && (machine == MACHINE_PENT || magic_map);
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
-        rampage_ext <= 0;
+        ram_pageext <= 0;
         port_dffd <= 0;
     end
     else if (port_dffd_cs && bus.wr) begin
-        rampage_ext <= bus.d[2:0];
+        ram_pageext <= bus.d[2:0];
         port_dffd <= bus.d[4:0];
     end
 end

@@ -28,7 +28,7 @@ module divmmc(
     output reg mapram,
     output ram,
     output ramwr_mask,
-    output cpuwait
+    output ext_wait_cycle1
 );
 
 reg rom_m1_access, rom_m1_access0;
@@ -121,7 +121,7 @@ end
 
 reg [3:0] spi_cnt;
 wire spi_cnt_en = ~spi_cnt[3] | spi_cnt[2] | spi_cnt[1] | spi_cnt[0];
-assign cpuwait = ~spi_cnt[3];
+assign ext_wait_cycle1 = ~spi_cnt[3];
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         spi_cnt <= 0;

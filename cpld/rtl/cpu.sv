@@ -1,5 +1,5 @@
 import common::*;
-module cpucontrol(
+module cpu(
     input rst_n,
     input clk28,
     input clk14,
@@ -12,8 +12,8 @@ module cpucontrol(
 
     input [8:0] vc,
     input [8:0] hc,
-    input screen_contention,
-    input [2:0] rampage128,
+    input video_contention,
+    input [2:0] ram_page128,
     input machine_t machine,
     input turbo_t turbo,
     input ext_wait_cycle1,
@@ -22,7 +22,7 @@ module cpucontrol(
     output reg n_rstcpu_out,
     output reg clkcpu,
     output clkcpu_ck,
-    output clkwait,
+    output clkcpu_stall,
     output reg n_int,
     output reg n_int_next,
     output snow
@@ -36,10 +36,10 @@ always @(posedge clkcpu)
     mreq_delayed <= bus.mreq;
 always @(posedge clkcpu)
     iorq_delayed <= iorq_contended;
-wire contention_page = (machine == MACHINE_S3)? rampage128[2] : rampage128[0];
+wire contention_page = (machine == MACHINE_S3)? ram_page128[2] : ram_page128[0];
 wire contention_addr = bus.a[14] & (~bus.a[15] | (bus.a[15] & contention_page));
 wire contention_mem = !iorq_contended && !mreq_delayed && contention_addr;
-wire contention0 = screen_contention && !iorq_delayed && (contention_mem || iorq_contended);
+wire contention0 = video_contention && !iorq_delayed && (contention_mem || iorq_contended);
 wire contention = clkcpu && contention0 && turbo == TURBO_NONE && (machine == MACHINE_S48 || machine == MACHINE_S128 || machine == MACHINE_S3);
 assign snow = bus.a[14] && ~bus.a[15] && bus.rfsh && (machine == MACHINE_S48 || machine == MACHINE_S128);
 
@@ -62,10 +62,10 @@ end
 
 reg clkcpu_prev;
 assign clkcpu_ck = clkcpu && !clkcpu_prev;
-assign clkwait = contention || (|turbo_wait[5:1]);
+assign clkcpu_stall = contention || (|turbo_wait[5:1]);
 always @(posedge clk28) begin
     clkcpu_prev <= clkcpu;
-    if (clkwait)
+    if (clkcpu_stall)
         clkcpu <= clkcpu;
     else if (turbo == TURBO_14)
         clkcpu <= clk14;
