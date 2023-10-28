@@ -49,16 +49,16 @@ If you press Magic button for a short time, the standard NMI handler 'll be call
 Sega gamepad support will be available starting from PCB rev.D (or Rev.C with slight modifications).
 | Button | Function in Kempston mode | Function in Sinclair mode |
 | - | - | - |
-| Up | Up | 9 |
-| Down | Down | 8 |
-| Left | Left | 6 |
-| Right | Right | 7 |
-| A | Button 3 | N |
-| B | Button 1 | 0 |
-| C | Button 2 | M |
-| X | Turbo Button 3 | Turbo N |
-| Y | Turbo Button 1 | Turbo 0 |
-| Z | Turbo Button 2 | Turbo M |
+| Right | Right (bit 0) | 7 |
+| Left | Left (bit 1) | 6 |
+| Down | Down (bit 2) | 8 |
+| Up | Up (bit 3) | 9 |
+| A | Button 3 (bit 6) | N |
+| B | Button 1 (bit 4) | 0 |
+| C | Button 2 (bit 5) | M |
+| X | Turbo Button 3 (bit 6) | Turbo N |
+| Y | Turbo Button 1 (bit 4) | Turbo 0 |
+| Z | Turbo Button 2 (bit 5) | Turbo M |
 | Start | Pause | Pause |
 | Mode | Magic button | Magic button |
 
