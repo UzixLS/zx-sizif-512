@@ -14,11 +14,11 @@ module video(
     output reg hsync,
     output reg csync,
 
-    input read_allow,
-    output reg read_req,
+    output read_req,
     output read_req_is_up,
     output [14:0] read_req_addr,
-    output [5:0] read_req_up_addr,
+    input read_req_ack,
+    input read_data_valid,
     input [7:0] read_data,
 
     output contention,
@@ -189,7 +189,7 @@ wire next_addr = hc0[4:0] == 5'b10001;
 
 reg screen_read;
 always @(posedge clk28)
-    screen_read <= (vc < V_AREA) && (hc0 > 15) && (hc0 < (H_AREA<<2) + 17);
+    screen_read <= (vc < V_AREA) && (hc0 > 17) && (hc0 < (H_AREA<<2) + 17);
 
 reg [7:0] vaddr;
 reg [7:3] haddr;
@@ -207,51 +207,48 @@ end
 reg [7:0] bitmap, attr, bitmap_next, attr_next;
 reg [7:0] up_ink, up_paper, up_ink_next, up_paper_next;
 
-reg [1:0] read_step;
-wire read_step_bitmap   = read_req && read_step == 2'd0;
-wire read_step_attr     = read_req && read_step == 2'd1;
-wire read_step_up_ink   = read_req && read_step == 2'd2;
-wire read_step_up_paper = read_req && read_step == 2'd3;
-assign read_req_is_up   = read_step_up_ink | read_step_up_paper;
-
-assign read_req_addr = read_step_bitmap?
-    { 2'b10, vaddr[7:6], vaddr[2:0], vaddr[5:3], haddr[7:3] } :
-    { 5'b10110, vaddr[7:3], haddr[7:3] };
-assign read_req_up_addr = read_step_up_ink?
-    { attr_next[7:6], 1'b0, attr_next[2:0] } :
-    { attr_next[7:6], 1'b1, attr_next[5:3] } ;
+reg [1:0] read_step, read_step_cur;
+assign read_req = 1'b1; // just to simplify logic
+assign read_req_addr =
+    (read_step == 2'd3)? { attr_next[7:6], 1'b1, attr_next[5:3] } :
+    (read_step == 2'd2)? { attr_next[7:6], 1'b0, attr_next[2:0] } :
+    (read_step == 2'd1)? { 2'b10, vaddr[7:6], vaddr[2:0], vaddr[5:3], haddr[7:3] } :
+                         { 5'b10110, vaddr[7:3], haddr[7:3] } ;
+assign read_req_is_up = (read_step == 2'd2) || (read_step == 2'd3);
 
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
-        read_req <= 0;
         read_step <= 0;
+        read_step_cur <= 0;
         attr_next <= 0;
         bitmap_next <= 0;
         up_ink_next <= 0;
         up_paper_next <= 0;
     end
-    else if (ck14) begin
-        if (read_req && read_step[0] && !up_en)
-            read_step <= 0; // skip fetching ulaplus ink and paper
-        else if (!screen_read && up_en)
-            read_step <= 2'd3; // always fetch ulaplus paper in border area
-        else if (next_addr)
+    else begin
+        if (next_addr)
             read_step <= 0;
-        else if (read_req)
-            read_step <= read_step + 1'b1;
-        read_req <= (screen_read || up_en) && read_allow;
+        else if (read_req_ack && !up_en && read_step[0])
+            read_step <= 0;
+        else if (read_req_ack)
+            read_step <= read_step + 1'd1;
 
-        if (read_step_attr)
+        if (read_req_ack)
+            read_step_cur <= read_step;
+
+        if (read_data_valid && read_step_cur == 2'd0 && screen_read)
             attr_next <= read_data;
-        else if (!screen_read)
+        else if (!screen_read && hc0[0])
             attr_next <= {2'b00, border[2:0], border[2:0]};
-        if (read_step_bitmap)
+
+        if (read_data_valid && read_step_cur == 2'd1 && screen_read)
             bitmap_next <= read_data;
-        else if (!screen_read)
+        else if (!screen_read && hc0[0])
             bitmap_next <= 0;
-        if (read_step_up_ink)
+
+        if (read_data_valid && read_step_cur == 2'd2)
             up_ink_next <= read_data;
-        if (read_step_up_paper)
+        if (read_data_valid && read_step_cur == 2'd3)
             up_paper_next <= read_data;
     end
 end

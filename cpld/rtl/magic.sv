@@ -95,7 +95,7 @@ always @(posedge clk28 or negedge rst_n) begin
             magic_map <= 1'b0;
             magic_unmap_next <= 1'b0;
         end
-        else if (magic_mode && bus.m1 && bus.mreq && (bus.a == 16'h0066 || magic_map_next)) begin
+        else if (magic_mode && bus.m1 && bus.mreq_rise && (bus.a == 16'h0066 || magic_map_next)) begin
             n_nmi <= 1'b1;
             magic_map <= 1'b1;
             magic_map_next <= 1'b0;

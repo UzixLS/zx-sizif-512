@@ -196,6 +196,16 @@ assign #57 a_cpu = a_cpu_cpu; //TdCr(A)
 // assign #130 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
 // assign #110 a_cpu = a_cpu_cpu; //TdCr(A)
 
+/* CPU SIGNALS (Z8400 timings) */
+// assign #130 n_rd = n_rd_cpu; //TdCf(RDf)
+// assign #80 n_wr = n_wr_cpu; //TdCf(WRf)
+// assign #75 n_iorq = n_iorq_cpu; //TdCr(IORQf)
+// assign #100 n_mreq = n_mreq_cpu; //TdCf(MREQf)
+// assign #130 n_m1 = n_m1_cpu; //TdCr(M1f)
+// assign #180 n_rfsh = n_rfsh_cpu; //TdCr(RFSHf)
+// assign #145 a_cpu = a_cpu_cpu; //TdCr(A)
+
+
 
 /* SIMULATION SIGNALS */
 initial begin

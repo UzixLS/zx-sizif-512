@@ -251,3 +251,10 @@ set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/top.sv
 set_global_assignment -name VERILOG_INCLUDE_FILE ../rtl/util.vh
 set_global_assignment -name SDC_FILE clocks.sdc
 set_global_assignment -name CDF_FILE output/zx_ula.cdf
+
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to n_vwr
+set_global_assignment -name FINAL_PLACEMENT_OPTIMIZATION ALWAYS
+set_global_assignment -name ROUTER_TIMING_OPTIMIZATION_LEVEL MAXIMUM
+set_global_assignment -name PLACEMENT_EFFORT_MULTIPLIER 10
+set_global_assignment -name ROUTER_EFFORT_MULTIPLIER 10
+set_global_assignment -name SEED 1

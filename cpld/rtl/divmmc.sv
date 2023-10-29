@@ -28,11 +28,11 @@ module divmmc(
     output reg mapram,
     output ram,
     output ramwr_mask,
-    output ext_wait_cycle1
+    output ext_wait_cycle2
 );
 
 reg rom_m1_access, rom_m1_access0;
-always @(negedge clk28 or negedge rst_n) begin
+always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         rom_m1_access <= 0;
         rom_m1_access0 <= 0;
@@ -51,7 +51,7 @@ always @(posedge clk28 or negedge rst_n) begin
         automap_next <= 0;
         automap <= 0;
     end
-    else if (bus.m1 && bus.mreq && !mask_hooks) begin
+    else if (bus.m1 && bus.mreq_rise && !mask_hooks) begin
         if (!en_hooks || !en || rammap) begin
             automap_next <= 0;
         end
@@ -121,7 +121,7 @@ end
 
 reg [3:0] spi_cnt;
 wire spi_cnt_en = ~spi_cnt[3] | spi_cnt[2] | spi_cnt[1] | spi_cnt[0];
-assign ext_wait_cycle1 = ~spi_cnt[3];
+assign ext_wait_cycle2 = ~spi_cnt[3];
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         spi_cnt <= 0;

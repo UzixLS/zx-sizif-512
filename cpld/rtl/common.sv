@@ -6,14 +6,16 @@ endpackage
 
 
 interface cpu_bus();
-    wire [15:0] a;
-    wire [7:0] d;
-    wire iorq;
-    wire mreq;
-    wire m1;
-    wire rfsh;
-    wire rd;
-    wire wr;
+    reg [15:0] a;
+    reg [7:0] d;
+    reg iorq;
+    reg mreq;
+    reg m1;
+    reg rfsh;
+    reg rd;
+    reg wr;
 
     reg ioreq;
+    reg ioreq_unmasked;
+    reg mreq_rise;
 endinterface

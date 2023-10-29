@@ -98,10 +98,10 @@ wire ps2_key_reset, ps2_key_pause, joy_start;
 wire [2:0] border;
 wire magic_reboot, magic_beeper;
 wire up_active;
-wire clkcpu_stall;
 wire [2:0] ram_page128;
 wire ay_ext_wait_cycle2;
-wire div_ext_wait_cycle1;
+wire div_ext_wait_cycle2;
+wire mem_wait;
 wire sd_indication;
 wire bright_boost;
 wire zxkit1;
@@ -113,18 +113,19 @@ wire basic48_paged;
 
 /* CPU BUS */
 cpu_bus bus();
-reg n_iorqge_delayed;
-always @(posedge clk28)
-    n_iorqge_delayed <= n_iorqge;
-assign bus.a = xa;
-assign bus.d = xd;
-assign bus.iorq = ~n_iorqge;
-assign bus.mreq = ~n_mreq;
-assign bus.m1 = ~n_m1;
-assign bus.rfsh = ~n_rfsh;
-assign bus.rd = ~n_rd;
-assign bus.wr = ~n_wr;
-assign bus.ioreq = ~(~n_m1 | n_iorqge | n_iorqge_delayed);
+always @(negedge clk28) begin
+    bus.a <= xa;
+    bus.d <= xd;
+    bus.iorq <= ~n_iorqge;
+    bus.mreq <= ~n_mreq;
+    bus.m1 <= ~n_m1;
+    bus.rfsh <= ~n_rfsh;
+    bus.rd <= ~n_rd;
+    bus.wr <= ~n_wr;
+    bus.ioreq <= ~n_iorqge & n_m1;
+    bus.ioreq_unmasked <= n_m1 & n_mreq & (~n_wr | ~n_rd);
+    bus.mreq_rise <= ~n_mreq & ~bus.mreq;
+end
 
 
 /* RESET */
@@ -161,13 +162,11 @@ end
 
 
 /* VIDEO CONTROLLER */
-wire up_write_req;
 wire [2:0] r0, g0;
 wire [1:0] b0;
 wire video_contention, port_ff_active;
-wire video_read_req, video_read_req_is_up;
+wire video_read_req, video_read_req_is_up, video_read_req_ack, video_read_data_valid;
 wire [14:0] video_read_addr;
-wire [5:0] video_read_up_addr;
 wire [7:0] port_ff_data;
 wire [8:0] vc, hc;
 wire even_line;
@@ -190,11 +189,11 @@ video video0(
     .vsync(vsync0),
     .hsync(hsync0),
 
-    .read_allow((!up_write_req && !bus.mreq) || bus.rfsh || (clkcpu_stall && turbo == TURBO_NONE)),
     .read_req(video_read_req),
     .read_req_is_up(video_read_req_is_up),
     .read_req_addr(video_read_addr),
-    .read_req_up_addr(video_read_up_addr),
+    .read_req_ack(video_read_req_ack),
+    .read_data_valid(video_read_data_valid),
     .read_data(vd),
 
     .contention(video_contention),
@@ -339,13 +338,12 @@ cpu cpu0(
     .machine(machine),
     .video_contention(video_contention),
     .turbo(turbo),
-    .ext_wait_cycle1(ay_ext_wait_cycle2 || div_ext_wait_cycle1),
-    .ext_wait_cycle2(ay_ext_wait_cycle2),
+    .hold(mem_wait),
+    .ext_wait_cycle2(ay_ext_wait_cycle2 | div_ext_wait_cycle2),
 
     .n_rstcpu_out(n_rstcpu_out),
     .clkcpu(clkcpu),
     .clkcpu_ck(clkcpu_ck),
-    .clkcpu_stall(clkcpu_stall),
     .n_int(n_int),
     .n_int_next(n_int_next),
     .snow(snow)
@@ -552,14 +550,15 @@ divmmc divmmc0(
     .mapram(div_mapram),
     .ram(div_ram),
     .ramwr_mask(div_ramwr_mask),
-    .ext_wait_cycle1(div_ext_wait_cycle1)
+    .ext_wait_cycle2(div_ext_wait_cycle2)
 );
 
 
 /* ULAPLUS */
 wire up_dout_active;
+wire up_read_req, up_write_req;
 wire [7:0] up_dout;
-wire [5:0] up_write_addr;
+wire [5:0] up_rw_addr;
 ulaplus ulaplus0(
     .rst_n(n_rstcpu_in),
     .clk28(clk28),
@@ -570,13 +569,15 @@ ulaplus ulaplus0(
     .d_out_active(up_dout_active),
 
     .active(up_active),
+    .read_req(up_read_req),
     .write_req(up_write_req),
-    .write_addr(up_write_addr)
+    .rw_addr(up_rw_addr)
 );
 
 
 /* MEMORY CONTROLLER */
 mem mem0(
+    .rst_n(n_rstcpu_in),
     .clk28(clk28),
     .bus(bus),
     .xd(xd),
@@ -588,6 +589,7 @@ mem mem0(
     .n_vwr(n_vwr),
 
     .basic48_paged(basic48_paged),
+    .cpuwait(mem_wait),
 
     .machine(machine),
     .rom_wren(rom_wren),
@@ -612,9 +614,12 @@ mem mem0(
     .video_read_req(video_read_req),
     .video_read_req_is_up(video_read_req_is_up),
     .video_read_addr(video_read_addr),
-    .video_read_up_addr(video_read_up_addr),
+    .video_read_req_ack(video_read_req_ack),
+    .video_data_valid(video_read_data_valid),
+    .up_read_req(up_read_req),
+    .up_read_addr(up_rw_addr),
     .up_write_req(up_write_req),
-    .up_write_addr(up_write_addr),
+    .up_write_addr(up_rw_addr),
 
     .magic_dout_active(magic_dout_active),
     .magic_dout(magic_dout),

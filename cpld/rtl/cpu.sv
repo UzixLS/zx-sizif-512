@@ -16,13 +16,13 @@ module cpu(
     input [2:0] ram_page128,
     input machine_t machine,
     input turbo_t turbo,
+    input hold,
     input ext_wait_cycle1,
     input ext_wait_cycle2,
 
     output reg n_rstcpu_out,
     output reg clkcpu,
     output clkcpu_ck,
-    output clkcpu_stall,
     output reg n_int,
     output reg n_int_next,
     output snow
@@ -41,31 +41,31 @@ wire contention_addr = bus.a[14] & (~bus.a[15] | (bus.a[15] & contention_page));
 wire contention_mem = !iorq_contended && !mreq_delayed && contention_addr;
 wire contention0 = video_contention && !iorq_delayed && (contention_mem || iorq_contended);
 wire contention = clkcpu && contention0 && turbo == TURBO_NONE && (machine == MACHINE_S48 || machine == MACHINE_S128 || machine == MACHINE_S3);
-assign snow = bus.a[14] && ~bus.a[15] && bus.rfsh && (machine == MACHINE_S48 || machine == MACHINE_S128);
+assign snow = video_contention && contention_addr && bus.rfsh && bus.mreq && (machine == MACHINE_S48 || machine == MACHINE_S128);
 
 
 /* CLOCK */
-reg [5:0] turbo_wait;
-wire turbo_wait_trig0 = turbo == TURBO_14 && bus.mreq && !bus.rfsh;
-wire turbo_wait_trig1 = turbo == TURBO_14 && (bus.rd || bus.wr);
-reg turbo_wait_trig0_prev, turbo_wait_trig1_prev;
+wire turbo_wait_cond = turbo == TURBO_14 && ((bus.mreq && !bus.rfsh) || (bus.iorq && bus.m1) || bus.ioreq_unmasked);
+reg [2:0] turbo_wait_reg;
+reg turbo_wait;
+always @* begin
+    if (ext_wait_cycle2)
+        turbo_wait <= turbo_wait_cond && !turbo_wait_reg[2];
+    else if (ext_wait_cycle1 || bus.iorq || bus.ioreq_unmasked)
+        turbo_wait <= turbo_wait_cond && !turbo_wait_reg[1];
+    else
+        turbo_wait <= turbo_wait_cond && !turbo_wait_reg[0];
+end
 always @(posedge clk28) begin
-    turbo_wait[0] <= turbo_wait_trig0 && !turbo_wait_trig0_prev;
-    turbo_wait[1] <= turbo_wait[0] || (turbo_wait_trig1 && !turbo_wait_trig1_prev);
-    turbo_wait[2] <= turbo_wait[1] && (bus.iorq || ext_wait_cycle1);
-    turbo_wait[3] <= turbo_wait[2];
-    turbo_wait[4] <= turbo_wait[3] && ext_wait_cycle2;
-    turbo_wait[5] <= turbo_wait[4];
-    turbo_wait_trig0_prev <= turbo_wait_trig0;
-    turbo_wait_trig1_prev <= turbo_wait_trig1;
+    if (clkcpu != clk14)
+        turbo_wait_reg <= {turbo_wait_reg[1:0], turbo_wait_cond};
 end
 
 reg clkcpu_prev;
 assign clkcpu_ck = clkcpu && !clkcpu_prev;
-assign clkcpu_stall = contention || (|turbo_wait[5:1]);
 always @(posedge clk28) begin
     clkcpu_prev <= clkcpu;
-    if (clkcpu_stall)
+    if (contention || hold || turbo_wait)
         clkcpu <= clkcpu;
     else if (turbo == TURBO_14)
         clkcpu <= clk14;

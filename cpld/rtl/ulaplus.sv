@@ -9,8 +9,9 @@ module ulaplus(
     output d_out_active,
 
     output reg active,
+    output reg read_req,
     output reg write_req,
-    output [5:0] write_addr
+    output [5:0] rw_addr
 );
 
 
@@ -19,12 +20,13 @@ wire port_ff3b_cs = en && bus.ioreq && bus.a == 16'hFF3B;
 reg port_ff3b_rd;
 wire [7:0] port_ff3b_data = {7'b0000000, active};
 reg [7:0] addr_reg;
-assign write_addr = addr_reg[5:0];
+assign rw_addr = addr_reg[5:0];
 
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         active <= 0;
         addr_reg <= 0;
+        read_req <= 0;
         write_req <= 0;
         port_ff3b_rd <= 0;
     end
@@ -34,6 +36,7 @@ always @(posedge clk28 or negedge rst_n) begin
         if (port_ff3b_cs && bus.wr && addr_reg == 8'b01000000)
             active <= bus.d[0];
 
+        read_req  <= port_ff3b_cs && bus.rd && addr_reg[7:6] == 2'b00;
         write_req <= port_ff3b_cs && bus.wr && addr_reg[7:6] == 2'b00;
         port_ff3b_rd <= port_ff3b_cs && bus.rd;
 
