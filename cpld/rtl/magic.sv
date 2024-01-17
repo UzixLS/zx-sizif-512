@@ -106,37 +106,36 @@ end
 
 
 /* MAGIC CONFIG */
-turbo_t turbo0;
-reg autoturbo_en;
+initial machine = MACHINE_PENT;
+turbo_t turbo0 = TURBO_NONE;
+initial panning = PANNING_ABC;
+initial rom_custom_en = 0;
+initial rom_custom = 0;
+initial rom_alt48_en = 0;
+initial rom_alt48 = 0;
+initial joy_sinclair = 0;
+initial divmmc_en = 0;
+initial zc_en = 1'b1;
+initial ulaplus_en = 1'b1;
+initial ay_en = 1'b1;
+initial covox_en = 1'b1;
+initial soundrive_en = 1'b1;
+initial sd_indication_en = 1'b1;
+`ifdef REV_C
+    initial bright_boost = 1'b1;
+`else
+    initial bright_boost = 1'b0;
+`endif
+reg autoturbo_en = 1'b0;
+initial zxkit1 = 1'b0;
+initial joy_a_up = 1'b0;
+
 wire config_cs = magic_map && bus.ioreq && bus.a[7:0] == 8'hFF;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         magic_reboot <= 0;
         magic_beeper <= 0;
         rom_wren <= 0;
-        machine <= MACHINE_PENT;
-        turbo0 <= TURBO_NONE;
-        panning <= PANNING_ABC;
-        rom_custom_en <= 0;
-        rom_custom <= 0;
-        rom_alt48_en <= 0;
-        rom_alt48 <= 0;
-        joy_sinclair <= 0;
-        divmmc_en <= 0;
-        zc_en <= 1'b1;
-        ulaplus_en <= 1'b1;
-        ay_en <= 1'b1;
-        covox_en <= 1'b1;
-        soundrive_en <= 1'b1;
-        sd_indication_en <= 1'b1;
-        `ifdef REV_C
-            bright_boost <= 1'b1;
-        `else
-            bright_boost <= 1'b0;
-        `endif
-        autoturbo_en <= 1'b0;
-        zxkit1 <= 1'b0;
-        joy_a_up <= 1'b0;
     end
     else if (config_cs && bus.wr) case (bus.a[15:8])
         8'h01: {rom_wren, magic_reboot, magic_beeper} <= bus.d[2:0];
