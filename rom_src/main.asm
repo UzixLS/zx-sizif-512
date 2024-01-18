@@ -224,7 +224,7 @@ load_user_config:
     ld hl, user_config_initialized ; check if magic world is written to flash
     call check_initialized.check   ; if no - do not do anything
     ret nz                         ; ...
-    ld bc, CFG_T                   ; else - cfg_saved = user_config
+    ld bc, CFG_T+CFGEXT_T          ; else - cfg_saved = user_config
     ld de, cfg_saved               ; ...
     ld hl, user_config             ; ...
     ldir                           ; ...
@@ -245,7 +245,7 @@ save_user_config:
     call flash_erase_sector        ; ...
     ld ix, cfg                     ; program config to flash
     ld iy, user_config             ; ...
-    ld b, CFG_T                    ; ...
+    ld b, CFG_T+CFGEXT_T           ; ...
     call flash_program             ; ...
     ld ix, cfg_initialized         ; program magic word to flash
     ld iy, user_config_initialized ; ...
@@ -326,26 +326,21 @@ detect_ext_board:
     xor a
     ld (var_ext_presence), a
     ret
-.detected
+.detected:
     ld a, 1
     ld (var_ext_presence), a
     xor a
-    bit 0, b     ; check TSFM jumper
-    jr z, .cfg_tsfm
-    ld a, 1
 .cfg_tsfm:
+    bit 0, b     ; check TSFM jumper
+    jr nz, .cfg_saa
     ld (cfgext_saved.tsfm), a
-    xor a
-    bit 1, b     ; check SAA jumper
-    jr z, .cfg_saa
-    ld a, 1
 .cfg_saa:
+    bit 1, b     ; check SAA jumper
+    jr nz, .cfg_gs
     ld (cfgext_saved.saa), a
-    xor a
-    bit 2, b     ; check GS jumper
-    jr z, .cfg_gs
-    ld a, 1
 .cfg_gs:
+    bit 2, b     ; check GS jumper
+    ret nz
     ld (cfgext_saved.gs), a
     ret
 
