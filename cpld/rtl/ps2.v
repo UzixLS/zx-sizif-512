@@ -16,6 +16,7 @@ module ps2#(
     output reg key_magic,
     output reg key_reset,
     output reg key_pause,
+    output reg key_fastforward,
     output reg joy_up,
     output reg joy_down,
     output reg joy_left,
@@ -57,6 +58,7 @@ always @(posedge clk or negedge rst_n) begin
         is_ext <= 0;
         key_magic <= 0;
         key_pause <= 0;
+        key_fastforward <= 0;
         {joy_up, joy_down, joy_left, joy_right, joy_fire} <= 0;
         {key2_a, key2_b, key2_c, key2_d, key2_e, key2_f, key2_g, key2_h, key2_i, key2_j, key2_k, key2_l, key2_m, key2_n} <= 0;
         {key2_o, key2_p, key2_q, key2_r, key2_s, key2_t, key2_u, key2_v, key2_w, key2_x, key2_y, key2_z, key2_0, key2_1} <= 0;
@@ -137,6 +139,7 @@ always @(posedge clk or negedge rst_n) begin
                 `PS2_PGDN:      key2_pgdn <= is_press;
 
                 `PS2_F1:        key_pause <= is_press;
+                `PS2_F2:        key_fastforward <= is_press;
                 `PS2_F5:        key_magic <= is_press;
                 `PS2_F10:       key_reset0 <= is_press;
                 `PS2_F12:       key_reset0 <= is_press;

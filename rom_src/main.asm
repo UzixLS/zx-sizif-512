@@ -56,6 +56,8 @@ startup_handler:
     call detect_external_bdi
     call check_custom_rom
 .warm_boot:
+    xor a
+    ld (cfg_saved.fastforward), a
     call load_config
     call init_cpld
     call save_initialized
@@ -80,15 +82,18 @@ nmi_handler:
     ld (var_magic_enter_cnt), a
     ld (var_magic_leave_cnt), a
 .key_wait_loop:
-    call check_entering_pause ; A[1] == 1 if pause button is pressed
-    bit 1, a                  ; ...
-    jp nz, .enter_pause       ; ...
+    xor a                     ;
+    in a, (#ff)               ;
+    bit 2, a                  ; A[2] == 1 if fastforward button is pressed
+    jr nz, .enter_fastforward ; ...
+    bit 1, a                  ; A[1] == 1 if pause button is pressed
+    jr nz, .enter_pause       ; ...
     call delay_10ms           ;
     call check_entering_menu  ; A == 1 if we are entering menu, A == 2 if we are leaving to...
-    bit 0, a                  ; ...default nmi handler, A == 0 otherwise
-    jp nz, .enter_menu        ; ...
-    bit 1, a                  ; ...
-    jr z, .key_wait_loop      ; ...
+    cp 1                      ; ...default nmi handler, A == 0 otherwise
+    jr z, .enter_menu         ; ...
+    cp 2                      ; ...
+    jr nz, .key_wait_loop     ; ...
 .leave_no_key:
     xor a                     ; disable border
     ld bc, #01ff              ; ...
@@ -96,10 +101,14 @@ nmi_handler:
     ld bc, #00ff              ; ...
     in a, (c)                 ; if divmmc paged - just do retn
     bit 3, a                  ; ...
-    jr nz, exit_with_ret      ; ...
+    jp nz, exit_with_ret      ; ...
     ld hl, #0066              ; otherwise jump to default nmi handler
-    jr exit_with_jp           ; ...
+    jp exit_with_jp           ; ...
 
+.enter_fastforward:
+    ld hl, nmi_fastforward
+    ld (var_main_fun), hl
+    jr .enter
 .enter_pause:
     ld hl, nmi_pause
     ld (var_main_fun), hl
@@ -231,6 +240,8 @@ load_user_config:
 .quirks:                           ; some options shouldn't be saved by user, so we just overwrite them from default config
     ld a, (CFG_DEFAULT.ay)         ; AY should be disabled only by detect_external_ay
     ld (cfg_saved.ay), a           ; ...
+    ld a, (CFG_DEFAULT.fastforward)
+    ld (cfg_saved.fastforward), a
     ret
 
 ; OUT -  A = 1 if error, 0 if ok
@@ -420,13 +431,6 @@ check_custom_rom:
     ret
 
 
-; OUT - A bit 1 if we are entering pause, 0 otherwise
-check_entering_pause:
-    xor a                       ; read pause key state in bit 1 of #00FF port
-    in a, (#ff)                 ; ...
-    ret
-
-
 ; OUT -  A = 1 if we are entering menu, A = 2 if we are leaving menu, A = 0 otherwise
 ; OUT -  F - garbage
 check_entering_menu:
@@ -458,6 +462,10 @@ check_entering_menu:
 ; OUT - AF - garbage
 ; OUT - BC - garbage
 delay_10ms:
+    ld c, 7*4
+    ld a, (cfg.fastforward)
+    or a
+    jr nz, .loop
     ld c, 7
     ld a, (cfg.clock)
     or a
@@ -624,8 +632,18 @@ bootmenu:
     ld hl, menuboot
     call menu_init
     call menu_input_loop
-    call wait_for_keys_release
-    ret
+    jp wait_for_keys_release
+
+
+nmi_fastforward:
+    ld a, (cfg.fastforward)
+    xor 1
+    ld (cfg.fastforward), a
+    ld bc, #11ff
+    out (c), a
+    ei
+    halt
+    jp wait_for_keys_release
 
 
 nmi_pause:
@@ -639,19 +657,7 @@ nmi_pause:
     ld a, (var_exit_flag)
     or a
     jr z, .loop
-.wait_for_pause_key_release:
-    xor a              ; read magic/pause keys state from port #00FF
-    in a, (#ff)        ; ...
-    and #03            ; ...
-    jr nz, .wait_for_pause_key_release
-    ei                 ; second read to fix start button bouncing on 8bitdo gamepad
-    halt               ; ...
-.wait_for_pause_key_release2:
-    xor a              ; read magic/pause keys state from port #00FF
-    in a, (#ff)        ; ...
-    and #03            ; ...
-    jr nz, .wait_for_pause_key_release2
-    ret
+    jp wait_for_keys_release
 
 
 nmi_menu:
@@ -674,8 +680,7 @@ nmi_menu:
     call menu_init
 .loop:
     call menu_input_loop
-    call wait_for_keys_release
-    ret
+    jp wait_for_keys_release
 
 
 menu_input_loop:
@@ -697,6 +702,9 @@ menu_input_loop:
 
 
 wait_for_keys_release:
+    ld b, 2            ; second attempt to fix start button bouncing on 8bitdo gamepad
+.attempt:
+    push bc
 .loop:
     ei
     halt
@@ -704,10 +712,12 @@ wait_for_keys_release:
     xor a
     or b
     jr nz, .loop
-    xor a              ; read magic/pause keys state from port #00FF
+    xor a              ; read magic/pause/fastforward keys state from port #00FF
     in a, (#ff)        ; ...
-    and #03            ; ...
+    and #07            ; ...
     jr nz, .loop
+    pop bc
+    djnz .attempt
     ret
 
 

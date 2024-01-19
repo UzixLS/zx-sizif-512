@@ -66,6 +66,7 @@ Sega gamepad support will be available starting from PCB rev.D (or Rev.C with sl
 | Button | Function |
 | - | - |
 | F1 | Pause |
+| F2 | Fast forward |
 | F5 | Magic button |
 | F10 | Reboot |
 | F12 | Reboot |

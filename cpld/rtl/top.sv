@@ -109,6 +109,7 @@ wire joy_a_up;
 wire div_map;
 wire div_mapram;
 wire basic48_paged;
+wire fastforward;
 
 
 /* CPU BUS */
@@ -230,7 +231,7 @@ rgb rgb0(
 
 /* PS/2 KEYBOARD */
 wire [4:0] ps2_kd;
-wire ps2_key_magic;
+wire ps2_key_magic, ps2_key_fastforward;
 wire ps2_joy_up, ps2_joy_down, ps2_joy_left, ps2_joy_right, ps2_joy_fire;
 `ifndef REV_C
 ps2 #(.CLK_FREQ(28_000_000)) ps2_0(
@@ -243,6 +244,7 @@ ps2 #(.CLK_FREQ(28_000_000)) ps2_0(
     .key_magic(ps2_key_magic),
     .key_reset(ps2_key_reset),
     .key_pause(ps2_key_pause),
+    .key_fastforward(ps2_key_fastforward),
     .joy_up(ps2_joy_up),
     .joy_down(ps2_joy_down),
     .joy_left(ps2_joy_left),
@@ -338,6 +340,7 @@ cpu cpu0(
     .machine(machine),
     .video_contention(video_contention),
     .turbo(turbo),
+    .fastforward(fastforward),
     .hold(mem_wait),
     .ext_wait_cycle2(ay_ext_wait_cycle2 | div_ext_wait_cycle2),
 
@@ -389,6 +392,7 @@ magic magic0(
 
     .magic_button(~n_magic || joy_mode || ps2_key_magic),
     .pause_button(ps2_key_pause || joy_start),
+    .fastforward_button(ps2_key_fastforward),
     .div_paged(div_map && !div_mapram),
     .basic48_paged(basic48_paged),
 
@@ -415,7 +419,8 @@ magic magic0(
     .sd_indication_en(sd_indication_en),
     .bright_boost(bright_boost),
     .zxkit1(zxkit1),
-    .joy_a_up(joy_a_up)
+    .joy_a_up(joy_a_up),
+    .fastforward(fastforward)
 );
 
 

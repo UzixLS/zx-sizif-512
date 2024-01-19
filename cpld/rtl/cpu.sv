@@ -16,6 +16,7 @@ module cpu(
     input [2:0] ram_page128,
     input machine_t machine,
     input turbo_t turbo,
+    input fastforward,
     input hold,
     input ext_wait_cycle1,
     input ext_wait_cycle2,
@@ -90,7 +91,13 @@ localparam INT_L_S128      = 6'd36;
 localparam INT_V_PENT      = 239;
 localparam INT_H_PENT      = 322;
 localparam INT_L_PENT      = 6'd32;
+localparam INT_V_FF1       = 0;
+localparam INT_V_FF2       = 106;
+localparam INT_V_FF3       = 212;
+localparam INT_H_FF        = 0;
 wire int_begin =
+    (fastforward)?
+        (vc == INT_V_FF1 || vc == INT_V_FF2 || vc == INT_V_FF3) && hc == INT_H_FF :
     (machine == MACHINE_S48)?
         vc == INT_V_S48 && hc == INT_H_S48 :
     (machine == MACHINE_S128 || machine == MACHINE_S3)?

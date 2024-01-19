@@ -14,6 +14,7 @@ module magic(
 
     input magic_button,
     input pause_button,
+    input fastforward_button,
     input div_paged,
     input basic48_paged,
 
@@ -40,7 +41,8 @@ module magic(
     output reg sd_indication_en,
     output reg bright_boost,
     output reg zxkit1,
-    output reg joy_a_up
+    output reg joy_a_up,
+    output reg fastforward
 );
 
 localparam magic_on_start = 1'b1;
@@ -63,7 +65,7 @@ always @(posedge clk28 or negedge rst_n) begin
         opcode_is_reading <= 0;
     end
     else begin
-        if ((magic_button || pause_button) && n_int == 1'b1 && n_int_next == 1'b0) begin
+        if ((magic_button || pause_button || fastforward_button) && n_int == 1'b1 && n_int_next == 1'b0) begin
             if (!magic_mode)
                 n_nmi <= 1'b0;
             magic_mode <= 1'b1;
@@ -136,6 +138,7 @@ always @(posedge clk28 or negedge rst_n) begin
         magic_reboot <= 0;
         magic_beeper <= 0;
         rom_wren <= 0;
+        fastforward <= 0;
     end
     else if (config_cs && bus.wr) case (bus.a[15:8])
         8'h01: {rom_wren, magic_reboot, magic_beeper} <= bus.d[2:0];
@@ -154,11 +157,12 @@ always @(posedge clk28 or negedge rst_n) begin
         8'h0E: autoturbo_en <= bus.d[0];
         8'h0F: zxkit1 <= bus.d[0];
         8'h10: joy_a_up <= bus.d[0];
+        8'h11: fastforward <= bus.d[0];
     endcase
 end
 
 reg config_rd;
-wire [7:0] config_data = {4'b0000, div_paged, 1'b1, pause_button, magic_button};
+wire [7:0] config_data = {4'b0000, div_paged, fastforward_button, pause_button, magic_button};
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         config_rd <= 0;
@@ -189,6 +193,8 @@ end
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         turbo <= TURBO_NONE;
+    else if (fastforward)
+        turbo <= TURBO_14;
     else if (autoturbo_en && div_paged && !magic_map)
         turbo <= TURBO_14;
     else if (autoturbo_en && |portfe_noturbo)
