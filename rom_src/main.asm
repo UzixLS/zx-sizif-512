@@ -54,6 +54,7 @@ startup_handler:
     call detect_ext_board
     call detect_external_ay
     call detect_external_bdi
+    call detect_external_kempston
     call check_custom_rom
 .warm_boot:
     xor a
@@ -405,6 +406,21 @@ detect_external_bdi:
     jp trdos_3d2f_entrypoint ; ...
 
 
+; Check if Kempston joystick addon is connected to zx-bus
+; If yes - set internal joystick to Sinclair mode
+detect_external_kempston:
+    ld a, 1                      ; disable internal Kempston
+    ld bc, #07ff                 ; ...
+    out (c), a                   ; ...
+    xor a                        ;
+    in a, (#1f)                  ; read kempston joystick port
+    cp #ff                       ; if value == 0xff - assume no addon connected
+    ret z                        ; ...
+    ld a, 1                      ; otherwise - change internal joystick mode to Sinclair
+    ld (cfg_saved.joystick), a   ; ...
+    ret                          ;
+
+
 ; Check if user holds CS key on poweron. If true - boot with custom rom
 check_custom_rom:
     ld a, #fe                    ; read cs,z,x,c,v
@@ -666,6 +682,8 @@ nmi_menu:
     call init_default_config
     ld a, 2                    ; default cpld sd card state - ZC
     ld (cfg_saved.sd), a       ; ...
+    dec a                      ; default joystick mode - Sinclair
+    ld (cfg_saved.joystick), a ; ...
     call detect_ext_board
     call load_config
     call save_initialized
