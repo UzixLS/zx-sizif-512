@@ -447,6 +447,7 @@ ports ports0 (
     .en_sinclair(joy_sinclair),
 
     .machine(machine),
+    .basic48_paged(basic48_paged),
     .port_ff_active(port_ff_active),
     .port_ff_data(port_ff_data),
     .kd(kd & ps2_kd),
