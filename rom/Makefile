@@ -15,7 +15,7 @@ bank11=zcen3e3.rom            # 0x2C000
 bank12=zcen3e3_notap.rom      # 0x30000
 bank13=negluk.rom             # 0x34000
 bank14=S128_ZX80_ROM.bin      # 0x38000
-bank15=S128_ZX81_ED2_ROM.bin  # 0x3C000
+bank15=S128_ZX81_ED3_ROM.bin  # 0x3C000
 # A18 (JP2)
 bank16=DiagROM.v61            # 0x40000
 bank17=DiagROM.v61            # 0x44000
