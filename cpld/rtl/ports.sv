@@ -10,7 +10,7 @@ module ports(
     output d_out_active,
 
     input machine_t machine,
-    input basic48_paged,
+    input trdos,
     input port_ff_active,
     input [7:0] port_ff_data,
     input [4:0] kd,
@@ -35,18 +35,6 @@ module ports(
 
 
 /* PORT #FF */
-reg trdos;
-always @(posedge clk28 or negedge rst_n) begin
-    if (!rst_n) begin
-        trdos <= 0;
-    end
-    else begin
-        if (bus.mreq_rise && bus.m1 && bus.a[15:8] == 8'h3D && basic48_paged)
-            trdos <= 1'b1;
-        else if (bus.mreq_rise && bus.m1 && (bus.a[15] == 1'b1 || bus.a[14] == 1'b1))
-            trdos <= 0;
-    end
-end
 reg port_ff_rd;
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
@@ -168,7 +156,7 @@ always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         kempston_rd <= 0;
     else
-        kempston_rd <= en_kempston && bus.ioreq && bus.rd && bus.a[5:0] == 6'h1F;
+        kempston_rd <= en_kempston && !trdos && bus.ioreq && bus.rd && bus.a[5:0] == 6'h1F;
 end
 
 

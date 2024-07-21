@@ -162,6 +162,18 @@ always @(posedge clk28 or negedge usrrst_n) begin
 end
 
 
+/* TR-DOS detection */
+reg trdos;
+always @(posedge clk28 or negedge rst_n) begin
+    if (!rst_n)
+        trdos <= 0;
+    else if (bus.mreq_rise && bus.m1 && (bus.a[15] == 1'b1 || bus.a[14] == 1'b1))
+        trdos <= 0;
+    else if (bus.mreq_rise && bus.m1 && bus.a[15:8] == 8'h3D && basic48_paged)
+        trdos <= 1'b1;
+end
+
+
 /* VIDEO CONTROLLER */
 wire [2:0] r0, g0;
 wire [1:0] b0;
@@ -447,7 +459,7 @@ ports ports0 (
     .en_sinclair(joy_sinclair),
 
     .machine(machine),
-    .basic48_paged(basic48_paged),
+    .trdos(trdos),
     .port_ff_active(port_ff_active),
     .port_ff_data(port_ff_data),
     .kd(kd & ps2_kd),
@@ -494,7 +506,7 @@ soundrive soundrive0(
     .clk28(clk28),
     .en_covox(covox_en),
     .en_specdrum(covox_en),
-    .en_soundrive(soundrive_en),
+    .en_soundrive(soundrive_en && !trdos),
 
     .bus(bus),
 
