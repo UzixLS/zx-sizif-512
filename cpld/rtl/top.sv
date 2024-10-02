@@ -389,6 +389,9 @@ assign ay_abc = panning == PANNING_ABC;
 wire divmmc_en, zc_en, sd_indication_en;
 assign sd_indication = sd_indication_en & ~sd_cs;
 
+wire joy_magic = joy_mode && !joy_right;
+wire joy_fast_forward = joy_mode && joy_right;
+
 magic magic0(
     .rst_n(n_rstcpu_in),
     .clk28(clk28),
@@ -402,9 +405,9 @@ magic magic0(
     .n_int_next(n_int_next),
     .n_nmi(n_nmi0),
 
-    .magic_button(~n_magic || joy_mode || ps2_key_magic),
+    .magic_button(~n_magic || joy_magic || ps2_key_magic),
     .pause_button(ps2_key_pause || joy_start),
-    .fastforward_button(ps2_key_fastforward),
+    .fastforward_button(ps2_key_fastforward || joy_fast_forward),
     .div_paged(div_map && !div_mapram),
     .basic48_paged(basic48_paged),
 
