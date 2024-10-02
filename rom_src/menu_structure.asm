@@ -272,8 +272,10 @@ menu_machine_cb:
     ret
 
 menu_clock_cb:
+    ld a, (cfg.cmoscpu)      ; for CMOS - max clock is 4 (14MHz)
+    add 3                    ; for NMOS - max clock is 3 (7MHz)
+    ld c, a                  ; ...
     ld a, (cfg.clock)
-    ld c, 4
     call menu_handle_press
     ld (cfg.clock), a
     ld bc, #03ff

@@ -129,6 +129,7 @@ initial sd_indication_en = 1'b1;
     initial bright_boost = 1'b0;
 `endif
 reg autoturbo_en = 1'b0;
+reg cmoscpu = 1'b0;
 initial zxkit1 = 1'b0;
 initial joy_a_up = 1'b0;
 
@@ -158,11 +159,12 @@ always @(posedge clk28 or negedge rst_n) begin
         8'h0F: zxkit1 <= bus.d[0];
         8'h10: joy_a_up <= bus.d[0];
         8'h11: fastforward <= bus.d[0];
+        8'h12: cmoscpu <= bus.d[0];
     endcase
 end
 
 reg config_rd;
-wire [7:0] config_data = {4'b0000, div_paged, fastforward_button, pause_button, magic_button};
+wire [7:0] config_data = {3'b000, cmoscpu, div_paged, fastforward_button, pause_button, magic_button};
 always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         config_rd <= 0;
@@ -194,13 +196,13 @@ always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n)
         turbo <= TURBO_NONE;
     else if (fastforward)
-        turbo <= TURBO_14;
+        turbo <= cmoscpu? TURBO_14 : TURBO_7;
     else if (autoturbo_en && div_paged && !magic_map)
-        turbo <= TURBO_14;
+        turbo <= cmoscpu? TURBO_14 : TURBO_7;
     else if (autoturbo_en && |portfe_noturbo)
         turbo <= TURBO_NONE;
     else if (autoturbo_en && basic48_ramclear_turbo)
-        turbo <= TURBO_14;
+        turbo <= cmoscpu? TURBO_14 : TURBO_7;
     else
         turbo <= turbo0;
 end
