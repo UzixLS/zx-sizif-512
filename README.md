@@ -1,7 +1,7 @@
 ## Sizif-512
 Another CPLD-based ZX Spectrum clone for 48K rubber case with some sweet features.
 
-[![photo](images/revD.small.jpg)](images/revD.jpg?raw=true)
+[![photo](images/revD.small.jpg)](images/revD.jpg)
 
 ### Tech specs
 * Half-sized PCB for 48K rubber case
@@ -39,7 +39,7 @@ Building from scratch experience in Terence Ang's blog: [part1](https://www.tere
 ### Magic button
 Sizif has a number of configurable parameters that you can change on the fly. To do this just hold Magic button for a second.
 
-[![photo](doc/sizif-menu.gif)](doc/sizif-menu.gif?raw=true)
+[![photo](doc/sizif-menu.gif)](doc/sizif-menu.gif)
 
 To navigate menu you can use up-down keys, to change value use enter or left-right keys. Kempston, Sinclair, Cursor and QAOP supported.
 
