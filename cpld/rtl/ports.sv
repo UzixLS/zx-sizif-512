@@ -17,6 +17,9 @@ module ports(
     input [7:0] kempston_data,
     input magic_map,
     input tape_in,
+    input [5:0] timex_mode,
+    input uplus_video_page_cs,
+    input uplus_video_page,
 
     output reg tape_out,
     output reg beeper,
@@ -43,6 +46,14 @@ always @(posedge clk28 or negedge rst_n) begin
         port_ff_rd <= bus.rd && bus.ioreq && !magic_map && !trdos && port_ff_active && (machine != MACHINE_S3) && bus.a[7:0] == 8'hFF;
 end
 
+// Shadowning #FF into eLeMeNt ZX port #9FFD
+reg port_9ffd_rd;
+always @(posedge clk28 or negedge rst_n) begin
+    if (!rst_n)
+        port_9ffd_rd <= 0;
+    else
+        port_9ffd_rd <= bus.rd && bus.ioreq && bus.a[15:0] == 16'h9FFD;
+end
 
 /* PORT #FE */
 wire port_fe_cs = bus.ioreq && bus.a[0] == 0;
@@ -103,6 +114,9 @@ always @(posedge clk28 or negedge rst_n) begin
         rom_page128 <= bus.d[4];
         lock_7ffd <= bus.d[5];
     end
+    else if (uplus_video_page_cs) begin
+        video_page <= uplus_video_page;
+    end
 end
 
 
@@ -161,12 +175,13 @@ end
 
 
 /* BUS CONTROLLER */
-assign d_out_active = port_fe_rd | port_ff_rd | kempston_rd;
+assign d_out_active = port_fe_rd | port_ff_rd | kempston_rd | port_9ffd_rd;
 
 assign d_out =
     kempston_rd? kempston_data :
     port_fe_rd? port_fe_data :
-    port_ff_data ;
+    port_9ffd_rd? {2'b00, timex_mode[5:0]}:
+    port_ff_data;
 
 
 endmodule

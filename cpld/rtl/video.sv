@@ -38,7 +38,8 @@ module video(
     output clk12_5hz,
     output clk6_25hz,
     output clk3_125hz,
-    output clk1_5625hz
+    output clk1_5625hz,
+    input [5:0] timex_mode
 );
 
 reg  [8:0] vc;
@@ -181,10 +182,15 @@ end
 
 
 /* SCREEN CONTROLLER */
+
+wire timex_page = timex_mode[0];
+wire timex_hi_col = timex_mode[1];
+wire timex_hi_res = timex_mode[2]; // must be set together with [1]
+
 wire screen_show = (vc < V_AREA) && (hc0 >= (SCREEN_DELAY<<2) - 1) && (hc0 < ((H_AREA + SCREEN_DELAY)<<2) - 1);
 wire screen_update = hc0[4:0] == 5'b10011;
 wire border_update = (hc0[4:0] == 5'b10011) || (machine == MACHINE_PENT && ck7);
-wire bitmap_shift = hc0[1:0] == 2'b11;
+wire bitmap_shift = hc0[1:0] == 2'b11 || timex_hi_res && hc0[0] == 1'b1;
 wire next_addr = hc0[4:0] == 5'b10001;
 
 reg screen_read;
@@ -204,7 +210,7 @@ always @(posedge clk28 or negedge rst_n) begin
     end
 end
 
-reg [7:0] bitmap, attr, bitmap_next, attr_next;
+reg [7:0] bitmap, attr, bitmap_next, attr_next, bitmap_odd, bitmap_odd_next;
 reg [7:0] up_ink, up_paper, up_ink_next, up_paper_next;
 
 reg [1:0] read_step, read_step_cur;
@@ -212,8 +218,11 @@ assign read_req = 1'b1; // just to simplify logic
 assign read_req_addr =
     (read_step == 2'd3)? { attr_next[7:6], 1'b1, attr_next[5:3] } :
     (read_step == 2'd2)? { attr_next[7:6], 1'b0, attr_next[2:0] } :
-    (read_step == 2'd1)? { 2'b10, vaddr[7:6], vaddr[2:0], vaddr[5:3], haddr[7:3] } :
-                         { 5'b10110, vaddr[7:3], haddr[7:3] } ;
+    (read_step == 2'd1)? { 1'b1, timex_page, vaddr[7:6], vaddr[2:0], vaddr[5:3], haddr[7:3] } :
+    // TIMEX MULTICOLOR atribute address / second page / HiRes OddColumn:
+    (timex_hi_col)?      { 2'b11, vaddr[7:6], vaddr[2:0], vaddr[5:3], haddr[7:3] } :
+                         { 1'b1, timex_page, 3'b110, vaddr[7:3], haddr[7:3] } ;	
+
 assign read_req_is_up = (read_step == 2'd2) || (read_step == 2'd3);
 
 always @(posedge clk28 or negedge rst_n) begin
@@ -224,6 +233,7 @@ always @(posedge clk28 or negedge rst_n) begin
         bitmap_next <= 0;
         up_ink_next <= 0;
         up_paper_next <= 0;
+        bitmap_odd_next <= 0;		  
     end
     else begin
         if (next_addr)
@@ -236,8 +246,14 @@ always @(posedge clk28 or negedge rst_n) begin
         if (read_req_ack)
             read_step_cur <= read_step;
 
-        if (read_data_valid && read_step_cur == 2'd0 && screen_read)
-            attr_next <= read_data;
+        if (read_data_valid && read_step_cur == 2'd0 && screen_read) begin
+            if (timex_hi_res) begin
+                bitmap_odd_next <= read_data;
+                attr_next <= {2'b00, ~timex_mode[5:3], timex_mode[5:3]};
+            end
+            else
+                attr_next <= read_data;
+        end
         else if (!screen_read && hc0[0])
             attr_next <= {2'b00, border[2:0], border[2:0]};
 
@@ -257,20 +273,25 @@ always @(posedge clk28 or negedge rst_n) begin
     if (!rst_n) begin
         attr <= 0;
         bitmap <= 0;
+        bitmap_odd <= 0;
         up_ink <= 0;
         up_paper <= 0;
     end
     else begin
-        if (screen_show && screen_update)
+        if (screen_show && screen_update) begin
             attr <= attr_next;
+        end
         else if (!screen_show && border_update)
             attr <= {2'b00, border[2:0], border[2:0]};
 
-        if (screen_update)
+        if (screen_update) begin
             bitmap <= bitmap_next;
-        else if (bitmap_shift)
-            bitmap <= {bitmap[6:0], 1'b0};
-
+            bitmap_odd <= bitmap_odd_next;
+        end
+        else if (bitmap_shift) begin
+            bitmap <= {bitmap[6:0], bitmap_odd[7]};
+            bitmap_odd <= {bitmap_odd[6:0], 1'b0};
+        end
         if (screen_update)
             up_ink <= up_ink_next;
         if (screen_update)

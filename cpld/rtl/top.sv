@@ -185,6 +185,7 @@ wire [8:0] vc, hc;
 wire even_line;
 wire clk14, clk7, clk35, ck14, ck7, ck35, clk12_5hz;
 wire vsync0, hsync0;
+wire [5:0] timex_mode;
 assign vsync = zxkit1? clk14 : vsync0;
 assign hsync = zxkit1? csync : hsync0;
 video video0(
@@ -222,7 +223,8 @@ video video0(
     .ck14(ck14),
     .ck7(ck7),
     .ck35(ck35),
-    .clk12_5hz(clk12_5hz)
+    .clk12_5hz(clk12_5hz),
+    .timex_mode(timex_mode)
 );
 
 
@@ -444,6 +446,8 @@ wire [7:0] ports_dout;
 wire ports_dout_active;
 wire beeper, tape_out;
 wire video_page;
+wire uplus_video_page_cs;
+wire uplus_video_page;
 wire rom_page128;
 wire [2:0] ram_pageext;
 wire [2:0] port_1ffd;
@@ -469,7 +473,9 @@ ports ports0 (
     .kempston_data(kempston_data),
     .magic_map(magic_map),
     .tape_in(tape_in),
-
+    .timex_mode(timex_mode),
+    .uplus_video_page_cs(uplus_video_page_cs),
+    .uplus_video_page(uplus_video_page),
     .tape_out(tape_out),
     .beeper(beeper),
     .border(border),
@@ -592,7 +598,11 @@ ulaplus ulaplus0(
     .active(up_active),
     .read_req(up_read_req),
     .write_req(up_write_req),
-    .rw_addr(up_rw_addr)
+    .rw_addr(up_rw_addr),
+    .timex_mode(timex_mode),
+    .uplus_video_page_cs(uplus_video_page_cs),
+    .uplus_video_page(uplus_video_page),
+    .magic_map(magic_map)
 );
 
 

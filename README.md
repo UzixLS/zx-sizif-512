@@ -15,12 +15,14 @@ Another CPLD-based ZX Spectrum clone for 48K rubber case with some sweet feature
 * PAL and RGB video output (Sega Mini-DIN/9 connector)
 * Digital video output header for EGA monitors, VGA scandoublers, etc.
 * ULAplus
+* Timex MultiColor and HiRes support
 * Mono covox (Pentagon ans SpecDrum standards)
 * SounDrive (4-channel stereo covox)
 * WiFi addon ([link](https://github.com/UzixLS/zx-sizif-512-wifi))
 * Tape input via 3.5" jack and Bluetooth
 * 9-12V power supply with any polarity
 * Reset and Magic buttons; header for power button
+
 
 With extension board ([link](https://github.com/UzixLS/zx-sizif-512-ext)) more features may be added:
 * Turbo Sound FM
@@ -85,6 +87,28 @@ Note that DFFDh port available only in Pentagon mode.
 
 ### SD card
 Sizif have preinstalled esxDOS firmware, which provides ability to load TAP, TRD, SCL, Z80 files and save snapshots. To use this you should format SD cart to FAT32 or FAT16 and unpack latest esxDOS release ([link](http://www.esxdos.org/index.html)) to card. Also it's recommended to install Long Filename Browser ([link](https://spectrumcomputing.co.uk/forums/viewtopic.php?t=2553)) to card.
+
+### Timex 2048 MultiColor and HiRes support
+The Timex graphics modes added by amsoft78.
+Basic ways to setup Timex 2048 modes is:
+* OUT 255, 1 - use Timex Screen #1 from 0x6000 instead of 0x4000
+* OUT 255, 2 - sets HiColor mode. Screen bitmap is read from 0x4000, but screen attributes are read from 0x6000. Each 8x1 bitmap has separate attributes entry, in opposite to 8x8 in regular Zx Spectrum.
+* OUT 255, 6 - sets HiRes mode. Screen is now 512x192 in two colors. Both Screen #0 from 0x4000 (odd columns) and 0x6000 (even columns) contains bitmap. Bits 5 to 3 in port 0xFF defines the ink color common for the whole screen. Background colour is always its binary inversion.
+* OUT 255, 0 - sets the regular ZX Spectrum mode.
+
+To activate Timex modes, the followig ports can be used:
+* ZX eLeMeNt compatible port 0x9FFD - shadowing original Timex 0xFF port, but with read and write capabilities.
+* ULA+ compatible method - on port 0xBF3B and "ModeGrop" (bits 7:6 == "01"). See Ula+ specification, as the values are different than for port 0xFF. Warning! As the lot of software first sets the Timex mode by 0xFF, and then sets "01000000" value in 0xBF3B, it would reset Timex mode back to 0. So this combination is ignored - no possibiity to turn off Timex modes via Ula+ port.
+* oryginal Timex 0xFF port - write only. This preserves original ZX Spectrum "Floating Bus", so the port is write-only.
+
+Warning! The method of binary "or" current 0xFF port value, somewhere adviced to use on original Timex 2048, will not work properly:
+
+```
+in      a, (0xFF)
+or      a, 2
+out     (0xFF), a
+```
+
 
 ### Tested addons
 * [AYX-32](https://github.com/tslabs/arm/tree/master/AYX-32) - OK
